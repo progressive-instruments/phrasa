@@ -1,0 +1,21 @@
+{
+  "name": "shift",
+  "version": "0.0.1",
+  "author": "Erez Blumenstock",
+  "license": "MIT",
+  "dependencies": {
+    "antlr4": "^4.8.0",
+    "tsconfig-paths": "^3.9.0",
+    "tscpaths": "0.0.9",
+    "webpack": "^4.39.2",
+    "webpack-cli": "^3.3.7"
+  },
+  "devDependencies": {
+    "mocha": "^6.2.0",
+    "monaco-editor": "^0.17.1"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "mocha"
+  }
+}
