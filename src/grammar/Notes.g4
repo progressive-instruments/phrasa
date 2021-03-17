@@ -1,6 +1,6 @@
 grammar Notes;
 
-main: (NOTE PSIK)* NOTE;
+main: NOTE (PSIK NOTE)*;
 
 WS: [ t]+ -> skip;
 

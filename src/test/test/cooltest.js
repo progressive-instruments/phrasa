@@ -18,3 +18,16 @@ describe('Basic lexing without spaces', function () {
     checkToken(tokens, 1, 'PSIK', 2, ",");
     checkToken(tokens, 2, 'NOTE', 3, "d#-2");
 });
+
+describe('Output check', function () {
+    let notes = parserFacade.getNotes("C3,d#-2");
+    it('should return 2 notes', function() {
+      assert.strictEqual(notes.length, 2);
+    });
+    it('note check',() => {
+        assert.strictEqual(notes[0],"C3");
+        assert.strictEqual(notes[1],"d#-2");
+    } )
+    
+    
+});
