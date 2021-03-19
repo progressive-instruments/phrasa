@@ -1,0 +1,1 @@
+protoc --cpp_out="..\player\ShiftPlayer\ProtoBuff" --js_out="..\interpreter\generated_protocol" .\note_message.proto

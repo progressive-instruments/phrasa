@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package shift_processor;
+
+message NoteSequence {
+  repeated Note note = 1;
+
+  message Note {
+    float frequency = 1;
+  }
+
+}
