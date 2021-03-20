@@ -1,0 +1,27 @@
+#Juce Related
+Builds
+JuceLibraryCode
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+
+# Visual Studio Files
+.vs
+Debug
+Release
+*.suo
+*.csproj.user
+*.vbproj.user
+ipch
+*sdf
