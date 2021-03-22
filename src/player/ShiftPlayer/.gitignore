@@ -2,6 +2,9 @@
 Builds
 JuceLibraryCode
 
+# ProtoBuff Generated
+ProtoBuff
+
 # Compiled Object files
 *.slo
 *.lo

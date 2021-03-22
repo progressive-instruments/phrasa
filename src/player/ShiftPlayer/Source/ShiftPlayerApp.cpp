@@ -9,11 +9,17 @@
 */
 
 #include "ShiftPlayerApp.h"
-
+#include "note_message.pb.h"
 
 ShiftPlayerApp::ShiftPlayerApp()
+    : m_comm(*this)
 {
     initializeAudioDeviceManager();
+}
+
+void ShiftPlayerApp::send(const std::vector<int>& notes)
+{
+    m_sineSynth.setSequence(notes);
 }
 
 inline void ShiftPlayerApp::initializeAudioDeviceManager()
@@ -31,4 +37,5 @@ inline void ShiftPlayerApp::initializeAudioDeviceManager()
 
     m_deviceManager.addAudioCallback(&m_audioPlayer);
     m_audioPlayer.setSource(&m_sineSynth);
+   
 }

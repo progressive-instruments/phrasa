@@ -115,6 +115,11 @@ struct SineSynth  : public juce::AudioSource
         setUsingSineWaveSound();
     }
 
+    void setSequence(const std::vector<int>& notes)
+    {
+        m_sequence = notes;
+    }
+
     void setUsingSineWaveSound()
     {
         synth.clearSounds();
@@ -162,7 +167,7 @@ struct SineSynth  : public juce::AudioSource
     }
 
     juce::Synthesiser synth;
-    const std::vector<int> m_sequence = std::vector<int> {60,62,64};
+    std::vector<int> m_sequence = std::vector<int> {60,62,64};
     const double sequenceTime = 2.0;
     double m_currentTime;
     double m_sampleTime;
