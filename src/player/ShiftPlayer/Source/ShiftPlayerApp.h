@@ -8,7 +8,7 @@
   ==============================================================================
 */
 
-#include <JuceHeader.h>
+#include "juce_audio_devices/juce_audio_devices.h"
 #include "SineSynth.h"
 #include "Communication.h"
 

@@ -8,8 +8,9 @@
   ==============================================================================
 */
 
-#include <JuceHeader.h>
+
 #include <vector>
+#include <thread>
 
 #pragma once
 

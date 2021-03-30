@@ -10,6 +10,7 @@
 
 #include "Communication.h"
 #include "note_message.pb.h"
+#include "juce_core/juce_core.h"
 
 Communication::Communication(IMessageHandler& messageHandler)
     : m_messageHandler(messageHandler)

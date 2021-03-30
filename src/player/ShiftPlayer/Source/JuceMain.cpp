@@ -1,5 +1,6 @@
 
-#include <JuceHeader.h>
+#include "juce_gui_extra/juce_gui_extra.h"
+
 #include "ShiftPlayerApp.h"
 
 class ShiftPlayerJuceApplication  : public juce::JUCEApplication
@@ -7,8 +8,8 @@ class ShiftPlayerJuceApplication  : public juce::JUCEApplication
 public:
     ShiftPlayerJuceApplication() {}
 
-    const juce::String getApplicationName() override       { return ProjectInfo::projectName; }
-    const juce::String getApplicationVersion() override    { return ProjectInfo::versionString; }
+    const juce::String getApplicationName() override       { return "ShiftPlayer"; } // from cmake
+    const juce::String getApplicationVersion() override    { return "0.0.1"; } // from cmake
     bool moreThanOneInstanceAllowed() override             { return true; }
 
     void initialise (const juce::String& /*commandLine*/) override

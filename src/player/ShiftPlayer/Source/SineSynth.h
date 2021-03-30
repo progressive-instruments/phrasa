@@ -1,6 +1,6 @@
-#include "JuceHeader.h"
 
 #include <mutex>
+#include "juce_audio_basics/juce_audio_basics.h"
 #pragma once
 
 
