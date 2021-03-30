@@ -1,5 +1,6 @@
 #include "JuceHeader.h"
 
+#include <mutex>
 #pragma once
 
 
@@ -103,9 +104,11 @@ private:
 
 struct SineSynth  : public juce::AudioSource
 {
+
     SineSynth ()
     {
         m_lastIndex = -1;
+        m_lastNote = -1;
         m_currentTime = 0;
         for (auto i = 0; i < 4; ++i)
         {
@@ -117,6 +120,7 @@ struct SineSynth  : public juce::AudioSource
 
     void setSequence(const std::vector<int>& notes)
     {
+        std::lock_guard<std::mutex> guard(m_sequenceMutex);
         m_sequence = notes;
     }
 
@@ -139,31 +143,42 @@ struct SineSynth  : public juce::AudioSource
         bufferToFill.clearActiveBufferRegion();
 
         juce::MidiBuffer incomingMidi;
-
-        for (int sample = 0; sample < bufferToFill.numSamples; ++sample)
-        {
-            double eachNoteDuration = sequenceTime / (double)m_sequence.size();
-            int currentIndex = (int) (m_currentTime / eachNoteDuration);
-            if (currentIndex != m_lastIndex)
-            {
-                if (m_lastIndex > -1)
-                {
-                    incomingMidi.addEvent(juce::MidiMessage::noteOff(1,m_sequence[m_lastIndex]), sample);
-                }
-                incomingMidi.addEvent(juce::MidiMessage::noteOn(1, m_sequence[currentIndex], (uint8_t)127), sample);
-
-                m_lastIndex = currentIndex;
-            }
-
-
-            m_currentTime += m_sampleTime;
-            if (m_currentTime >= sequenceTime)
-            {
-                m_currentTime = m_currentTime - sequenceTime ;
-            }
+        if (!m_sequenceMutex.try_lock()) {
+            return;
         }
+        try {
+            m_lastIndex = std::min((int)m_sequence.size()-1, m_lastIndex);
+            for (int sample = 0; sample < bufferToFill.numSamples; ++sample)
+            {
 
-        synth.renderNextBlock (*bufferToFill.buffer, incomingMidi, 0, bufferToFill.numSamples);
+                double eachNoteDuration = sequenceTime / (double)m_sequence.size();
+                int currentIndex = (int)(m_currentTime / eachNoteDuration);
+                if (currentIndex != m_lastIndex)
+                {
+                    if (m_lastNote > -1)
+                    {
+                        incomingMidi.addEvent(juce::MidiMessage::noteOff(1, m_lastNote), sample);
+                    }
+                    incomingMidi.addEvent(juce::MidiMessage::noteOn(1, m_sequence[currentIndex], (uint8_t)127), sample);
+                    m_lastNote = m_sequence[currentIndex];
+                    m_lastIndex = currentIndex;
+                }
+
+
+                m_currentTime += m_sampleTime;
+                if (m_currentTime >= sequenceTime)
+                {
+                    m_currentTime = m_currentTime - sequenceTime;
+                }
+            }
+
+            synth.renderNextBlock(*bufferToFill.buffer, incomingMidi, 0, bufferToFill.numSamples);
+        }
+        catch(std::exception) {
+            m_sequenceMutex.unlock();
+            throw;
+        }
+        m_sequenceMutex.unlock();
     }
 
     juce::Synthesiser synth;
@@ -172,5 +187,7 @@ struct SineSynth  : public juce::AudioSource
     double m_currentTime;
     double m_sampleTime;
     int m_lastIndex;
+    std::mutex m_sequenceMutex;
+    int m_lastNote;
 };
 

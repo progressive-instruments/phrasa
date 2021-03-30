@@ -39,24 +39,23 @@ void Communication::commRoutine(Communication* communication)
                 break;
             }
             messageSize = juce::ByteOrder::swapIfLittleEndian(messageSize);
-
-            communication->m_buffer.reserve(messageSize);
-            if (connectionSocket->read(communication->m_buffer.data(), sizeof(messageSize), true) < 0)
+            std::vector<uint8_t> buff(messageSize);
+            if (connectionSocket->read(buff.data(), messageSize, true) < 0)
             {
                 // log
                 break;
             }
 
-            shift_processor::NoteSequence noteSequence;
-            if (!noteSequence.ParseFromArray(communication->m_buffer.data(), communication->m_buffer.size()))
+            shift_processor::NoteSequence noteSequence = shift_processor::NoteSequence();
+            if (!noteSequence.ParseFromArray(buff.data(), messageSize))
             {
                 throw new std::exception("failed to parse sequence");
             }
             std::vector<int> notes;
             for (auto note : noteSequence.note())
             {
-                int midiNote = std::round(log(note.frequency() / 440.0) / log(2) * 12 + 69);
-                notes.push_back(midiNote);
+                int midinote = std::round(log(note.frequency() / 440.0) / log(2) * 12 + 69);
+                notes.push_back(midinote);
             }
             communication->m_messageHandler.send(notes);
         }

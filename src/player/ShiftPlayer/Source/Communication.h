@@ -27,7 +27,7 @@ public:
     static void commRoutine(Communication* communication);
 
 private:
-    std::vector<char> m_buffer;
+    std::vector<uint8_t> m_buffer;
     IMessageHandler& m_messageHandler;
     std::thread m_commRoutineThread;
 };

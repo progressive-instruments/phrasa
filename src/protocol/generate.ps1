@@ -1,1 +1,1 @@
-protoc --cpp_out="..\player\ShiftPlayer\ProtoBuff" --js_out="..\interpreter\generated_protocol" .\note_message.proto
+protoc --plugin=".\protoc-gen-ts=\node_modules\.bin\protoc-g-ts" --js_out="import_style=commonjs,binary:.\src\generated_protocol" --ts_out=".\src\generated_protocol" ..\shift\src\protocol\note_message.proto
