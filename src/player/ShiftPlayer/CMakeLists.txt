@@ -1,10 +1,15 @@
 cmake_minimum_required(VERSION 3.15)
 
+set_property(GLOBAL PROPERTY USE_FOLDERS ON) # required for oredering projects within solution
+
 project(ShiftPlayer VERSION 0.0.1)
 
 add_subdirectory(JUCE)                    # If you've put JUCE in a subdirectory called JUCE
+add_subdirectory(googletest)                    # If you've put JUCE in a subdirectory called JUCE
 
-juce_add_gui_app(ShiftPlayer
+include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+
+juce_add_gui_app(${PROJECT_NAME}
     # VERSION ...                       # Set this if the app version is different to the project version
     # ICON_BIG ...                      # ICON_* arguments specify a path to an image file to use as an icon
     # ICON_SMALL ...
@@ -49,3 +54,18 @@ target_link_libraries(${PROJECT_NAME}
         juce::juce_recommended_warning_flags)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ProtoBuff "C:/protobuf/include")
+
+source_group(juce REGULAR_EXPRESSION juce_*)
+
+set_target_properties (gmock gmock_main gtest gtest_main PROPERTIES
+    FOLDER googletest
+)
+
+################################
+# Unit Tests
+################################
+# Add test cpp file
+add_executable( runUnitTests Source/testgtest.cpp )
+# Link test executable against gtest & gtest_main
+target_link_libraries(runUnitTests gtest gtest_main)
+add_test( runUnitTests runUnitTests )
