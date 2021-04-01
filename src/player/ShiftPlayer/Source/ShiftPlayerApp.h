@@ -15,7 +15,8 @@
 #pragma once
 
 
-class ShiftPlayerApp : IMessageHandler
+
+class ShiftPlayerApp : shift::IMessageHandler
 {
 public:
     ShiftPlayerApp();
@@ -23,7 +24,7 @@ public:
     void send(const std::vector<int>& notes) override;
 
 private:
-    Communication m_comm;
+    shift::Communication m_comm;
     void initializeAudioDeviceManager();
     juce::AudioDeviceManager m_deviceManager;
     juce::AudioSourcePlayer m_audioPlayer;

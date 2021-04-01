@@ -4,6 +4,9 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON) # required for oredering projects w
 
 project(ShiftPlayer VERSION 0.0.1)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
 add_subdirectory(JUCE)                    # If you've put JUCE in a subdirectory called JUCE
 add_subdirectory(googletest)                    # If you've put JUCE in a subdirectory called JUCE
 
@@ -22,6 +25,9 @@ target_sources(${PROJECT_NAME}
         Source/Communication.cpp
         Source/ShiftPlayerApp.cpp
         Source/JuceMain.cpp
+        Source/Communication/impl/TcpConnection.cpp
+        Source/Communication/impl/TcpConnection.h
+        Source/Communication/IConnection.h
         ProtoBuff/note_message.pb.cc)
 
 target_compile_definitions(${PROJECT_NAME}
@@ -54,8 +60,11 @@ target_link_libraries(${PROJECT_NAME}
         juce::juce_recommended_warning_flags)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ProtoBuff "C:/protobuf/include")
+target_include_directories(${PROJECT_NAME} PUBLIC "Source")
 
 source_group(juce REGULAR_EXPRESSION juce_*)
+source_group(Communication/impl REGULAR_EXPRESSION "Source/Communication/impl/.*")
+source_group(Communication REGULAR_EXPRESSION "Source/Communication/.*")
 
 set_target_properties (gmock gmock_main gtest gtest_main PROPERTIES
     FOLDER googletest

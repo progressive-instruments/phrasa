@@ -9,26 +9,33 @@
 */
 
 
+#pragma once
+
+
 #include <vector>
 #include <thread>
-
-#pragma once
+#include "Communication/IConnection.h"
+namespace shift 
+{
 
 class IMessageHandler
 {
-public: 
-    virtual void send(const std::vector<int>& notes)=0;
+public:
+    virtual void send(const std::vector<int>& notes) = 0;
 };
 
 class Communication
 {
 public:
-    Communication(IMessageHandler& messageHandler);
+    Communication(IMessageHandler& messageHandler, std::shared_ptr<connection::IConnection> connection);
 
     static void commRoutine(Communication* communication);
 
 private:
     std::vector<uint8_t> m_buffer;
     IMessageHandler& m_messageHandler;
+    std::shared_ptr<connection::IConnection> m_connection;
     std::thread m_commRoutineThread;
 };
+
+}

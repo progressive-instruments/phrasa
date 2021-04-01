@@ -12,8 +12,11 @@
 #include "note_message.pb.h"
 #include "juce_core/juce_core.h"
 
-Communication::Communication(IMessageHandler& messageHandler)
-    : m_messageHandler(messageHandler)
+using namespace shift;
+
+Communication::Communication(IMessageHandler& messageHandler, std::shared_ptr<connection::IConnection> connection)
+    : m_messageHandler(messageHandler),
+        m_connection(connection)
 {
     m_commRoutineThread = std::thread(commRoutine, this);
 }
@@ -24,42 +27,36 @@ void Communication::commRoutine(Communication* communication)
 
     while (true)
     {
-        if (!serverSocket.createListener(1000))
-        {
-            throw new std::exception("could not create listener");
+        communication->m_connection->waitForClientConnection(1000);
+
+        try{
+            while (true)
+            {
+                uint32_t messageSize;
+                communication->m_connection->receive(&messageSize, sizeof(messageSize));
+
+                messageSize = juce::ByteOrder::swapIfLittleEndian(messageSize);
+                std::vector<uint8_t> buff(messageSize);
+                communication->m_connection->receive(buff.data(), messageSize);
+
+                shift_processor::NoteSequence noteSequence = shift_processor::NoteSequence();
+                if (!noteSequence.ParseFromArray(buff.data(), messageSize))
+                {
+                    throw new std::exception("failed to parse sequence");
+                }
+                std::vector<int> notes;
+                for (auto note : noteSequence.note())
+                {
+                    int midinote = std::round(log(note.frequency() / 440.0) / log(2) * 12 + 69);
+                    notes.push_back(midinote);
+                }
+                communication->m_messageHandler.send(notes);
+            }
         }
-
-        std::unique_ptr<juce::StreamingSocket> connectionSocket (serverSocket.waitForNextConnection());
-
-        while (connectionSocket->isConnected())
-        {
-            uint32_t messageSize;
-            if (connectionSocket->read(&messageSize, sizeof(messageSize), true) < 0)
-            {
-                // log
-                break;
-            }
-            messageSize = juce::ByteOrder::swapIfLittleEndian(messageSize);
-            std::vector<uint8_t> buff(messageSize);
-            if (connectionSocket->read(buff.data(), messageSize, true) < 0)
-            {
-                // log
-                break;
-            }
-
-            shift_processor::NoteSequence noteSequence = shift_processor::NoteSequence();
-            if (!noteSequence.ParseFromArray(buff.data(), messageSize))
-            {
-                throw new std::exception("failed to parse sequence");
-            }
-            std::vector<int> notes;
-            for (auto note : noteSequence.note())
-            {
-                int midinote = std::round(log(note.frequency() / 440.0) / log(2) * 12 + 69);
-                notes.push_back(midinote);
-            }
-            communication->m_messageHandler.send(notes);
+        catch (connection::ConnectionClosedException& ex) {
+            // log disconnected..
         }
+        
         
     }
 

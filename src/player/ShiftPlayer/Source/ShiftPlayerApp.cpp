@@ -11,9 +11,10 @@
 #include "ShiftPlayerApp.h"
 #include "note_message.pb.h"
 #include "juce_core/juce_core.h"
+#include "Communication/impl/TcpConnection.h"
 
 ShiftPlayerApp::ShiftPlayerApp()
-    : m_comm(*this)
+    : m_comm(*this, std::shared_ptr<shift::connection::impl::TcpConnection>(new shift::connection::impl::TcpConnection()))
 {
     initializeAudioDeviceManager();
 }
