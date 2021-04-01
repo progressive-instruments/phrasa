@@ -9,6 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 add_subdirectory(JUCE)                    # If you've put JUCE in a subdirectory called JUCE
 add_subdirectory(googletest)                    # If you've put JUCE in a subdirectory called JUCE
+add_subdirectory(Source/connection)
 
 include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 
@@ -25,9 +26,6 @@ target_sources(${PROJECT_NAME}
         Source/Communication.cpp
         Source/ShiftPlayerApp.cpp
         Source/JuceMain.cpp
-        Source/Communication/impl/TcpConnection.cpp
-        Source/Communication/impl/TcpConnection.h
-        Source/Communication/IConnection.h
         ProtoBuff/note_message.pb.cc)
 
 target_compile_definitions(${PROJECT_NAME}
@@ -41,6 +39,7 @@ target_compile_definitions(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
         # GuiAppData            # If we'd created a binary data target, we'd link to it here
+        connection
         juce::juce_gui_extra
         juce::juce_audio_basics
         juce::juce_audio_devices
@@ -62,9 +61,7 @@ target_link_libraries(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME} PUBLIC ProtoBuff "C:/protobuf/include")
 target_include_directories(${PROJECT_NAME} PUBLIC "Source")
 
-source_group(juce REGULAR_EXPRESSION juce_*)
-source_group(Communication/impl REGULAR_EXPRESSION "Source/Communication/impl/.*")
-source_group(Communication REGULAR_EXPRESSION "Source/Communication/.*")
+source_group(juce REGULAR_EXPRESSION juce_.*)
 
 set_target_properties (gmock gmock_main gtest gtest_main PROPERTIES
     FOLDER googletest

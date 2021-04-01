@@ -14,7 +14,7 @@
 
 #include <vector>
 #include <thread>
-#include "Communication/IConnection.h"
+#include "connection/IConnection.h"
 namespace shift 
 {
 
