@@ -10,6 +10,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 add_subdirectory(JUCE)                    # If you've put JUCE in a subdirectory called JUCE
 add_subdirectory(googletest)                    # If you've put JUCE in a subdirectory called JUCE
 add_subdirectory(Source/connection)
+add_subdirectory(Source/player)
+add_subdirectory(Source/player_controller)
 
 include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 
@@ -66,12 +68,3 @@ source_group(juce REGULAR_EXPRESSION juce_.*)
 set_target_properties (gmock gmock_main gtest gtest_main PROPERTIES
     FOLDER googletest
 )
-
-################################
-# Unit Tests
-################################
-# Add test cpp file
-add_executable( runUnitTests Source/testgtest.cpp )
-# Link test executable against gtest & gtest_main
-target_link_libraries(runUnitTests gtest gtest_main)
-add_test( runUnitTests runUnitTests )
