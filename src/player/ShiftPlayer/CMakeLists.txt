@@ -27,8 +27,7 @@ target_sources(${PROJECT_NAME}
     PRIVATE
         Source/Communication.cpp
         Source/ShiftPlayerApp.cpp
-        Source/JuceMain.cpp
-        ProtoBuff/note_message.pb.cc)
+        Source/JuceMain.cpp)
 
 target_compile_definitions(${PROJECT_NAME}
     PRIVATE
@@ -53,14 +52,11 @@ target_link_libraries(${PROJECT_NAME}
         juce::juce_events
         juce::juce_graphics
         juce::juce_gui_basics
-        debug "C:/protobuf/debug/lib/libprotobufd.lib"
-        optimized "C:/protobuf/lib/libprotobuf.lib"
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags)
 
-target_include_directories(${PROJECT_NAME} PUBLIC ProtoBuff "C:/protobuf/include")
 target_include_directories(${PROJECT_NAME} PUBLIC "Source")
 
 source_group(juce REGULAR_EXPRESSION juce_.*)
