@@ -23,8 +23,6 @@ Communication::Communication(IMessageHandler& messageHandler, std::shared_ptr<co
 
 void Communication::commRoutine(Communication* communication)
 {
-    juce::StreamingSocket serverSocket;
-
     while (true)
     {
         communication->m_connection->waitForClientConnection(1000);
