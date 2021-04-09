@@ -14,7 +14,7 @@ m_connection(connection)
 	m_commRoutineThread = std::thread(communicationRoutine, this);
 }
 
-class EventValue  : public shift::player::IEventValue
+class EventValue  : public shift::IEventValue
 {
 public:
     EventValue(double value)
@@ -47,18 +47,18 @@ void shift::playerctrl::impl::PlayerController::communicationRoutine(PlayerContr
                 {
                     throw new std::exception("failed to parse sequence");
                 }
-                std::shared_ptr<shift::player::Sequence> sequence(new shift::player::Sequence());
+                std::unique_ptr<Sequence> sequence(new Sequence());
                 
-                shift::player::Time currentTime(0);
-                shift::player::Time duration(100);
+                shift::SequenceTime currentTime = SequenceTime::FromMilliseconds(0);
+                shift::SequenceTime duration = SequenceTime::FromMilliseconds(100);
                 for (auto note : noteSequence.note())
                 {
-                    std::unique_ptr<shift::player::Event> event(new shift::player::Event(currentTime, duration));
-                    event->values["frequency"] = std::unique_ptr<shift::player::IEventValue>(new EventValue(note.frequency()));
-                    currentTime.timeMs += duration.timeMs;
-                    sequence->events.push_back(std::move(event));
+                    std::shared_ptr<shift::Event> event(new shift::Event(duration));
+                    event->values["frequency"] = std::unique_ptr<shift::IEventValue>(new EventValue(note.frequency()));
+                    currentTime += duration;
+                    sequence->events.insert({ currentTime, event });
                 }
-                controller->m_player->setSequence(sequence, shift::player::Time(noteSequence.note().size() * duration.timeMs));
+                controller->m_player->setSequence(std::move(sequence), shift::SequenceTime(duration * noteSequence.note().size()));
             }
         }
         catch (connection::ConnectionClosedException& ex) {

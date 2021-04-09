@@ -1,0 +1,47 @@
+#pragma once
+
+#include <vector>
+#include <cstdint>
+#include "Event.h"
+#include "AudioBuffer.h"
+#include "SequenceTrack.h"
+
+namespace shift::instrument {
+
+enum class InstrumentType { SineSynth };
+
+/**
+ * @brief Abstraction for instrument
+ * 
+ * All functions must be called synchronously
+ */
+class IInstrument
+{
+public:
+	/**
+	 * @brief Notify before process block is called
+	 * @param sampleRate 
+	 * @param expectedBlockSize 
+	*/
+	virtual void prepareForProcessing(unsigned int sampleRate, size_t expectedBlockSize)=0;
+
+	/**
+	 * @brief 
+	 * @param buffer  buffer to be filled
+	 * @param track	current sequence state 
+	*/
+	virtual void processBlock(audio::AudioBuffer& buffer, const SequenceTrack& track/*, real time events*/)=0;
+	
+	/**
+	 * @brief Notify on process ending
+	*/
+	virtual void processingEnded()=0;
+
+	/**
+	 * @brief Set new sequence to be owned by instrument
+	 * @param sequence 
+	*/
+	virtual void setSequence(std::unique_ptr<Sequence>& sequence)=0;
+};
+
+}

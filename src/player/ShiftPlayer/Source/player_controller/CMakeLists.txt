@@ -18,7 +18,8 @@ target_link_libraries(player_controller
     ../player 
     ../connection
     ../../JUCE/modules
-    "C:/protobuf/include")
+    "C:/protobuf/include"
+    ../event)
 
 # Tests
 add_executable( playerControlTest tests/PlayerControlTest.cpp )

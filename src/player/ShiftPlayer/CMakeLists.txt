@@ -10,8 +10,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 add_subdirectory(JUCE)                    # If you've put JUCE in a subdirectory called JUCE
 add_subdirectory(googletest)                    # If you've put JUCE in a subdirectory called JUCE
 add_subdirectory(Source/connection)
+add_subdirectory(Source/audio)
+add_subdirectory(Source/event)
 add_subdirectory(Source/player)
 add_subdirectory(Source/player_controller)
+add_subdirectory(Source/instrument)
 
 include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 
@@ -28,6 +31,8 @@ target_sources(${PROJECT_NAME}
         Source/Communication.cpp
         Source/ShiftPlayerApp.cpp
         Source/JuceMain.cpp)
+
+
 
 target_compile_definitions(${PROJECT_NAME}
     PRIVATE
