@@ -23,6 +23,6 @@ target_include_directories(instrument
 
 
 #Tests
-# add_executable( instrumentTests tests/instrumentTest.cpp )
-# target_link_libraries(instrumentTests instrument gtest gtest_main)
-# add_test( instrumentTests instrumentTests )
+add_executable( sequenceProcessorTests tests/SequenceProcessorTests.cpp )
+target_link_libraries(sequenceProcessorTests instrument gtest gtest_main)
+add_test( sequenceProcessorTests sequenceProcessorTests )

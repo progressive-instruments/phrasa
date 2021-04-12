@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include "SequenceTrack.h"
 #include "Event.h"
 #include <optional>
 
@@ -31,13 +32,13 @@ public:
 			m_currentTime = std::chrono::microseconds(0);
 		}
 		else {
-			m_currentTime + time;
+			m_currentTime += time;
 		}
 	}
 
-	void addEvent(std::shared_ptr<Event> event, SequenceTime relativeStartTime = std::chrono::microseconds(0))
+	void addEvent(std::shared_ptr<Event> event, SequenceTime startOffsetTime = std::chrono::microseconds(0))
 	{
-		SequenceTime time = relativeStartTime + event->duration + m_currentTime;
+		SequenceTime time = startOffsetTime + event->duration + m_currentTime;
 		m_pool.insert({ time, event });
 	}
 
@@ -53,7 +54,7 @@ public:
 				m_pool.begin()->first > m_currentTime)) {
 			throw std::runtime_error("no events");
 		}
-		RelativeEvent res(m_pool.begin()->second, m_pool.begin()->first - m_prevTime);
+		return RelativeEvent(m_pool.begin()->second, m_pool.begin()->first - m_prevTime);
 	}
 	
 private:
@@ -61,6 +62,7 @@ private:
 	SequenceTime m_currentTime;
 	std::multimap<SequenceTime, std::shared_ptr<Event>> m_pool;
 };
+
 
 /**
  * @brief Synchronous handling
@@ -74,8 +76,9 @@ public:
 		 m_sequence(new Sequence()),
 		m_addOffEvents(addOffEvents)
 	{
-		m_nextIterator = m_sequence->events.cend();
-		m_expectedNextTime = SequenceTime(std::chrono::microseconds(0));
+		m_endItr = m_sequence->events.cend();
+		m_currentItr = m_sequence->events.cend();
+		m_endTime = SequenceTime(std::chrono::microseconds(0));
 	}
 
 	void setSequence(std::unique_ptr<Sequence>& sequence)
@@ -84,40 +87,45 @@ public:
 		sequenceChanged = true;
 	}
 
+	void ring(EventMapIterator& itr) {
+		if (m_sequence->events.cend() == itr) {
+			itr = m_sequence->events.cbegin();
+		}
+	}
+
+
 	void setSequenceTrack(const SequenceTrack& sequenceTrack) {
 		m_sequenceTrack = sequenceTrack;
 		m_currentRepeat = 0;
-		if (sequenceChanged || sequenceTrack.Time != m_expectedNextTime)
+		if (sequenceChanged || sequenceTrack.Time != m_endTime)
 		{
+			// need to recalculate position
 			m_currentItr = m_sequence->events.lower_bound(sequenceTrack.Time);
+			ring(m_currentItr);
+			sequenceChanged = false;
 		}
 		else
 		{
-			m_currentItr = m_nextIterator;
+			// continue with previous end
+			m_currentItr = m_endItr;
 		}
 
-		if (m_sequence->events.empty()) {
-			m_repeats = 0;
-		}
-		else {
-			m_repeats = sequenceTrack.Duration / sequenceTrack.SequenceLength;
-		}
+		m_repeats = !m_sequence->events.empty() ? sequenceTrack.Duration / sequenceTrack.SequenceLength : 0;
+		m_endTime = (sequenceTrack.Time + sequenceTrack.Duration) % sequenceTrack.SequenceLength;
 
-		m_expectedNextTime = (sequenceTrack.Time + sequenceTrack.Duration) % sequenceTrack.SequenceLength;
-		if (sequenceTrack.Time <= m_expectedNextTime)
+		if (sequenceTrack.Time <= m_endTime)
 		{
-			m_endItr = std::find_if(m_currentItr, m_sequence->events.cend(), [this](auto pair) {return pair.first >= m_expectedNextTime;});
+			m_endItr = std::find_if(m_currentItr, m_sequence->events.cend(), [this](auto pair) {return pair.first >= m_endTime;});
 		}
 		else
 		{
-			m_endItr = std::find_if(m_sequence->events.cbegin(), m_currentItr, [this](auto pair) {return pair.first >= m_expectedNextTime;});
+			m_endItr = std::find_if(m_sequence->events.cbegin(), m_currentItr, [this](auto pair) {return pair.first >= m_endTime;});
 		}
-
-		
+		ring(m_endItr);
 	}
 
 	bool hasEvents() {
-		return m_currentItr == m_endItr && m_repeats == m_currentRepeat;
+		return m_currentItr != m_endItr || m_currentRepeat < m_repeats;
 
 	}
 
@@ -134,14 +142,8 @@ public:
 		}
 		
 		RelativeEvent res(m_currentItr->second, getRelativeTime(m_currentItr->first));
-
-		if (m_currentItr == m_sequence->events.cend())
-		{
-			m_currentItr = m_sequence->events.begin();
-		}
-		else {
-			++m_currentItr;
-		}
+		++m_currentItr;
+		ring(m_currentItr);
 
 		return res;
 	}
@@ -163,7 +165,7 @@ private:
 
 	std::unique_ptr<shift::Sequence> m_sequence;
 	bool sequenceChanged;
-	shift::SequenceTime m_expectedNextTime;
+	shift::SequenceTime m_endTime;
 
 	EventMapIterator m_nextIterator;
 	EventMapIterator m_currentItr;
