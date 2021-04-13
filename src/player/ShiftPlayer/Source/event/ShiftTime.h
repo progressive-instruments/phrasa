@@ -16,6 +16,14 @@ public:
 		: m_time(time)
 	{}
 
+	static SequenceTime Max(SequenceTime a, SequenceTime b) {
+		return a > b ? a : b;
+	}
+
+	static SequenceTime Min(SequenceTime a, SequenceTime b) {
+		return a < b ? a : b;
+	}
+
 	SequenceTime(const SequenceTime& time) 
 		: m_time(time.m_time)
 	{}

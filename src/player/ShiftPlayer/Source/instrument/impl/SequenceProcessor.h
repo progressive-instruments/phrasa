@@ -6,6 +6,8 @@
 #include "Event.h"
 #include <optional>
 
+using namespace std::literals::chrono_literals;
+
 namespace shift::instrument::impl {
 
 typedef std::multimap<SequenceTime,std::shared_ptr<Event>>::const_iterator EventMapIterator;
@@ -42,19 +44,16 @@ public:
 		m_pool.insert({ time, event });
 	}
 
-	bool hasEvents() {
-		auto firstEventItr = m_pool.begin();
-		return (firstEventItr != m_pool.end() &&
-			firstEventItr->first <= m_currentTime);
-	}
-
-	RelativeEvent getNextEvent(bool includeFutureEvents = false) {
+	std::optional<RelativeEvent> getNextEvent(bool includeFutureEvents = false) {
 		if (m_pool.begin() == m_pool.end() || 
 			(!includeFutureEvents && 
 				m_pool.begin()->first > m_currentTime)) {
-			throw std::runtime_error("no events");
+			return std::nullopt;
 		}
-		return RelativeEvent(m_pool.begin()->second, m_pool.begin()->first - m_prevTime);
+
+		auto res = RelativeEvent(m_pool.begin()->second, m_pool.begin()->first - m_prevTime);
+		m_pool.erase(m_pool.begin());
+		return res;
 	}
 	
 private:
@@ -74,12 +73,8 @@ public:
 	SequenceProcessor(bool addOffEvents = true) 
 		:
 		 m_sequence(new Sequence()),
-		m_addOffEvents(addOffEvents)
-	{
-		m_endItr = m_sequence->events.cend();
-		m_currentItr = m_sequence->events.cend();
-		m_endTime = SequenceTime(std::chrono::microseconds(0));
-	}
+		m_nextEventItr(m_sequence->events.cend())
+	{}
 
 	void setSequence(std::unique_ptr<Sequence>& sequence)
 	{
@@ -87,93 +82,81 @@ public:
 		sequenceChanged = true;
 	}
 
-	void ring(EventMapIterator& itr) {
-		if (m_sequence->events.cend() == itr) {
-			itr = m_sequence->events.cbegin();
-		}
-	}
-
-
 	void setSequenceTrack(const SequenceTrack& sequenceTrack) {
-		m_sequenceTrack = sequenceTrack;
-		m_currentRepeat = 0;
-		if (sequenceChanged || sequenceTrack.Time != m_endTime)
-		{
-			// need to recalculate position
-			m_currentItr = m_sequence->events.lower_bound(sequenceTrack.Time);
-			ring(m_currentItr);
-			sequenceChanged = false;
-		}
-		else
-		{
-			// continue with previous end
-			m_currentItr = m_endItr;
-		}
-
-		m_repeats = !m_sequence->events.empty() ? sequenceTrack.Duration / sequenceTrack.SequenceLength : 0;
-		m_endTime = (sequenceTrack.Time + sequenceTrack.Duration) % sequenceTrack.SequenceLength;
-
-		if (sequenceTrack.Time <= m_endTime)
-		{
-			m_endItr = std::find_if(m_currentItr, m_sequence->events.cend(), [this](auto pair) {return pair.first >= m_endTime;});
-		}
-		else
-		{
-			m_endItr = std::find_if(m_sequence->events.cbegin(), m_currentItr, [this](auto pair) {return pair.first >= m_endTime;});
-		}
-		ring(m_endItr);
-	}
-
-	bool hasEvents() {
-		return m_currentItr != m_endItr || m_currentRepeat < m_repeats;
-
-	}
-
-
-	RelativeEvent getNextEvent()
-	{
-		if (m_currentItr == m_endItr) {
-			if (m_currentRepeat < m_repeats) {
-				++m_currentRepeat;
-			}
-			else {
-				throw std::runtime_error("no more elements");
-			}
-		}
 		
-		RelativeEvent res(m_currentItr->second, getRelativeTime(m_currentItr->first));
-		++m_currentItr;
-		ring(m_currentItr);
+		if (sequenceChanged || sequenceTrack.Time != m_track.expectedNextTime())
+		{
+			m_nextEventItr = findNextEvent(sequenceTrack.Time);
+			sequenceChanged = false;
+		} else {
+			while (getNextEvent().has_value()) 
+			{}
+		}
+		m_track = sequenceTrack;
+		m_currentTime = m_track.Time;
+		m_durationLeft = m_track.Duration;
+	}
 
+	std::optional<RelativeEvent> getNextEvent()
+	{
+		if (m_track.SequenceLength == SequenceTime(0us)) {
+			return std::nullopt;
+		}
+		while (m_nextEventItr == m_sequence->events.end()) {
+			if (advanceToEndItr() == END_ITR_NOT_PASSED) {
+				return std::nullopt;
+			}
+		}
+		auto distanceFromCurrent = m_nextEventItr->first - m_currentTime;
+		if (distanceFromCurrent >= m_durationLeft) {
+			return std::nullopt;
+		}
+		m_durationLeft -= distanceFromCurrent;
+		m_currentTime = m_nextEventItr->first;
+		
+		RelativeEvent res(m_nextEventItr->second, m_track.Duration - m_durationLeft);
+		++m_nextEventItr;
 		return res;
 	}
 
 private:
 
-
-	SequenceTime getRelativeTime(SequenceTime eventTime) {
-		SequenceTime res;
-		if (eventTime >= m_sequenceTrack.Time) {
-			res = eventTime - m_sequenceTrack.Time;
+	EventMapIterator findNextEvent(SequenceTime time) {
+		auto res = m_sequence->events.upper_bound(time);
+		if (res == m_sequence->events.begin()) {
+			return res;
 		}
 		else {
-			res = m_sequenceTrack.SequenceLength - m_sequenceTrack.Time + eventTime;
+			--res;
+			if (res->first == time) {
+				return res;
+			}
+			else {
+				return ++res;
+			}
 		}
-		res += m_sequenceTrack.Duration * m_repeats;
-		return res;
+	}
+
+	enum AdvanceToEndItrRes { END_ITR_PASSED, END_ITR_NOT_PASSED };
+	AdvanceToEndItrRes advanceToEndItr() {
+		auto endTime = m_currentTime + m_durationLeft;
+		if (endTime < m_track.SequenceLength) {
+			return END_ITR_NOT_PASSED;
+		}
+		m_durationLeft = endTime - m_track.SequenceLength;
+		m_nextEventItr = m_sequence->events.cbegin();
+		m_currentTime = 0us;
+
+		return END_ITR_PASSED;
 	}
 
 	std::unique_ptr<shift::Sequence> m_sequence;
 	bool sequenceChanged;
-	shift::SequenceTime m_endTime;
 
-	EventMapIterator m_nextIterator;
-	EventMapIterator m_currentItr;
-	EventMapIterator m_endItr;
-	SequenceTrack m_sequenceTrack;
-	int m_repeats;
-	int m_currentRepeat;
-	bool m_addOffEvents;
+	SequenceTrack m_track;
+	EventMapIterator m_nextEventItr;
+	SequenceTime m_currentTime;
+	SequenceTime m_durationLeft;
 };
 
 }

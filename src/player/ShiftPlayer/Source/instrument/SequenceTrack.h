@@ -10,6 +10,9 @@ struct SequenceTrack
 		Time = (Time + Duration) % SequenceLength;
 		Duration = newDuration;
 	}
+	SequenceTime expectedNextTime() {
+		return (Time + Duration) % SequenceLength;
+	}
 	SequenceTime Time;
 	SequenceTime Duration;
 
