@@ -28,8 +28,8 @@ juce_add_gui_app(${PROJECT_NAME}
 
 target_sources(${PROJECT_NAME}
     PRIVATE
-        Source/Communication.cpp
         Source/ShiftPlayerApp.cpp
+        Source/ShiftPlayerApp.h
         Source/JuceMain.cpp)
 
 
@@ -45,7 +45,6 @@ target_compile_definitions(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
         # GuiAppData            # If we'd created a binary data target, we'd link to it here
-        connection
         juce::juce_gui_extra
         juce::juce_audio_basics
         juce::juce_audio_devices
@@ -57,6 +56,12 @@ target_link_libraries(${PROJECT_NAME}
         juce::juce_events
         juce::juce_graphics
         juce::juce_gui_basics
+        event
+        audio
+        connection
+        instrument
+        player
+        player_controller
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags

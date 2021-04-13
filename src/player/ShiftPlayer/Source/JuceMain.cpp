@@ -14,7 +14,7 @@ public:
 
     void initialise (const juce::String& /*commandLine*/) override
     {
-        m_shiftPlayerApp.reset(new ShiftPlayerApp());
+        m_shiftPlayerApp.reset(new shift::ShiftPlayerApp());
     }
 
 
@@ -30,7 +30,7 @@ public:
     {}
 
 private:
-    std::unique_ptr<ShiftPlayerApp> m_shiftPlayerApp;
+    std::unique_ptr<shift::ShiftPlayerApp> m_shiftPlayerApp;
 };
 
 //==============================================================================

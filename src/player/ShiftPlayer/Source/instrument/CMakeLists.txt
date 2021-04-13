@@ -16,10 +16,11 @@ target_compile_definitions(instrument PRIVATE
 target_link_libraries(instrument audio)
 
 target_include_directories(instrument 
+  PRIVATE
+  ../../JUCE/modules
   PUBLIC 
     .
-    ../event
-    ../../JUCE/modules)
+    ../event)
 
 
 #Tests

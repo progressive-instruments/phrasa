@@ -1,5 +1,4 @@
 add_library(player_controller impl/PlayerController.cpp "impl/generated/note_message.pb.cc")
-
 target_sources( player_controller
   PRIVATE
     IPlayerController.h
@@ -9,12 +8,14 @@ target_sources( player_controller
       JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1)
 
 target_link_libraries(player_controller
+  PRIVATE
   debug "C:/protobuf/debug/lib/libprotobufd.lib"
   optimized "C:/protobuf/lib/libprotobuf.lib")
 
  target_include_directories(player_controller 
-  PRIVATE 
+  PUBLIC 
     . 
+  PRIVATE
     ../player 
     ../connection
     ../../JUCE/modules

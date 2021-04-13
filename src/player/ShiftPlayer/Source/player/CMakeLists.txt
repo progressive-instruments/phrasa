@@ -8,8 +8,9 @@ target_sources( player
     IPlayerAudioProcessor.h)
 
 target_include_directories(player 
-  PRIVATE 
+  PUBLIC 
     .
+  PRIVATE
     ../event
     ../instrument)
 

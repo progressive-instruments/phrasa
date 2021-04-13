@@ -38,7 +38,7 @@ void shift::playerctrl::impl::PlayerController::communicationRoutine(PlayerContr
                 uint32_t messageSize;
                 controller->m_connection->receive(&messageSize, sizeof(messageSize));
 
-                //messageSize = juce::ByteOrder::swapIfLittleEndian(messageSize);
+                messageSize = juce::ByteOrder::swapIfLittleEndian(messageSize);
                 std::vector<uint8_t> buff(messageSize);
                 controller->m_connection->receive(buff.data(), messageSize);
 
@@ -55,8 +55,8 @@ void shift::playerctrl::impl::PlayerController::communicationRoutine(PlayerContr
                 {
                     std::shared_ptr<shift::Event> event(new shift::Event(duration));
                     event->values["frequency"] = std::unique_ptr<shift::IEventValue>(new EventValue(note.frequency()));
-                    currentTime += duration;
                     sequence->events.insert({ currentTime, event });
+                    currentTime += duration;
                 }
                 controller->m_player->setSequence(std::move(sequence), shift::SequenceTime(duration * noteSequence.note().size()));
             }

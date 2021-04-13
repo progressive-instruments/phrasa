@@ -18,12 +18,13 @@ enum class InstrumentType { SineSynth };
 class IInstrument
 {
 public:
+	virtual ~IInstrument() {}
 	/**
 	 * @brief Notify before process block is called
 	 * @param sampleRate 
 	 * @param expectedBlockSize 
 	*/
-	virtual void prepareForProcessing(unsigned int sampleRate, size_t expectedBlockSize)=0;
+	virtual void prepareForProcessing(double sampleRate, size_t expectedBlockSize)=0;
 
 	/**
 	 * @brief 

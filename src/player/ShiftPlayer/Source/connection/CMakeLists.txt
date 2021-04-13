@@ -8,7 +8,11 @@ target_sources( connection
     impl/TcpConnection.h 
     IConnection.h)
 
-target_include_directories(connection PUBLIC . ../../JUCE/modules)
+target_include_directories(connection 
+  PUBLIC 
+  .
+  PRIVATE 
+  ../../JUCE/modules)
 
 #Tests
 add_executable( connectionTest tests/ConnectionTest.cpp )

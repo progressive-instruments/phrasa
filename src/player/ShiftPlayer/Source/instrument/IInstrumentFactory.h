@@ -7,6 +7,7 @@ namespace shift::instrument {
 class IInstrumentFactory
 {
 public:
+    virtual ~IInstrumentFactory() {}
     /**
      * @brief create instrument of type
      * @param instrumentType 

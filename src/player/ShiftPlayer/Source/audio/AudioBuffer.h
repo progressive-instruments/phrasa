@@ -5,6 +5,6 @@ namespace shift::audio {
   {
 	  float* const * data;
 	  unsigned int numChannels;
-	  size_t bufferSize;
+	  size_t numSamples;
   };
 }

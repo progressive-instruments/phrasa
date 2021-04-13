@@ -10,10 +10,11 @@
 
 namespace shift::player::impl {
 
-
-
 class Player : public IPlayer, IPlayerAudioProcessor
 {
+	Player(const Player&) = delete;
+	Player& operator=(const Player&) = delete;
+
 public:
 	Player(std::shared_ptr<instrument::IInstrumentFactory> instrumentFactory)
 		: m_processor(instrumentFactory)
@@ -23,7 +24,7 @@ public:
 	virtual void setSequence(std::unique_ptr<Sequence> sequence, SequenceTime endTime) override;
 
 	// IPlayerAudioProcessor
-	virtual void prepareForProcessing(unsigned int sampleRate, size_t expectedBlockSize) override;
+	virtual void prepareForProcessing(double sampleRate, size_t expectedBlockSize) override;
 	virtual void processBlock(audio::AudioBuffer& buffer) override;
 	virtual void processingEnded() override;
 private:
@@ -46,7 +47,7 @@ private:
 		}
 
 		void send(std::unique_ptr<ProcessorMessage> message);
-		void prepareForProcessing(unsigned int sampleRate, size_t expectedBlockSize);
+		void prepareForProcessing(double sampleRate, size_t expectedBlockSize);
 		void processBlock(audio::AudioBuffer& buffer);
 		void processingEnded();
 	private:

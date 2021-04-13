@@ -9,24 +9,30 @@
 */
 
 #include "ShiftPlayerApp.h"
-#include "note_message.pb.h"
 #include "juce_core/juce_core.h"
-#include "connection/impl/TcpConnection.h"
+#include "impl/TcpConnection.h"
+#include "impl/Player.h"
+#include "impl/PlayerController.h"
+#include "impl/InstrumentFactory.h"
+namespace shift {
 
 ShiftPlayerApp::ShiftPlayerApp()
-    : m_comm(*this, std::shared_ptr<shift::connection::impl::TcpConnection>(new shift::connection::impl::TcpConnection()))
+    :
+    m_player(
+        new player::impl::Player(
+            std::make_shared<instrument::impl::InstrumentFactory>())),
+    m_playerController(
+        new playerctrl::impl::PlayerController(
+            m_player, 
+            std::make_shared<connection::impl::TcpConnection>()))
 {
     initializeAudioDeviceManager();
 }
 
-void ShiftPlayerApp::send(const std::vector<int>& notes)
-{
-    m_sineSynth.setSequence(notes);
-}
 
 inline void ShiftPlayerApp::initializeAudioDeviceManager()
 {
-    const int numInputChannels = 2;
+    const int numInputChannels = 0;
     const int numOutputChannels = 2;
     juce::String audioError;
 
@@ -38,6 +44,27 @@ inline void ShiftPlayerApp::initializeAudioDeviceManager()
     jassert(audioError.isEmpty());
 
     m_deviceManager.addAudioCallback(&m_audioPlayer);
-    m_audioPlayer.setSource(&m_sineSynth);
-   
+    m_audioPlayer.setSource(this);
+
+}
+
+void ShiftPlayerApp::prepareToPlay(int samplesPerBlockExpected, double sampleRate)
+{
+    m_player->prepareForProcessing(sampleRate, samplesPerBlockExpected);
+}
+
+void ShiftPlayerApp::releaseResources()
+{
+    m_player->processingEnded();
+}
+
+void ShiftPlayerApp::getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill)
+{
+    audio::AudioBuffer buffer;
+    buffer.data = bufferToFill.buffer->getArrayOfWritePointers();
+    buffer.numSamples = bufferToFill.numSamples;
+    buffer.numChannels = bufferToFill.buffer->getNumChannels();
+    m_player->processBlock(buffer);
+}
+
 }

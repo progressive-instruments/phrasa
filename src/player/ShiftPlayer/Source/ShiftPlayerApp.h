@@ -9,25 +9,27 @@
 */
 
 #include "juce_audio_devices/juce_audio_devices.h"
-#include "SineSynth.h"
-#include "Communication.h"
-
+#include "impl/Player.h"
+#include "impl/PlayerController.h"
 #pragma once
 
+namespace shift {
 
-
-class ShiftPlayerApp : shift::IMessageHandler
+class ShiftPlayerApp : juce::AudioSource
 {
 public:
     ShiftPlayerApp();
-
-    void send(const std::vector<int>& notes) override;
-
 private:
-    shift::Communication m_comm;
+    std::shared_ptr<player::impl::Player> m_player;
+    std::shared_ptr<playerctrl::impl::PlayerController> m_playerController;
     void initializeAudioDeviceManager();
     juce::AudioDeviceManager m_deviceManager;
     juce::AudioSourcePlayer m_audioPlayer;
-    SineSynth m_sineSynth;
+
+    // Inherited via AudioSource
+    virtual void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override;
+    virtual void releaseResources() override;
+    virtual void getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill) override;
 };
 
+}

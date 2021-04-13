@@ -127,7 +127,7 @@ struct SineSynth : public shift::instrument::IInstrument
     }
 
 
-    void prepareForProcessing(unsigned int sampleRate, size_t expectedBlockSize) override
+    void prepareForProcessing(double sampleRate, size_t expectedBlockSize) override
     {
         synth.setCurrentPlaybackSampleRate(sampleRate);
         m_sampleTimeMs = 1.0 / sampleRate / 1000;
@@ -139,7 +139,8 @@ struct SineSynth : public shift::instrument::IInstrument
     }
 
 
-    void processingEnded() override {}
+    void processingEnded() override {
+    }
     
     int getMidiNote(double freq) {
         return std::round(log(freq / 440.0) / log(2) * 12 + 69);
@@ -147,28 +148,36 @@ struct SineSynth : public shift::instrument::IInstrument
 
     void processBlock(shift::audio::AudioBuffer& buffer, const SequenceTrack& track/*, real time events*/) override
     {
-        juce::AudioBuffer juceBuff(buffer.data, buffer.numChannels, buffer.bufferSize);
+        juce::AudioBuffer juceBuff(buffer.data, buffer.numChannels, buffer.numSamples);
         juceBuff.clear();
 
         juce::MidiBuffer incomingMidi;
-        while (m_sequenceProcessor.hasEvents()) {
+        m_sequenceProcessor.setSequenceTrack(track);
+        
+        while (true) {
             auto event = m_sequenceProcessor.getNextEvent();
+            if (!event.has_value()) {
+                break;
+            }
                 
-            int sample = event.relativeTime.getMilliSeconds() / m_sampleTimeMs;
-            auto midi = getMidiNote(event.event->values["frequency"]->getValue());
+            int sample = event->relativeTime.getMilliSeconds() / m_sampleTimeMs;
+            auto midi = getMidiNote(event->event->values["frequency"]->getValue());
             incomingMidi.addEvent(juce::MidiMessage::noteOn(1, midi, (juce::uint8)127), sample);
 
-            m_eventPool.addEvent(event.event, event.relativeTime);
+            m_eventPool.addEvent(event->event, event->relativeTime);
         }
         m_eventPool.advance(track.Duration);
-        while (m_eventPool.hasEvents()) {
+        while (true) {
             auto event = m_eventPool.getNextEvent();
-            int sample = event.relativeTime.getMilliSeconds() / m_sampleTimeMs;
-            auto midi = getMidiNote(event.event->values["frequency"]->getValue());
+            if (!event.has_value()) {
+                break;
+            }
+            int sample = event->relativeTime.getMilliSeconds() / m_sampleTimeMs;
+            auto midi = getMidiNote(event->event->values["frequency"]->getValue());
             incomingMidi.addEvent(juce::MidiMessage::noteOff(1, midi), sample);
 
         }
-        synth.renderNextBlock(juceBuff, incomingMidi, 0, buffer.bufferSize);
+        synth.renderNextBlock(juceBuff, incomingMidi, 0, buffer.numSamples);
     }
 
     double m_sampleTimeMs;

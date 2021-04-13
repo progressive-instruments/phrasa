@@ -1,6 +1,6 @@
 #include "Player.h"
 using namespace shift::player::impl;
-
+using namespace std::literals::chrono_literals;
 
 inline void Player::Processor::send(std::unique_ptr<ProcessorMessage> message)
 {
@@ -10,9 +10,10 @@ inline void Player::Processor::send(std::unique_ptr<ProcessorMessage> message)
 	}
 }
 
-inline void Player::Processor::prepareForProcessing(unsigned int sampleRate, size_t expectedBlockSize)
+inline void Player::Processor::prepareForProcessing(double sampleRate, size_t expectedBlockSize)
 {
-	m_sampleTimeMs = 1.0 / sampleRate / 1000;
+	m_sineInstrument->prepareForProcessing(sampleRate, expectedBlockSize);
+	m_sampleTimeMs = 1 / sampleRate * 1000;
 }
 
 inline void Player::Processor::processBlock(audio::AudioBuffer& buffer)
@@ -28,13 +29,17 @@ inline void Player::Processor::processBlock(audio::AudioBuffer& buffer)
 		}
 	}
 	
-	m_track.Time = (m_track.Time + m_track.Duration) % m_track.SequenceLength;
-	m_track.Duration = SequenceTime::FromMilliseconds(m_sampleTimeMs * buffer.bufferSize);
+	if (m_track.SequenceLength == 0us) {
+		return;
+	}
+
+	m_track.Advance(SequenceTime::FromMilliseconds(m_sampleTimeMs * buffer.numSamples));
 	m_sineInstrument->processBlock(buffer, m_track);
 }
 
 inline void Player::Processor::processingEnded()
 {
+	m_sineInstrument->processingEnded();
 }
 
 
@@ -48,7 +53,7 @@ void Player::setSequence(std::unique_ptr<Sequence> sequence, SequenceTime endTim
 }
 
 
-void Player::prepareForProcessing(unsigned int sampleRate, size_t expectedBlockSize)
+void Player::prepareForProcessing(double sampleRate, size_t expectedBlockSize)
 {
 	m_processor.prepareForProcessing(sampleRate, expectedBlockSize);
 }
