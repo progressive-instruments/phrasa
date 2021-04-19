@@ -2,11 +2,33 @@ syntax = "proto3";
 
 package shift_processor;
 
-message NoteSequence {
-  repeated Note note = 1;
-
-  message Note {
-    float frequency = 1;
+message ShiftPlayerMessage {
+  oneof message {
+    SetSequenceMessage setSequence = 1;
   }
+}
 
+message SetSequenceMessage {
+  double sequenceLength = 1;
+  repeated SequenceEvent events = 2;
+}
+
+message SequenceEvent {
+  double eventTime = 1;
+  double duration = 2;
+  map<string, EventValue> values = 3;
+}
+
+message EventValue {
+  oneof value {
+    double numericValue=1;
+    string stringValue=2;
+    RangedValue rangedValue=3;
+  }
+}
+
+message RangedValue {
+  double startValue=1;
+  double endValue=2;
+  double curve=3;
 }

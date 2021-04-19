@@ -1,1 +1,1 @@
-protoc --plugin=".\protoc-gen-ts=\node_modules\.bin\protoc-g-ts" --js_out="import_style=commonjs,binary:.\src\generated_protocol" --ts_out=".\src\generated_protocol" ..\shift\src\protocol\note_message.proto
+protoc --plugin=protoc-gen-ts=.\node_modules\.bin\protoc-gen-ts.cmd --js_out="import_style=commonjs,binary:.\out" --ts_out=".\out" --cpp_out=".\out" .\note_message.proto

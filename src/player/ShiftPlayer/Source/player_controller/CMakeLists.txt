@@ -15,11 +15,11 @@ target_link_libraries(player_controller
  target_include_directories(player_controller 
   PUBLIC 
     . 
+    "C:/protobuf/include"
   PRIVATE
     ../player 
     ../connection
     ../../JUCE/modules
-    "C:/protobuf/include"
     ../event)
 
 # Tests
