@@ -11,21 +11,15 @@ class GetNotesErrorRecognizer {
 }
 
 export function getNotes(input: string) : string[] {
-    console.log('stream')
     const chars = new InputStream(input)
-    console.log('lexer')
     let lexer = new NotesLexer(chars)
     let lexerRecognizer = (lexer as Recognizer);
     lexerRecognizer.addErrorListener(new GetNotesErrorRecognizer())
-    console.log('tokens')
     const stream = new CommonTokenStream(lexer)
-    console.log('parser')
     const parser = new NotesParser(stream)
     let parserRecognizer = (parser as Recognizer);
     parserRecognizer.addErrorListener(new GetNotesErrorRecognizer())
-    console.log('map')
     let notes = parser.main().NOTE().map(t => t.getText())
-    console.log('got notes')
     return notes;
 }
 
