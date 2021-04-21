@@ -1,4 +1,4 @@
-import {getNotes,getTokens} from  '../facade/ParserFacade.js';
+import {ShiftInterpreter} from  '../index.js';
 import NotesLexer from '../generated-parser/NotesLexer.js'
 
 
@@ -12,6 +12,8 @@ describe("testingim", function() {
   }
 
   it('Basic lexing without spaces', function () {
+      let interpreter = new ShiftInterpreter();
+      let tokens = interpreter.getTokens("C3,d#-2");
       expect(tokens.length).toEqual(3);
       checkToken(tokens, 0, 'NOTE', 0, "C3");
       checkToken(tokens, 1, 'PSIK', 2, ",");
@@ -19,7 +21,8 @@ describe("testingim", function() {
   });
 
   it('Output check', function () {
-      let notes = getNotes("C3,d#-2");
+      let interpreter = new ShiftInterpreter();
+      let notes = interpreter.getNotes("C3,d#-2");
 
       expect(notes.length).toEqual(2);
       expect(notes[0]).toEqual("C3");
