@@ -5,16 +5,16 @@
 #include "../impl/TcpConnection.h"
 #include "juce_core/juce_core.h"
 
-using namespace shift::connection::impl;
+using namespace phrasa::connection::impl;
 using namespace std::chrono_literals;
 
 TEST(Connection, Construct) {
-	shift::connection::impl::TcpConnection connection;
+	phrasa::connection::impl::TcpConnection connection;
 }
 
 
 TEST(Connection, Connect) {
-	shift::connection::impl::TcpConnection connection;
+	phrasa::connection::impl::TcpConnection connection;
 	bool connectionReceived = false;
 	std::thread th([&]() {
 		connection.waitForClientConnection(1000);
@@ -31,7 +31,7 @@ TEST(Connection, Connect) {
 }
 
 TEST(Connection, SendReceiveData) {
-	shift::connection::impl::TcpConnection connection;
+	phrasa::connection::impl::TcpConnection connection;
 	bool receivedCorrectly = false;
 	bool sentSuccesfully = false;
 	std::thread th([&]() {

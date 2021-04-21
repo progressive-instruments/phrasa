@@ -4,7 +4,7 @@
 
 #include "Event.h"
 
-namespace shift::player {
+namespace phrasa::player {
 
 
 class IPlayer

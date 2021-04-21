@@ -6,7 +6,7 @@
 #include "IInstrument.h"
 #include "SequenceProcessor.h"
 
-namespace shift::instrument::impl {
+namespace phrasa::instrument::impl {
 
 struct SineWaveSound : public juce::SynthesiserSound
 {
@@ -106,7 +106,7 @@ private:
 };
 
 
-struct SineSynth : public shift::instrument::IInstrument
+struct SineSynth : public phrasa::instrument::IInstrument
 {
 
     SineSynth()
@@ -133,7 +133,7 @@ struct SineSynth : public shift::instrument::IInstrument
         m_sampleTimeMs = 1.0 / sampleRate / 1000;
     }
 
-    virtual void setSequence(std::unique_ptr<shift::Sequence>& sequence)
+    virtual void setSequence(std::unique_ptr<phrasa::Sequence>& sequence)
     {
         m_sequenceProcessor.setSequence(sequence);
     }
@@ -146,7 +146,7 @@ struct SineSynth : public shift::instrument::IInstrument
         return std::round(log(freq / 440.0) / log(2) * 12 + 69);
     }
 
-    void processBlock(shift::audio::AudioBuffer& buffer, const SequenceTrack& track/*, real time events*/) override
+    void processBlock(phrasa::audio::AudioBuffer& buffer, const SequenceTrack& track/*, real time events*/) override
     {
         juce::AudioBuffer juceBuff(buffer.data, buffer.numChannels, buffer.numSamples);
         juceBuff.clear();

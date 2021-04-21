@@ -8,7 +8,7 @@
 
 using namespace std::literals::chrono_literals;
 
-namespace shift::instrument::impl {
+namespace phrasa::instrument::impl {
 
 typedef std::multimap<SequenceTime,std::shared_ptr<Event>>::const_iterator EventMapIterator;
 
@@ -150,7 +150,7 @@ private:
 		return END_ITR_PASSED;
 	}
 
-	std::unique_ptr<shift::Sequence> m_sequence;
+	std::unique_ptr<phrasa::Sequence> m_sequence;
 	bool sequenceChanged;
 
 	SequenceTrack m_track;

@@ -13,12 +13,12 @@
 #include "impl/PlayerController.h"
 #pragma once
 
-namespace shift {
+namespace phrasa {
 
-class ShiftPlayerApp : juce::AudioSource
+class PhrasaPlayerApp : juce::AudioSource
 {
 public:
-    ShiftPlayerApp();
+    PhrasaPlayerApp();
 private:
     std::shared_ptr<player::impl::Player> m_player;
     std::shared_ptr<playerctrl::impl::PlayerController> m_playerController;

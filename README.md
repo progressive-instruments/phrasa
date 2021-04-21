@@ -1,2 +1,2 @@
-# Shift
-A Language to Make Music
+# Phrasa
+A Language for Making Music

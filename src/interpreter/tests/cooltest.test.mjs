@@ -1,4 +1,4 @@
-import {ShiftInterpreter} from  '../index.js';
+import {PhrasaInterpreter} from  '../index.js';
 import NotesLexer from '../generated-parser/NotesLexer.js'
 
 
@@ -12,7 +12,7 @@ describe("testingim", function() {
   }
 
   it('Basic lexing without spaces', function () {
-      let interpreter = new ShiftInterpreter();
+      let interpreter = new PhrasaInterpreter();
       let tokens = interpreter.getTokens("C3,d#-2");
       expect(tokens.length).toEqual(3);
       checkToken(tokens, 0, 'NOTE', 0, "C3");
@@ -21,7 +21,7 @@ describe("testingim", function() {
   });
 
   it('Output check', function () {
-      let interpreter = new ShiftInterpreter();
+      let interpreter = new PhrasaInterpreter();
       let notes = interpreter.getNotes("C3,d#-2");
 
       expect(notes.length).toEqual(2);

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace shift::audio {
+namespace phrasa::audio {
   struct AudioBuffer
   {
 	  float* const * data;

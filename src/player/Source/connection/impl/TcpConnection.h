@@ -3,7 +3,7 @@
 #include "juce_core/juce_core.h"
 #include "..\IConnection.h"
 
-namespace shift::connection::impl {
+namespace phrasa::connection::impl {
 
 	class TcpConnection : public IConnection
 	{

@@ -8,7 +8,7 @@
 #include <IInstrumentFactory.h>
 #include <SequenceTrack.h>
 
-namespace shift::player::impl {
+namespace phrasa::player::impl {
 
 class Player : public IPlayer, IPlayerAudioProcessor
 {

@@ -1,2 +1,2 @@
 
-export {ShiftInterpreter} from './src/NotesInterpreter.js';
+export {PhrasaInterpreter} from './src/NotesInterpreter.js';

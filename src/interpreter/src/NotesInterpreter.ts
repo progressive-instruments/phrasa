@@ -9,7 +9,7 @@ class GetNotesErrorRecognizer {
             throw new Error('lexer/parser error');
         }
 }
-export class ShiftInterpreter {
+export class PhrasaInterpreter {
     getNotes(input: string) : string[] {
         const chars = new InputStream(input)
         let lexer = new NotesLexer(chars)

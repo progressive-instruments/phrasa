@@ -4,9 +4,9 @@
 #include "gtest/gtest.h"
 #include "../impl/SequenceProcessor.h"
 
-using namespace shift;
-using namespace shift::instrument;
-using namespace shift::instrument::impl;
+using namespace phrasa;
+using namespace phrasa::instrument;
+using namespace phrasa::instrument::impl;
 
 using namespace std::chrono_literals;
 
@@ -24,7 +24,7 @@ void assertEvent(SequenceProcessor& processor , SequenceTime expectedTime, std::
 
 
 TEST(SequenceProcessor, OneEvent) {
-	auto firstEvent = std::make_pair(SequenceTime(80us), std::make_shared<Event>(shift::SequenceTime()));
+	auto firstEvent = std::make_pair(SequenceTime(80us), std::make_shared<Event>(phrasa::SequenceTime()));
 
 	std::unique_ptr<Sequence> seq(new Sequence());
 	seq->events.insert(firstEvent);
@@ -57,8 +57,8 @@ TEST(SequenceProcessor, OneEvent) {
 }
 
 TEST(SequenceProcessor, ZeroEvent) {
-	auto firstEvent = std::make_pair(SequenceTime(0us), std::make_shared<Event>(shift::SequenceTime()));
-	auto secondEvent = std::make_pair(SequenceTime(1000us), std::make_shared<Event>(shift::SequenceTime()));
+	auto firstEvent = std::make_pair(SequenceTime(0us), std::make_shared<Event>(phrasa::SequenceTime()));
+	auto secondEvent = std::make_pair(SequenceTime(1000us), std::make_shared<Event>(phrasa::SequenceTime()));
 
 	std::unique_ptr<Sequence> seq(new Sequence());
 	seq->events.insert(firstEvent);
@@ -97,9 +97,9 @@ TEST(SequenceProcessor, ZeroEvent) {
 TEST(SequenceProcessor, Processing) {
 
 
-	auto firstEvent = std::make_pair(SequenceTime(600us),std::make_shared<Event>(shift::SequenceTime()));
-	auto secondEvent = std::make_pair(SequenceTime(1200us), std::make_shared<Event>(shift::SequenceTime()));
-	auto thirdEvent = std::make_pair(SequenceTime(1400us),std::make_shared<Event>(shift::SequenceTime()));
+	auto firstEvent = std::make_pair(SequenceTime(600us),std::make_shared<Event>(phrasa::SequenceTime()));
+	auto secondEvent = std::make_pair(SequenceTime(1200us), std::make_shared<Event>(phrasa::SequenceTime()));
+	auto thirdEvent = std::make_pair(SequenceTime(1400us),std::make_shared<Event>(phrasa::SequenceTime()));
 	
 	std::unique_ptr<Sequence> seq (new Sequence());
 	seq->events.insert(thirdEvent);
@@ -151,7 +151,7 @@ TEST(EventHolder, Construct) {
 TEST(EventHolder, Process) {
 	EventHolder holder;
 	SequenceTime time = 100us;
-	auto ev = std::make_shared<Event>(shift::SequenceTime(150us));
+	auto ev = std::make_shared<Event>(phrasa::SequenceTime(150us));
 	holder.addEvent(ev);
 	holder.advance(time);
 	ASSERT_FALSE(holder.getNextEvent().has_value());

@@ -8,15 +8,15 @@
   ==============================================================================
 */
 
-#include "ShiftPlayerApp.h"
+#include "PhrasaPlayerApp.h"
 #include "juce_core/juce_core.h"
 #include "impl/TcpConnection.h"
 #include "impl/Player.h"
 #include "impl/PlayerController.h"
 #include "impl/InstrumentFactory.h"
-namespace shift {
+namespace phrasa {
 
-ShiftPlayerApp::ShiftPlayerApp()
+PhrasaPlayerApp::PhrasaPlayerApp()
     :
     m_player(
         new player::impl::Player(
@@ -30,7 +30,7 @@ ShiftPlayerApp::ShiftPlayerApp()
 }
 
 
-inline void ShiftPlayerApp::initializeAudioDeviceManager()
+inline void PhrasaPlayerApp::initializeAudioDeviceManager()
 {
     const int numInputChannels = 0;
     const int numOutputChannels = 2;
@@ -48,17 +48,17 @@ inline void ShiftPlayerApp::initializeAudioDeviceManager()
 
 }
 
-void ShiftPlayerApp::prepareToPlay(int samplesPerBlockExpected, double sampleRate)
+void PhrasaPlayerApp::prepareToPlay(int samplesPerBlockExpected, double sampleRate)
 {
     m_player->prepareForProcessing(sampleRate, samplesPerBlockExpected);
 }
 
-void ShiftPlayerApp::releaseResources()
+void PhrasaPlayerApp::releaseResources()
 {
     m_player->processingEnded();
 }
 
-void ShiftPlayerApp::getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill)
+void PhrasaPlayerApp::getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill)
 {
     audio::AudioBuffer buffer;
     buffer.data = bufferToFill.buffer->getArrayOfWritePointers();

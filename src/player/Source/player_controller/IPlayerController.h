@@ -1,6 +1,6 @@
 #pragma once
 
-namespace shift::playerctrl {
+namespace phrasa::playerctrl {
 
 class IPlayerController
 {

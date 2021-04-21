@@ -8,7 +8,7 @@
 #include "ShiftTime.h"
 #include "IEventValue.h"
 
-namespace shift {
+namespace phrasa {
 
 struct Event
 {

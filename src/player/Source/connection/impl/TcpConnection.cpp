@@ -1,7 +1,7 @@
 #include "TcpConnection.h"
 
-using namespace shift::connection::impl;
-using namespace shift::connection;
+using namespace phrasa::connection::impl;
+using namespace phrasa::connection;
 
 void TcpConnection::waitForClientConnection(unsigned int port)
 {

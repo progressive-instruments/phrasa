@@ -6,7 +6,7 @@
 #include "AudioBuffer.h"
 #include "SequenceTrack.h"
 
-namespace shift::instrument {
+namespace phrasa::instrument {
 
 enum class InstrumentType { SineSynth };
 

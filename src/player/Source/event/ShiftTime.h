@@ -3,7 +3,7 @@
 #include <chrono>
 #include <cmath>
 
-namespace shift  {
+namespace phrasa  {
 
 class SequenceTime
 {

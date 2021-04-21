@@ -1,5 +1,5 @@
 #include "Player.h"
-using namespace shift::player::impl;
+using namespace phrasa::player::impl;
 using namespace std::literals::chrono_literals;
 
 inline void Player::Processor::send(std::unique_ptr<ProcessorMessage> message)

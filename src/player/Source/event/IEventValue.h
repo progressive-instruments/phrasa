@@ -1,6 +1,6 @@
 #pragma once
 
-namespace shift {
+namespace phrasa {
 
 class IEventValue
 {

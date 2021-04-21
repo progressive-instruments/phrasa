@@ -3,7 +3,7 @@
 #include <ctime>
 #include "juce_core/juce_core.h"
 
-using namespace shift::playerctrl::impl;
+using namespace phrasa::playerctrl::impl;
 
 PlayerController::PlayerController(std::shared_ptr<player::IPlayer> player, std::shared_ptr<connection::IConnection> connection)
 :
@@ -13,7 +13,7 @@ m_connection(connection)
 	m_commRoutineThread = std::thread(communicationRoutine, this);
 }
 
-class EventValue  : public shift::IEventValue
+class EventValue  : public phrasa::IEventValue
 {
 public:
     EventValue(double value)
@@ -25,7 +25,7 @@ private:
     double m_value;
 };
 
-void PlayerController::parseSetSequenceMessage(const shift_processor::SetSequenceMessage& msg, std::unique_ptr<shift::Sequence>& sequenceOutput, SequenceTime& sequenceLengthOut) {
+void PlayerController::parseSetSequenceMessage(const shift_processor::SetSequenceMessage& msg, std::unique_ptr<phrasa::Sequence>& sequenceOutput, SequenceTime& sequenceLengthOut) {
 
     sequenceOutput.reset(new Sequence());
     for (auto e : msg.events()) {
@@ -35,7 +35,7 @@ void PlayerController::parseSetSequenceMessage(const shift_processor::SetSequenc
             if (val.second.value_case() != shift_processor::EventValue::ValueCase::kNumericValue) {
                 throw std::runtime_error("player supported only numberic values");
             }
-            outputEvent->values[val.first] = std::unique_ptr<shift::IEventValue>(
+            outputEvent->values[val.first] = std::unique_ptr<phrasa::IEventValue>(
                 new EventValue(val.second.numericvalue()));;
         }
         sequenceOutput->events.insert({ SequenceTime::FromMilliseconds(e.eventtime()), outputEvent });
@@ -43,7 +43,7 @@ void PlayerController::parseSetSequenceMessage(const shift_processor::SetSequenc
     sequenceLengthOut = SequenceTime::FromMilliseconds(msg.sequencelength());
 }
 
-void shift::playerctrl::impl::PlayerController::communicationRoutine(PlayerController* controller)
+void phrasa::playerctrl::impl::PlayerController::communicationRoutine(PlayerController* controller)
 {
     while (true)
     {

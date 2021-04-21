@@ -3,7 +3,7 @@
 #include <memory>
 #include <boost/lockfree/queue.hpp>
 
-namespace shift::player::impl {
+namespace phrasa::player::impl {
 
 template<class T>
 class UniquePtrLockFreeQueue

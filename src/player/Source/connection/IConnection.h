@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace shift::connection {
+namespace phrasa::connection {
 
 
 class IConnection

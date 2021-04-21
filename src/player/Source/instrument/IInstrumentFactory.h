@@ -2,7 +2,7 @@
 
 #include "IInstrument.h"
 
-namespace shift::instrument {
+namespace phrasa::instrument {
 
 class IInstrumentFactory
 {

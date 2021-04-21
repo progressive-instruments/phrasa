@@ -2,7 +2,7 @@
 
 #include "Event.h"
 
-namespace shift::instrument {
+namespace phrasa::instrument {
 
 struct SequenceTrack
 {

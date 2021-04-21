@@ -4,7 +4,7 @@
 
 #include "AudioBuffer.h"
 
-namespace shift::player {
+namespace phrasa::player {
 
 
 class IPlayerAudioProcessor
