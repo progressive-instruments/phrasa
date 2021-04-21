@@ -3,7 +3,8 @@
     "module": "es2015",
     "target": "ES2015",
     "sourceMap": true,
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "declaration": true,
   },
   "exclude": [
     "node_modules"

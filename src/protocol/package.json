@@ -1,0 +1,6 @@
+{
+  "name": "protobuff-dependencies",
+  "dependencies": {
+    "ts-protoc-gen": "^0.14.0"
+  }
+}

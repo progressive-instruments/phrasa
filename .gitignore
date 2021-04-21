@@ -1,4 +1,5 @@
-generated-parser
+/generated-parser/PhrasaLexer.js
+
 node_modules
 .antlr
 package-lock.json

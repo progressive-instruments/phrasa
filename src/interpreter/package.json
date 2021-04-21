@@ -1,7 +1,12 @@
 {
   "name": "phrasa",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "author": "Erez Blumenstock",
+  "repository": {
+    "url": "https://github.com/progressive-instruments/phrasa",
+    "directory": "interpreter",
+    "type": "git"
+  },
   "license": "MIT",
   "dependencies": {
     "antlr4": "^4.9.2",
@@ -9,13 +14,17 @@
     "tscpaths": "0.0.9"
   },
   "devDependencies": {
+    "@babel/cli": "^7.13.16",
+    "@babel/core": "^7.13.16",
+    "@babel/plugin-proposal-class-properties": "^7.13.0",
+    "@babel/preset-env": "^7.13.15",
     "jasmine": "^3.7.0",
     "typescript": "^4.2.4"
   },
-  "type" : "module",
+  "type": "module",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && babel generated-parser --out-dir=generated-parser",
     "test": "jasmine --config=tests/jasmine.json"
   }
 }
