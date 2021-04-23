@@ -1,1 +1,0 @@
-antlr4 Notes.g4 -Dlanguage=JavaScript -o ..\generated-parser

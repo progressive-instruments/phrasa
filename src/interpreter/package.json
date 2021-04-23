@@ -24,7 +24,8 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "build": "tsc && babel generated-parser --out-dir=generated-parser",
+    "generate" : "antlr4 grammar/Phrasa.g4 -Dlanguage=JavaScript -o generated-parser && babel generated-parser --out-dir=generated-parser",
+    "build": "tsc",
     "test": "jasmine --config=tests/jasmine.json"
   }
 }

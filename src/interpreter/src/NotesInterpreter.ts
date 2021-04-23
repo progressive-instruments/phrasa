@@ -1,7 +1,7 @@
 import {InputStream, Token, CommonTokenStream, tree, Recognizer} from 'antlr4'
-import NotesLexer from "../generated-parser/NotesLexer.js"
-import NotesParser from "../generated-parser/NotesParser.js"
-import {NotesListener} from "../generated-parser/NotesListener.js"
+import PhrasaLexer from "../generated-parser/PhrasaLexer.js"
+import PhrasaParser from "../generated-parser/PhrasaParser.js"
+import {PhrasaListener} from "../generated-parser/PhrasaListener.js"
 
 class GetNotesErrorRecognizer {
         syntaxError(recognizer: Recognizer, offendingSymbol: Token, line: number, column: number, msg: string, e: any): void {
@@ -10,24 +10,6 @@ class GetNotesErrorRecognizer {
         }
 }
 export class PhrasaInterpreter {
-    getNotes(input: string) : string[] {
-        const chars = new InputStream(input)
-        let lexer = new NotesLexer(chars)
-        let lexerRecognizer = (lexer as Recognizer);
-        lexerRecognizer.addErrorListener(new GetNotesErrorRecognizer())
-        const stream = new CommonTokenStream(lexer)
-        const parser = new NotesParser(stream)
-        let parserRecognizer = (parser as Recognizer);
-        parserRecognizer.addErrorListener(new GetNotesErrorRecognizer())
-        let notes = parser.main().NOTE().map(t => t.getText())
-        return notes;
-    }
-
-    getTokens(input: string) : Token[] {
-        const chars = new InputStream(input);
-        const lexer = new NotesLexer(chars);
-        return lexer.getAllTokens();
-    }
-
+    // define interpreter interface
 }
 
