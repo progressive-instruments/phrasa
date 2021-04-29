@@ -23,17 +23,26 @@ tokens {
     }
 }
 
-main: object;
+main: newline_expr_ins;
 
-object: (NEWLINE | declaration (NEWLINE | EOF))+;
+newline_expr_ins: (NEWLINE | newline_expr_in (NEWLINE | EOF))+;
 
-declaration: 
-    (key (value | NEWLINE INDENT object (DEDENT | EOF)))
-    |   value;
+newline_expr_in: 
+    newline_expr 
+    | inline_expr_in;
+
+newline_expr: (key (inline_expr_ins | NEWLINE INDENT newline_expr_ins (DEDENT | EOF)));
 
 key: TEXT ('.' TEXT)*;
 
-value: TEXT;
+inline_expr_ins: inline_expr_in (',' inline_expr_in)*;
+
+inline_expr_in: 
+    TEXT
+    | inline_expr
+    | '(' inline_expr_ins ')';
+
+inline_expr: '(' key  inline_expr_ins')';
 
 COMMENT: '//' ~[\n\r]+ -> skip;
 TEXT: [a-zA-Z0-9_-]+;

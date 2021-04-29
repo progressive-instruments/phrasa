@@ -1,4 +1,3 @@
-import {PhrasaInterpreter} from  '../index.js';
 import PhrasaLexer from '../generated-parser/PhrasaLexer.js'
 import * as fs from 'fs';
 import PhrasaParser from '../generated-parser/PhrasaParser.js';
@@ -48,29 +47,97 @@ describe("testingim", function() {
     const parser = new PhrasaParser(stream);
     let main = parser.main();
     expect(main).not.toEqual(null);
-    let obj = main.object();
-    expect(obj).not.toEqual(null);
+    let mainExprIns = main.newline_expr_ins();
+    expect(mainExprIns).not.toEqual(null);
 
-    let declarations = obj.declaration();
-    expect(declarations.length).toBe(3);
-    checkToken(declarations[0].key().TEXT()[0].symbol, PhrasaLexer.TEXT, 'key');
-    checkToken(declarations[0].value().TEXT().symbol, PhrasaLexer.TEXT, 'value');
+    mainExprIns = mainExprIns.newline_expr_in();
+    expect(mainExprIns.length).toBe(3);
+    let expr = mainExprIns[0].newline_expr();
+    checkToken(expr.key().TEXT()[0].symbol, PhrasaLexer.TEXT, 'key');
+    let exprInputs = expr.inline_expr_ins().inline_expr_in();
+    checkToken(exprInputs[0].TEXT().symbol, PhrasaLexer.TEXT, 'value');
     
-    checkToken(declarations[1].key().TEXT()[0].symbol, PhrasaLexer.TEXT, 'key2');
-    checkToken(declarations[1].value().TEXT().symbol, PhrasaLexer.TEXT, 'value2');
+    expr = mainExprIns[1].newline_expr();
+    checkToken(expr.key().TEXT()[0].symbol, PhrasaLexer.TEXT, 'key2');
+    exprInputs = expr.inline_expr_ins().inline_expr_in();
+    checkToken(exprInputs[0].TEXT().symbol, PhrasaLexer.TEXT, 'value2');
 
-    checkToken(declarations[2].key().TEXT()[0].symbol, PhrasaLexer.TEXT, 'keyobj');
-    let innerObj = declarations[2].object();
-    expect(innerObj).not.toEqual(null);
-    let innerDeclarations = innerObj.declaration();
-    expect(innerDeclarations.length).toEqual(2);
-    checkToken(innerDeclarations[0].key().TEXT()[0].symbol, PhrasaLexer.TEXT, 'objkey');
-    checkToken(innerDeclarations[0].value().TEXT().symbol, PhrasaLexer.TEXT, 'objval');
+    expr = mainExprIns[2].newline_expr();
+    checkToken(expr.key().TEXT()[0].symbol, PhrasaLexer.TEXT, 'keyobj');
 
-    checkToken(innerDeclarations[1].key().TEXT()[0].symbol, PhrasaLexer.TEXT, 'objkey2');
-    checkToken(innerDeclarations[1].value().TEXT().symbol, PhrasaLexer.TEXT, 'objval2');
+    let innerExprInputs = expr.newline_expr_ins().newline_expr_in();
+    expect(innerExprInputs.length).toEqual(2);
+
+    expr = innerExprInputs[0].newline_expr();
+    checkToken(expr.key().TEXT()[0].symbol, PhrasaLexer.TEXT, 'objkey');
+    exprInputs = expr.inline_expr_ins().inline_expr_in();
+    checkToken(exprInputs[0].TEXT().symbol, PhrasaLexer.TEXT, 'objval');
+
+    expr = innerExprInputs[1].newline_expr();
+    checkToken(expr.key().TEXT()[0].symbol, PhrasaLexer.TEXT, 'objkey2');
+    exprInputs = expr.inline_expr_ins().inline_expr_in();
+    checkToken(exprInputs[0].TEXT().symbol, PhrasaLexer.TEXT, 'objval2');
 
   });
 
+  it('inner expr', function () {
+    let data = fs.readFileSync("tests/files/inner_expr", 'utf8');
+
+    const chars = new InputStream(data);
+    let lexer = new PhrasaLexer(chars);
+    const stream = new CommonTokenStream(lexer);
+    const parser = new PhrasaParser(stream);
+    let main = parser.main();
+    expect(main).not.toEqual(null);
+    let mainExprIns = main.newline_expr_ins();
+    expect(mainExprIns).not.toEqual(null);
+
+    mainExprIns = mainExprIns.newline_expr_in();
+    expect(mainExprIns.length).toBe(1);
+    let expr = mainExprIns[0].newline_expr();
+    checkToken(expr.key().TEXT()[0].symbol, PhrasaLexer.TEXT, 'key');
+    let exprInputs = expr.inline_expr_ins().inline_expr_in();
+    let inlineExpr = exprInputs[0].inline_expr();
+    checkToken(inlineExpr.key().TEXT()[0].symbol, PhrasaLexer.TEXT, 'innerkey');
+    
+    let innerExprInputs = inlineExpr.inline_expr_ins().inline_expr_in();
+    checkToken(innerExprInputs[0].TEXT().symbol, PhrasaLexer.TEXT, 'value');
+  });
+
+  it('inner exp 2r', function () {
+    let data = fs.readFileSync("tests/files/inner_expr2", 'utf8');
+
+    const chars = new InputStream(data);
+    let lexer = new PhrasaLexer(chars);
+    const stream = new CommonTokenStream(lexer);
+    const parser = new PhrasaParser(stream);
+    let main = parser.main();
+    expect(main).not.toEqual(null);
+    let mainExprIns = main.newline_expr_ins();
+    expect(mainExprIns).not.toEqual(null);
+
+    mainExprIns = mainExprIns.newline_expr_in();
+    expect(mainExprIns.length).toBe(1);
+    let expr = mainExprIns[0].newline_expr();
+    checkToken(expr.key().TEXT()[0].symbol, PhrasaLexer.TEXT, 'key');
+    let exprInputs = expr.inline_expr_ins().inline_expr_in();
+
+    checkToken(exprInputs[0].TEXT().symbol, PhrasaLexer.TEXT, 'value');
+    checkToken(exprInputs[1].TEXT().symbol, PhrasaLexer.TEXT, '3');
+    
+    let innerExpr = exprInputs[2].inline_expr();
+    checkToken(innerExpr.key().TEXT()[0].symbol, PhrasaLexer.TEXT, 'innerkey');
+    
+    let innerExprInputs = innerExpr.inline_expr_ins().inline_expr_in();
+    checkToken(innerExprInputs[0].TEXT().symbol, PhrasaLexer.TEXT, '1');
+    checkToken(innerExprInputs[1].TEXT().symbol, PhrasaLexer.TEXT, '2');
+
+    let innerList = exprInputs[3].inline_expr_ins().inline_expr_in();
+    checkToken(innerList[0].TEXT().symbol, PhrasaLexer.TEXT, 'a');
+    checkToken(innerList[1].TEXT().symbol, PhrasaLexer.TEXT, 'b');
+    checkToken(innerList[2].TEXT().symbol, PhrasaLexer.TEXT, 'c');
+
+    
+  });
 });
 
