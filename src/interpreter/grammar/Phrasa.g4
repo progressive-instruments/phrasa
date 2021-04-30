@@ -28,7 +28,7 @@ main: newline_expr_ins;
 newline_expr_ins: (NEWLINE | newline_expr_in (NEWLINE | EOF))+;
 
 newline_expr_in: 
-    newline_expr 
+    newline_expr
     | inline_expr_in;
 
 newline_expr: (key (inline_expr_ins | NEWLINE INDENT newline_expr_ins (DEDENT | EOF)));
@@ -38,14 +38,19 @@ key: TEXT ('.' TEXT)*;
 inline_expr_ins: inline_expr_in (',' inline_expr_in)*;
 
 inline_expr_in: 
-    TEXT
+    value
     | inline_expr
     | '(' inline_expr_ins ')';
 
+value: 
+    TEXT | operation;
+    
+operation:  TEXT OPERATOR TEXT;
 inline_expr: '(' key  inline_expr_ins')';
 
 COMMENT: '//' ~[\n\r]+ -> skip;
-TEXT: [a-zA-Z0-9_-]+;
+OPERATOR: [*/+-];
+TEXT: ~[ )(,\n\r]+;
 
 NEWLINE: '\r'? '\n' ' '* {
     let spaces = this.text.length - (this.text.indexOf('\n')+1);

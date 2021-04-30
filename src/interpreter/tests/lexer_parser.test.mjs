@@ -55,12 +55,12 @@ describe("testingim", function() {
     let expr = mainExprIns[0].newline_expr();
     checkToken(expr.key().TEXT()[0].symbol, PhrasaLexer.TEXT, 'key');
     let exprInputs = expr.inline_expr_ins().inline_expr_in();
-    checkToken(exprInputs[0].TEXT().symbol, PhrasaLexer.TEXT, 'value');
+    checkToken(exprInputs[0].value().TEXT().symbol, PhrasaLexer.TEXT, 'value');
     
     expr = mainExprIns[1].newline_expr();
     checkToken(expr.key().TEXT()[0].symbol, PhrasaLexer.TEXT, 'key2');
     exprInputs = expr.inline_expr_ins().inline_expr_in();
-    checkToken(exprInputs[0].TEXT().symbol, PhrasaLexer.TEXT, 'value2');
+    checkToken(exprInputs[0].value().TEXT().symbol, PhrasaLexer.TEXT, 'value2');
 
     expr = mainExprIns[2].newline_expr();
     checkToken(expr.key().TEXT()[0].symbol, PhrasaLexer.TEXT, 'keyobj');
@@ -71,12 +71,12 @@ describe("testingim", function() {
     expr = innerExprInputs[0].newline_expr();
     checkToken(expr.key().TEXT()[0].symbol, PhrasaLexer.TEXT, 'objkey');
     exprInputs = expr.inline_expr_ins().inline_expr_in();
-    checkToken(exprInputs[0].TEXT().symbol, PhrasaLexer.TEXT, 'objval');
+    checkToken(exprInputs[0].value().TEXT().symbol, PhrasaLexer.TEXT, 'objval');
 
     expr = innerExprInputs[1].newline_expr();
     checkToken(expr.key().TEXT()[0].symbol, PhrasaLexer.TEXT, 'objkey2');
     exprInputs = expr.inline_expr_ins().inline_expr_in();
-    checkToken(exprInputs[0].TEXT().symbol, PhrasaLexer.TEXT, 'objval2');
+    checkToken(exprInputs[0].value().TEXT().symbol, PhrasaLexer.TEXT, 'objval2');
 
   });
 
@@ -101,7 +101,7 @@ describe("testingim", function() {
     checkToken(inlineExpr.key().TEXT()[0].symbol, PhrasaLexer.TEXT, 'innerkey');
     
     let innerExprInputs = inlineExpr.inline_expr_ins().inline_expr_in();
-    checkToken(innerExprInputs[0].TEXT().symbol, PhrasaLexer.TEXT, 'value');
+    checkToken(innerExprInputs[0].value().TEXT().symbol, PhrasaLexer.TEXT, 'value');
   });
 
   it('inner exp 2r', function () {
@@ -122,20 +122,20 @@ describe("testingim", function() {
     checkToken(expr.key().TEXT()[0].symbol, PhrasaLexer.TEXT, 'key');
     let exprInputs = expr.inline_expr_ins().inline_expr_in();
 
-    checkToken(exprInputs[0].TEXT().symbol, PhrasaLexer.TEXT, 'value');
-    checkToken(exprInputs[1].TEXT().symbol, PhrasaLexer.TEXT, '3');
+    checkToken(exprInputs[0].value().TEXT().symbol, PhrasaLexer.TEXT, 'value');
+    checkToken(exprInputs[1].value().TEXT().symbol, PhrasaLexer.TEXT, '3');
     
     let innerExpr = exprInputs[2].inline_expr();
     checkToken(innerExpr.key().TEXT()[0].symbol, PhrasaLexer.TEXT, 'innerkey');
     
     let innerExprInputs = innerExpr.inline_expr_ins().inline_expr_in();
-    checkToken(innerExprInputs[0].TEXT().symbol, PhrasaLexer.TEXT, '1');
-    checkToken(innerExprInputs[1].TEXT().symbol, PhrasaLexer.TEXT, '2');
+    checkToken(innerExprInputs[0].value().TEXT().symbol, PhrasaLexer.TEXT, '1');
+    checkToken(innerExprInputs[1].value().TEXT().symbol, PhrasaLexer.TEXT, '2');
 
     let innerList = exprInputs[3].inline_expr_ins().inline_expr_in();
-    checkToken(innerList[0].TEXT().symbol, PhrasaLexer.TEXT, 'a');
-    checkToken(innerList[1].TEXT().symbol, PhrasaLexer.TEXT, 'b');
-    checkToken(innerList[2].TEXT().symbol, PhrasaLexer.TEXT, 'c');
+    checkToken(innerList[0].value().TEXT().symbol, PhrasaLexer.TEXT, 'a');
+    checkToken(innerList[1].value().TEXT().symbol, PhrasaLexer.TEXT, 'b');
+    checkToken(innerList[2].value().TEXT().symbol, PhrasaLexer.TEXT, 'c');
 
     
   });
