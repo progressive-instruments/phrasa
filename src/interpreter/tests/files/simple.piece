@@ -2,4 +2,6 @@ key  value
 key2   value2
 keyobj
   objkey objval
+  objobjkey
+    objobjval
   objkey2 objval2

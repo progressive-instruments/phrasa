@@ -25,15 +25,15 @@ tokens {
 
 main: newline_expr_ins;
 
-newline_expr_ins: (NEWLINE | newline_expr_in (NEWLINE | EOF))+;
+newline_expr_ins: (NEWLINE | newline_expr_in)+;
 
 newline_expr_in: 
     newline_expr
-    | inline_expr_in;
+    | inline_expr_in (NEWLINE | EOF);
 
-newline_expr: (key (inline_expr_ins | NEWLINE INDENT newline_expr_ins (DEDENT | EOF)));
+newline_expr: key (NEWLINE INDENT newline_expr_ins (DEDENT | EOF)  | inline_expr_ins  (EOF | NEWLINE));
 
-key: TEXT ('.' TEXT)*;
+key: TEXT;
 
 inline_expr_ins: inline_expr_in (',' inline_expr_in)*;
 
