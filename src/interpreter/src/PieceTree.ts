@@ -27,7 +27,7 @@ export class Expression {
 }
 
 export type ExpressionInputItem = ((string | Variable | Expression | ArithmeticExpression) & TextLocation);  
-export type ExpressionInput = ExpressionInputItem[];  
+export type ExpressionInput = ExpressionInputItem[] | ExpressionInputItem;   
 export interface PitchGrid {
   root: number; // frequency
   octaveGrid: number[] // array of 0-11

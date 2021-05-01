@@ -82,7 +82,7 @@ class LengthAssigner extends Assigner {
     super();
   }
   assign(value : string) {
-    this._phrase.length = [value];
+    this._phrase.length = value;
   }
 }
 
@@ -112,7 +112,7 @@ class EventAssigner extends Assigner {
     super();
   }
   assign(value: string) {
-    this._events.set(this._eventKey, [value]);
+    this._events.set(this._eventKey, value);
   }
 }
 

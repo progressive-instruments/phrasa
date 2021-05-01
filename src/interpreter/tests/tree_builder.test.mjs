@@ -18,18 +18,18 @@ describe("tree builder", function() {
     expect(root.tempo).toEqual(["120bpm"]);
     let phrases = root.phrases;
     expect(phrases.length).toEqual(2);
-    expect(phrases[0].length).toEqual(["1/4"]);
+    expect(phrases[0].length).toEqual("1/4");
     expect(phrases[0].events.has('saw_synth')).toBeTrue();
     expect(phrases[0].beat == undefined || phrases[0].beat == false).toBeTrue();
     expect(phrases[1].beat).toBeTrue();
 
     let sawSynth = phrases[0].events.get('saw_synth');
     expect(sawSynth.has('frequency')).toBeTrue();
-    expect(sawSynth.get('frequency')).toEqual(["C3"]);
+    expect(sawSynth.get('frequency')).toEqual("C3");
 
     expect(phrases[1].events.has('saw_synth')).toBeTrue();
     sawSynth = phrases[1].events.get('saw_synth');
     expect(sawSynth.has('frequency')).toBeTrue();
-    expect(sawSynth.get('frequency')).toEqual(["D3"]);
+    expect(sawSynth.get('frequency')).toEqual("D3");
   });
 });
