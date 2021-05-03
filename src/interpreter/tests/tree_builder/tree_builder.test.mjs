@@ -24,15 +24,15 @@ describe("tree builder", function() {
 
     expect(phrases[0].sounds.has('saw_synth')).toBeTrue();
     let sawSynth = phrases[0].sounds.get('saw_synth');
-    expect(sawSynth.size).toEqual(1);
-    expect(sawSynth.get(0).values.has('frequency')).toBeTrue();
-    expect(sawSynth.get(0).values.get('frequency')).toEqual("C3");
+    expect(sawSynth.events.size).toEqual(1);
+    expect(sawSynth.events.get(0).values.has('frequency')).toBeTrue();
+    expect(sawSynth.events.get(0).values.get('frequency')).toEqual("C3");
 
     expect(phrases[1].sounds.has('saw_synth')).toBeTrue();
     sawSynth = phrases[1].sounds.get('saw_synth');
-    expect(sawSynth.size).toEqual(1);
-    expect(sawSynth.get(0).values.has('frequency')).toBeTrue();
-    expect(sawSynth.get(0).values.get('frequency')).toEqual("D3");
+    expect(sawSynth.events.size).toEqual(1);
+    expect(sawSynth.events.get(0).values.has('frequency')).toBeTrue();
+    expect(sawSynth.events.get(0).values.get('frequency')).toEqual("D3");
   });
 
   it('offset', function () {
@@ -42,10 +42,10 @@ describe("tree builder", function() {
     let inst1 = root.sounds.get('a');
     let inst2 = root.sounds.get('b');
 
-    expect(inst1.get(0).startOffset).toEqual("10%");
-    expect(inst1.get(0).endOffset).toEqual("-10%");
-    expect(inst2.get(0).startOffset).toEqual("0.1");
-    expect(inst2.get(0).endOffset).toEqual("-0.1");
+    expect(inst1.events.get(0).startOffset).toEqual("10%");
+    expect(inst1.events.get(0).endOffset).toEqual("-10%");
+    expect(inst2.events.get(0).startOffset).toEqual("0.1");
+    expect(inst2.events.get(0).endOffset).toEqual("-0.1");
   });
   
 });

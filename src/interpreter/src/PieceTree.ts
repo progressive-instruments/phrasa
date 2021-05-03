@@ -46,11 +46,21 @@ export interface Phrase {
   branches? : Map<string,Phrase>
   phrases? : Phrase[]
   sequences? : Map<string, Sequence>
-  sounds? : Map<string,Map<number,PhraseEvent>>
+  sounds? : Map<string,Sound>
+}
+
+export interface Sound {
+  events: Map<number,PhraseEvent>
+}
+
+export interface FrequencyExpression {
+  type: 'pitch' | 'frequency' | 'note';
+  value: FrequencyExpression;
 }
 
 export type Sequence = ExpressionInput;
 export interface PhraseEvent {
+  frequency?: FrequencyExpression;
   values: Map<string, EventPropertyValue>
   startOffset?: ExpressionInput
   endOffset?: ExpressionInput

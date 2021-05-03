@@ -133,7 +133,7 @@ export class SequenceBuilder implements ISequenceBuilder {
 
     if(phrase.sounds) {
       for(const [k,s] of phrase.sounds) {
-        for(const [eventIndex,e] of s) {
+        for(const [eventIndex,e] of s.events) {
           let values = new Map<string,EventValue>();
           e.values.forEach((v,k) => {
             if(typeof v != 'string') {

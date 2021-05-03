@@ -12,7 +12,10 @@ describe("sequence builder", function() {
           sounds: new Map([
             [
               'saw_synth', 
-              new Map([[0, {values: new Map([['frequency', 'D3']]) } ]])
+              {
+                events: new Map([[0, {values: new Map([['frequency', 'D3']]) } ]])
+              }
+              
             ]
           ])
         },
@@ -22,7 +25,10 @@ describe("sequence builder", function() {
           sounds: new Map([
             [
               'saw_synth', 
-              new Map([[0,{values: new Map([['frequency', 'C3']])}]])
+              {
+                events: new Map([[0,{values: new Map([['frequency', 'C3']])}]])
+              }
+              
             ]
           ])
         }
@@ -46,19 +52,25 @@ describe("sequence builder", function() {
       sounds: new Map([
         [
           'saw_synth', 
-          new Map([[0, {
-            values: new Map([['frequency', 'D3']]),
-            startOffset: '10%',
-            endOffset: '-10%',
-          }]])
+          {
+            events: new Map([[0, {
+              values: new Map([['frequency', 'D3']]),
+              startOffset: '10%',
+              endOffset: '-10%',
+            }]])
+          }
+          
         ],
         [
           'sine_synth', 
-          new Map([[0, {
-            values: new Map([['frequency', 'D3']]),
-            startOffset: '0.2',
-            endOffset: '-0.2',
-          }]])
+          {
+            events: new Map([[0, {
+              values: new Map([['frequency', 'D3']]),
+              startOffset: '0.2',
+              endOffset: '-0.2',
+            }]])
+          }
+          
         ]
       ])
     };

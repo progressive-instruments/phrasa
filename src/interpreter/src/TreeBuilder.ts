@@ -168,14 +168,15 @@ class EventsAssigner extends Assigner {
 
 
 class SoundAssigner extends Assigner {
-  constructor(private _events: Map<number,Tree.PhraseEvent>){
+  constructor(private _sound: Tree.Sound){
     super();
   }
   getInnerAssigner(input: string) : Assigner {
+
     if(input == PhrasaSymbol.Events) {
-      return new EventsAssigner(this._events);
+      return new EventsAssigner(this._sound.events);
     } else if(input == PhrasaSymbol.Event) {
-      const firstEvent = getOrCreate(this._events, 0, ()=>{return {values: new Map<string, Tree.ExpressionInput>()};});
+      const firstEvent = getOrCreate(this._sound.events, 0, ()=>{return {values: new Map<string, Tree.ExpressionInput>()};});
       return new EventAssigner(firstEvent);
     } else {
       throw new Error('unknown instrument property');
@@ -215,9 +216,9 @@ class PhraseAssigner extends Assigner {
           return new SequencesAssigner(this._phrase.sequences);
         default:
           if(!this._phrase.sounds) {
-            this._phrase.sounds = new Map<string,Map<number, Tree.PhraseEvent>>();
+            this._phrase.sounds = new Map<string,Tree.Sound>();
           }
-          let soundEvents = getOrCreate(this._phrase.sounds, propertyName, ()=>new Map<number, Tree.PhraseEvent>());
+          let soundEvents = getOrCreate(this._phrase.sounds, propertyName, ()=> {return {events: new Map<number, Tree.PhraseEvent>()}});
           return new SoundAssigner(soundEvents);
       }
     }
