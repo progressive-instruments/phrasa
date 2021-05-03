@@ -8,6 +8,7 @@ import * as Tree from './PieceTree'
 import {TextContent} from './TextContent'
 import { ParseTreeWalker } from 'antlr4/src/antlr4/tree/Tree.js'
 import { TerminalNode } from 'antlr4/tree/Tree'
+import { ErrorStrategy } from 'antlr4/error/ErrorStrategy'
 
 interface ExtendedPhrase extends Tree.Phrase {
   defaultInnerPhrase? : Tree.Phrase;
@@ -25,7 +26,7 @@ class GetNotesErrorRecognizer {
 }
 
 abstract class Assigner {
-  getInnerAssigner(propertyName: string) : Assigner {throw new Error("property unknown");}
+  getInnerAssigner(propertyName: string) : Assigner {throw new Error(`property ${propertyName} unknown`);}
   assign(value : string) {
     throw new Error("value assign is not supported")
   }
@@ -44,19 +45,46 @@ class TempoAssigner extends Assigner {
 
 enum PhrasaSymbol { 
   Beat = "beat",
-  PitchProperty = "pitch",
   PitchEventValue = "pitch",
   FrequencyEventValue = "frequency",
   NoteEventValue = "note",
+  SelectorSymbol = "#",
+}
+
+enum Property {
+  Pitch = "pitch",
   Tempo = "tempo",
-  Phrases = "phrases",
   Length = "length",
   Branches = "branches",
-  Sequences = "sequences",
   Events = "events",
   Event = "event",
-  EventStartOffset = "start",
+  Phrases = "phrases",
   EventEndOffset = "end",
+  EventStartOffset = "start",
+  Sequences = "sequences",
+}
+
+const KeyPrefixes:Map<string,Property> = new Map<string,Property>([
+  ['>', Property.Phrases],
+  ['$', Property.Sequences],
+  ['&', Property.Branches]
+])
+
+
+
+class SelectorAssigner extends Assigner {
+  constructor(
+    private _path:string[], 
+    private _innerAssigner: Assigner) {
+      super();
+  }
+  getInnerAssigner(property: string): Assigner{
+    let assigner = this._innerAssigner.getInnerAssigner(property);
+    for(const prop of this._path) {
+      assigner = assigner.getInnerAssigner(prop);
+    }
+    return assigner;
+  }
 }
 
 class PitchAssigner extends Assigner {
@@ -133,9 +161,9 @@ class EventValueAssigner extends Assigner {
     super();
   }
   assign(value: string) {
-    if(this._valueKey === PhrasaSymbol.EventStartOffset) {
+    if(this._valueKey === Property.EventStartOffset) {
       this._event.startOffset = value;
-    } else if(this._valueKey === PhrasaSymbol.EventEndOffset) {
+    } else if(this._valueKey === Property.EventEndOffset) {
       this._event.endOffset = value;
     } else if(this._valueKey === PhrasaSymbol.PitchEventValue) {
       this._event.frequency = {type: 'pitch', value: value};
@@ -182,9 +210,9 @@ class SoundAssigner extends Assigner {
   }
   getInnerAssigner(input: string) : Assigner {
 
-    if(input == PhrasaSymbol.Events) {
+    if(input == Property.Events) {
       return new EventsAssigner(this._sound.events);
-    } else if(input == PhrasaSymbol.Event) {
+    } else if(input == Property.Event) {
       const firstEvent = getOrCreate(this._sound.events, 0, ()=>{return {values: new Map<string, Tree.ExpressionInput>()};});
       return new EventAssigner(firstEvent);
     } else {
@@ -199,11 +227,11 @@ class PhraseAssigner extends Assigner {
   }
     getInnerAssigner(propertyName: string) : Assigner {
       switch(propertyName) {
-        case PhrasaSymbol.PitchProperty:
+        case Property.Pitch:
           return new PitchAssigner(this._phrase);
-        case PhrasaSymbol.Tempo:
+        case Property.Tempo:
           return new TempoAssigner(this._phrase);
-        case PhrasaSymbol.Phrases:
+        case Property.Phrases:
           if(!this._phrase.phrases) {
             this._phrase.phrases = [];
           }
@@ -211,14 +239,14 @@ class PhraseAssigner extends Assigner {
             this._phrase.defaultInnerPhrase = {};
           }
           return new PhrasesAssigner(this._phrase.phrases, this._phrase.defaultInnerPhrase);
-        case PhrasaSymbol.Length:
+        case Property.Length:
           return new LengthAssigner(this._phrase);
-        case PhrasaSymbol.Branches:
+        case Property.Branches:
           if(!this._phrase.branches) {
             this._phrase.branches = new Map<string, Tree.Phrase>();
           }
           return new BranchesAssigner(this._phrase.branches);
-        case PhrasaSymbol.Sequences:
+        case Property.Sequences:
           if(!this._phrase.sequences) {
             this._phrase.sequences = new Map<string, Tree.ExpressionInput>();
           }
@@ -240,9 +268,12 @@ class PhraseAssigner extends Assigner {
     }
 }
 
+const EventsPostifxRegex = /(.+)~([1-9]\d*)?$/;
+
 export class TreeBuilder extends Listener implements ITreeBuilder {
   private _tree: Tree.PieceTree;
   private _assignerStack: Assigner[];
+
 
   build(piece: TextContent, motifs: TextContent[], instruments: TextContent[]) : Tree.PieceTree {
     this._tree = {rootPhrase: {}};
@@ -257,14 +288,44 @@ export class TreeBuilder extends Listener implements ITreeBuilder {
 
     return this._tree;
   }
+  splitAssignKey(path: string) : string[] {
+    let res: string[] = [];
+    for(let key of path.split('.')) {
+
+        let prefix = key.charAt(0);
+        if(KeyPrefixes.has(key.charAt(0))) {
+          key = key.slice(1);
+          res.push(KeyPrefixes.get(prefix));
+        }
+
+        res.push(key);
+
+        let postfixMatch = key.match(EventsPostifxRegex);
+        if(postfixMatch) {
+          res[res.length-1] = postfixMatch[1];
+          if(postfixMatch[2]) {
+            res.push(Property.Events)
+            res.push(postfixMatch[2]);
+          } else {
+            res.push(Property.Event);
+          }
+        }
+      }
+      return res;
+  }
 
   enterKey(ctx: PhrasaParser.KeyContext) {
       let key = ctx.TEXT();
       let newAssigner = this._assignerStack[this._assignerStack.length-1];
       let text = ctx.TEXT().getText();
-      text.split('.').forEach((key) => {
-        newAssigner = newAssigner.getInnerAssigner(key)
-      })
+      const path = this.splitAssignKey(text);
+      for(let i=0 ; i<path.length; ++i ){
+        if(path[i] == PhrasaSymbol.SelectorSymbol) {
+          newAssigner = new SelectorAssigner(path.slice(i+1),newAssigner);
+          break;
+        }
+        newAssigner = newAssigner.getInnerAssigner(path[i])
+      }
       this._assignerStack.push(newAssigner);
   }
 

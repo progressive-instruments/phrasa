@@ -51,5 +51,18 @@ describe("tree builder", function() {
     expect(inst2.events.get(0).startOffset).toEqual("0.1");
     expect(inst2.events.get(0).endOffset).toEqual("-0.1");
   });
-  
+
+  it('selector', function () {
+    let treeBuilder = new TreeBuilder();
+    let tree = treeBuilder.build(new TextContent("bla", "tests/tree_builder/selector_test"), null ,null)
+    let root = tree.rootPhrase;
+    expect(root.phrases.length).toEqual(2);
+    let events = root.phrases[0].sounds.get('saw_synth').events
+    expect(events.get(0).values.size).toEqual(1);
+    expect(events.get(0).values.get('cutoff')).toEqual("100%");
+    events = root.phrases[1].sounds.get('saw_synth').events
+    expect(events.get(0).values.size).toEqual(2);
+    expect(events.get(0).values.get('cutoff')).toEqual("80%");
+    expect(events.get(0).values.get('attack')).toEqual("90%");
+  });
 });

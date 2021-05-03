@@ -1,9 +1,9 @@
 tempo 120bpm
-phrases.2 beat
+>2 beat
 phrases
   1.length 1/4
   1
-    saw_synth.event.frequency 440
+    saw_synth~.frequency 440
     saw_synth.event.cutoff 90%
   2
     saw_synth.event
