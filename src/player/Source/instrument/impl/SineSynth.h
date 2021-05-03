@@ -161,10 +161,14 @@ struct SineSynth : public phrasa::instrument::IInstrument
             }
                 
             int sample = event->relativeTime.getMilliSeconds() / m_sampleTimeMs;
-            auto midi = getMidiNote(event->event->values["frequency"]->getValue());
-            incomingMidi.addEvent(juce::MidiMessage::noteOn(1, midi, (juce::uint8)127), sample);
-
-            m_eventPool.addEvent(event->event, event->relativeTime);
+            if (event->event->values.count("frequency")) {
+                auto midi = getMidiNote(event->event->values["frequency"]->getValue());
+                if (midi >= 0) {
+                    incomingMidi.addEvent(juce::MidiMessage::noteOn(1, midi, (juce::uint8)127), sample);
+                    m_eventPool.addEvent(event->event, event->relativeTime);
+                }
+            }
+            
         }
         m_eventPool.advance(track.Duration);
         while (true) {
@@ -172,9 +176,11 @@ struct SineSynth : public phrasa::instrument::IInstrument
             if (!event.has_value()) {
                 break;
             }
-            int sample = event->relativeTime.getMilliSeconds() / m_sampleTimeMs;
-            auto midi = getMidiNote(event->event->values["frequency"]->getValue());
-            incomingMidi.addEvent(juce::MidiMessage::noteOff(1, midi), sample);
+            if (event->event->values.count("frequency")) {
+                int sample = event->relativeTime.getMilliSeconds() / m_sampleTimeMs;
+                auto midi = getMidiNote(event->event->values["frequency"]->getValue());
+                incomingMidi.addEvent(juce::MidiMessage::noteOff(1, midi), sample);
+            }
 
         }
         synth.renderNextBlock(juceBuff, incomingMidi, 0, buffer.numSamples);
