@@ -51,6 +51,7 @@ enum PhrasaSymbol {
   Branches = "branches",
   Sequences = "sequences",
   Events = "events",
+  Event = "event",
   EventStartOffset = "start",
   EventEndOffset = "end",
 }
@@ -60,6 +61,21 @@ class PitchAssigner extends Assigner {
     super();
   }
 }
+function fromOneBasedInteger(input: string): number {
+  if(input.match(/^[1-9]\d*$/)) 
+  {
+    return parseInt(input)-1;
+  }
+  return null;
+}
+
+function getOrCreate<T,U>(map: Map<T,U> , key: T, defaultValue: ()=>U): U {
+  if(!map.has(key)) {
+    map.set(key, defaultValue());
+  }
+  return map.get(key);
+}
+
 
 class PhrasesAssigner extends Assigner {
   constructor(
@@ -68,8 +84,8 @@ class PhrasesAssigner extends Assigner {
     super();
   }
   getInnerAssigner(propertyName: string) : Assigner {
-    if(propertyName.match(/^\d+$/)) {
-      let index = parseInt(propertyName);
+    let index = fromOneBasedInteger(propertyName);
+    if(index != null) {
       while(index >= this._phrases.length) {
         this._phrases.push(JSON.parse(JSON.stringify(this._defaultPhrase)));
       }
@@ -107,7 +123,7 @@ class SequencesAssigner extends Assigner {
 }
 
 
-class EventAssigner extends Assigner {
+class EventValueAssigner extends Assigner {
   constructor(
     private _event: Tree.PhraseEvent, 
     private _valueKey : string){
@@ -124,27 +140,48 @@ class EventAssigner extends Assigner {
   }
 }
 
-class InstrumentEventsAssigner extends Assigner {
+class EventAssigner extends Assigner {
   constructor(private event: Tree.PhraseEvent){
     super();
   }
   getInnerAssigner(propertyName: string) : Assigner {
-    return new EventAssigner(this.event, propertyName);
+    return new EventValueAssigner(this.event, propertyName);
   }
 }
 
 class EventsAssigner extends Assigner {
-  constructor(private _events: Map<string,Tree.PhraseEvent>){
+  constructor(private _events: Map<number,Tree.PhraseEvent>){
     super();
   }
-  getInnerAssigner(instrument: string) : Assigner {
-    if(!this._events.has(instrument)) {
-      this._events.set(instrument, {values: new Map<string, Tree.ExpressionInput>()});
+  getInnerAssigner(eventNum: string) : Assigner {
+    let index = fromOneBasedInteger(eventNum);
+    if(index == null) { 
+      throw new Error('invalid event key');
     }
-    return new InstrumentEventsAssigner(this._events.get(instrument));
+    if(!this._events.has(index)) {
+      this._events.set(index, {values: new Map<string, Tree.ExpressionInput>()});
+    }
+    return new EventAssigner(this._events.get(index));
   }
 }
 
+
+
+class SoundAssigner extends Assigner {
+  constructor(private _events: Map<number,Tree.PhraseEvent>){
+    super();
+  }
+  getInnerAssigner(input: string) : Assigner {
+    if(input == PhrasaSymbol.Events) {
+      return new EventsAssigner(this._events);
+    } else if(input == PhrasaSymbol.Event) {
+      const firstEvent = getOrCreate(this._events, 0, ()=>{return {values: new Map<string, Tree.ExpressionInput>()};});
+      return new EventAssigner(firstEvent);
+    } else {
+      throw new Error('unknown instrument property');
+    }
+  }
+}
 
 class PhraseAssigner extends Assigner {
   constructor(private _phrase: ExtendedPhrase){
@@ -176,13 +213,13 @@ class PhraseAssigner extends Assigner {
             this._phrase.sequences = new Map<string, Tree.ExpressionInput>();
           }
           return new SequencesAssigner(this._phrase.sequences);
-        case PhrasaSymbol.Events:
-          if(!this._phrase.events) {
-            this._phrase.events = new Map<string, Tree.PhraseEvent>();
+        default:
+          if(!this._phrase.sounds) {
+            this._phrase.sounds = new Map<string,Map<number, Tree.PhraseEvent>>();
           }
-          return new EventsAssigner(this._phrase.events);
+          let soundEvents = getOrCreate(this._phrase.sounds, propertyName, ()=>new Map<number, Tree.PhraseEvent>());
+          return new SoundAssigner(soundEvents);
       }
-      return super.getInnerAssigner(propertyName);
     }
     assign(value : string) {
       if(value == PhrasaSymbol.Beat) {

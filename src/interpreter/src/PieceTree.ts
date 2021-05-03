@@ -46,7 +46,7 @@ export interface Phrase {
   branches? : Map<string,Phrase>
   phrases? : Phrase[]
   sequences? : Map<string, Sequence>
-  events? : Map<string,PhraseEvent>
+  sounds? : Map<string,Map<number,PhraseEvent>>
 }
 
 export type Sequence = ExpressionInput;

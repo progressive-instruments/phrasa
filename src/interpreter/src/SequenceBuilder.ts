@@ -131,32 +131,34 @@ export class SequenceBuilder implements ISequenceBuilder {
       })
     }
 
-    if(phrase.events) {
-      phrase.events.forEach((e,k) => {
-        let values = new Map<string,EventValue>();
-        e.values.forEach((v,k) => {
-          if(typeof v != 'string') {
-            throw new Error('not supported event value type');
+    if(phrase.sounds) {
+      for(const [k,s] of phrase.sounds) {
+        for(const [eventIndex,e] of s) {
+          let values = new Map<string,EventValue>();
+          e.values.forEach((v,k) => {
+            if(typeof v != 'string') {
+              throw new Error('not supported event value type');
+            }
+            values.set(k,v);
+          });
+          const phraseDuration = phraseEndTime - phraseStartTime;
+          let startTime = phraseStartTime;
+          let endTime = phraseEndTime;
+          if(e.startOffset) {
+            const factor = this.evalOffset(e.startOffset)
+            startTime = startTime + phraseDuration * factor
           }
-          values.set(k,v);
-        });
-        const phraseDuration = phraseEndTime - phraseStartTime;
-        let startTime = phraseStartTime;
-        let endTime = phraseEndTime;
-        if(e.startOffset) {
-          const factor = this.evalOffset(e.startOffset)
-          startTime = startTime + phraseDuration * factor
+          if(e.endOffset) {
+            const factor = this.evalOffset(e.endOffset)
+            endTime = endTime + phraseDuration * factor
+          }
+          events.push({
+            startTimeMs: startTime,
+            durationMs: endTime - startTime,
+            values: values
+          });
         }
-        if(e.endOffset) {
-          const factor = this.evalOffset(e.endOffset)
-          endTime = endTime + phraseDuration * factor
-        }
-        events.push({
-          startTimeMs: startTime,
-          durationMs: endTime - startTime,
-          values: values
-        });
-      })
+      }
     }
 
     return phraseEndTime;

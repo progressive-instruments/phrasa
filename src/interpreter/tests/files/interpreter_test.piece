@@ -1,9 +1,9 @@
 tempo 120bpm
-phrases.1 beat
+phrases.2 beat
 phrases
-  0.length 1/4
-  0
-    events.saw_synth.frequency C3
-  1.events
-    saw_synth
+  1.length 1/4
+  1
+    saw_synth.event.frequency C3
+  2.saw_synth
+    event
       frequency D3

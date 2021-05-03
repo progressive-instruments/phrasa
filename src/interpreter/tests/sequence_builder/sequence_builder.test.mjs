@@ -9,20 +9,20 @@ describe("sequence builder", function() {
       phrases: [
         {
           length: '1/2',
-          events: new Map([
+          sounds: new Map([
             [
               'saw_synth', 
-              {values: new Map([['frequency', 'D3']])}
+              new Map([[0, {values: new Map([['frequency', 'D3']]) } ]])
             ]
           ])
         },
         {
           beat: true,
           length: '1/2',
-          events: new Map([
+          sounds: new Map([
             [
               'saw_synth', 
-              {values: new Map([['frequency', 'C3']])}
+              new Map([[0,{values: new Map([['frequency', 'C3']])}]])
             ]
           ])
         }
@@ -43,22 +43,22 @@ describe("sequence builder", function() {
     tree.rootPhrase = {
       tempo: '120bpm',
       beat: true,
-      events: new Map([
+      sounds: new Map([
         [
           'saw_synth', 
-          {
+          new Map([[0, {
             values: new Map([['frequency', 'D3']]),
             startOffset: '10%',
             endOffset: '-10%',
-          }
+          }]])
         ],
         [
           'sine_synth', 
-          {
+          new Map([[0, {
             values: new Map([['frequency', 'D3']]),
             startOffset: '0.2',
             endOffset: '-0.2',
-          }
+          }]])
         ]
       ])
     };
