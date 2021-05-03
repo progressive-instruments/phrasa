@@ -114,13 +114,12 @@ class EventAssigner extends Assigner {
     super();
   }
   assign(value: string) {
-    if(value === PhrasaSymbol.EventStartOffset) {
+    if(this._valueKey === PhrasaSymbol.EventStartOffset) {
       this._event.startOffset = value;
-    } else if(value === PhrasaSymbol.EventEndOffset) {
+    } else if(this._valueKey === PhrasaSymbol.EventEndOffset) {
       this._event.endOffset = value;
     } else {
       this._event.values.set(this._valueKey, value);
-
     }
   }
 }

@@ -21,7 +21,7 @@ const BpmToMsEvaluator: ExpressionEvaluator<number> =  {
 }
 
 const FloatEvaluator: ExpressionEvaluator<number> =  {
-  expression: /^\d*[.]?\d+$/,
+  expression: /^-?\d*[.]?\d+$/,
   evaluate(matches) {
     return parseFloat(matches[0]);
   }
@@ -29,7 +29,7 @@ const FloatEvaluator: ExpressionEvaluator<number> =  {
 
 
 const PrecentToFactorEvaluator: ExpressionEvaluator<number> =  {
-  expression: /^(\d*[.]?\d+)%$/,
+  expression: /^(-?\d*[.]?\d+)%$/,
   evaluate(matches) {
     return parseFloat(matches[1])/100.0;
   }
@@ -94,7 +94,7 @@ export class SequenceBuilder implements ISequenceBuilder {
     throw new Error('unsupported offset format');
   }
   // return endTime
-  private evalPhrase(phrase: Phrase, context: Context, totalPhrases: number, startTime: number, events: SequenceEvent[]): number {
+  private evalPhrase(phrase: Phrase, context: Context, totalPhrases: number, phraseStartTime: number, events: SequenceEvent[]): number {
     if(!phrase.length) {
       context.length /= totalPhrases;
     } else {
@@ -118,19 +118,17 @@ export class SequenceBuilder implements ISequenceBuilder {
     if(phrase.variables) { 
       throw new Error('variables are not supported');
     }
-    let endTime: number;
+    let phraseEndTime = phraseStartTime + context.length;
     if(phrase.phrases && phrase.phrases.length > 0) {
-      endTime = startTime;
+      phraseEndTime = phraseStartTime;
       phrase.phrases.forEach(ph => {
-        endTime = this.evalPhrase(
+        phraseEndTime = this.evalPhrase(
           ph, 
           JSON.parse(JSON.stringify(context)),
           phrase.phrases.length,
-          endTime,
+          phraseEndTime,
           events);
       })
-    }else {
-      endTime = startTime + context.length;
     }
 
     if(phrase.events) {
@@ -142,7 +140,9 @@ export class SequenceBuilder implements ISequenceBuilder {
           }
           values.set(k,v);
         });
-        const phraseDuration = endTime - startTime
+        const phraseDuration = phraseEndTime - phraseStartTime;
+        let startTime = phraseStartTime;
+        let endTime = phraseEndTime;
         if(e.startOffset) {
           const factor = this.evalOffset(e.startOffset)
           startTime = startTime + phraseDuration * factor
@@ -159,6 +159,6 @@ export class SequenceBuilder implements ISequenceBuilder {
       })
     }
 
-    return endTime;
+    return phraseEndTime;
   }
 }

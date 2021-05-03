@@ -3,9 +3,6 @@
   "spec_files": [
     "**/*.[tT]est.mjs"
   ],
-  "helpers": [
-    "helpers/**/*.mjs"
-  ],
   "stopSpecOnExpectationFailure": false,
   "random": true
 }
