@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import {TreeBuilder} from '../dist/TreeBuilder.js'
+import {TreeBuilder} from '../dist/src/TreeBuilder.js'
 
 class TextContent {
     constructor(name,file) {
@@ -15,7 +15,7 @@ describe("tree builder", function() {
     let treeBuilder = new TreeBuilder();
     let tree = treeBuilder.build(new TextContent("bla", "tests/files/tree_builder_test.piece"), null ,null)
     let root = tree.rootPhrase;
-    expect(root.tempo).toEqual(["120bpm"]);
+    expect(root.tempo).toEqual("120bpm");
     let phrases = root.phrases;
     expect(phrases.length).toEqual(2);
     expect(phrases[0].length).toEqual("1/4");
@@ -24,12 +24,12 @@ describe("tree builder", function() {
     expect(phrases[1].beat).toBeTrue();
 
     let sawSynth = phrases[0].events.get('saw_synth');
-    expect(sawSynth.has('frequency')).toBeTrue();
-    expect(sawSynth.get('frequency')).toEqual("C3");
+    expect(sawSynth.values.has('frequency')).toBeTrue();
+    expect(sawSynth.values.get('frequency')).toEqual("C3");
 
     expect(phrases[1].events.has('saw_synth')).toBeTrue();
     sawSynth = phrases[1].events.get('saw_synth');
-    expect(sawSynth.has('frequency')).toBeTrue();
-    expect(sawSynth.get('frequency')).toEqual("D3");
+    expect(sawSynth.values.has('frequency')).toBeTrue();
+    expect(sawSynth.values.get('frequency')).toEqual("D3");
   });
 });

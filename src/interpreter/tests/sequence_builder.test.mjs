@@ -1,5 +1,5 @@
-import {SequenceBuilder} from '../dist/SequenceBuilder.js'
 
+import {SequenceBuilder} from '../dist/src/SequenceBuilder.js'
 
 describe("sequence builder", function() {
   it('builddd', function () {
@@ -10,18 +10,20 @@ describe("sequence builder", function() {
         {
           length: '1/2',
           events: new Map([
-            ['saw_synth', new Map([
-              ['frequency', 'D3']
-            ])],
+            [
+              'saw_synth', 
+              {values: new Map([['frequency', 'D3']])}
+            ]
           ])
         },
         {
           beat: true,
           length: '1/2',
           events: new Map([
-            ['saw_synth', new Map([
-              ['frequency', 'D3']
-            ])],
+            [
+              'saw_synth', 
+              {values: new Map([['frequency', 'C3']])}
+            ]
           ])
         }
       ]

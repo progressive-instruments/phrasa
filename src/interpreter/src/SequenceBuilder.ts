@@ -1,10 +1,40 @@
 import {ISequenceBuilder} from './ISequenceBuilder'
 import {Sequence, SequenceEvent, EventValue} from './Sequence'
-import {PieceTree, Phrase, ExpressionInput} from './PieceTree'
+import {PieceTree, Phrase, ExpressionInput, Expression} from './PieceTree'
 
 interface Context {
   length: number;
 }
+
+
+
+interface ExpressionEvaluator<T> {
+  expression: RegExp;
+  evaluate(matchArr: RegExpMatchArray):T;
+}
+
+const BpmToMsEvaluator: ExpressionEvaluator<number> =  {
+  expression: /^(\d*[.]?\d+)bpm$/,
+  evaluate(matches) {
+    return 60000 / parseFloat(matches[1]);
+  }
+}
+
+const FloatEvaluator: ExpressionEvaluator<number> =  {
+  expression: /^\d*[.]?\d+$/,
+  evaluate(matches) {
+    return parseFloat(matches[0]);
+  }
+}
+
+
+const PrecentToFactorEvaluator: ExpressionEvaluator<number> =  {
+  expression: /^(\d*[.]?\d+)%$/,
+  evaluate(matches) {
+    return parseFloat(matches[1])/100.0;
+  }
+}
+
 
 export class SequenceBuilder implements ISequenceBuilder {
   private _relativeBeatLength?: number;
@@ -38,19 +68,31 @@ export class SequenceBuilder implements ISequenceBuilder {
     }
     throw new Error('unsupported length format');
   }
-
-  private evalTempo(input: ExpressionInput): number {
-    const _bpmExpr = /^(\d*[.]?\d)+bpm$/
-    if(typeof input == 'string') {
-        let match = input.match(_bpmExpr);
+  private evaluate<T>(input: string, evaluators: ExpressionEvaluator<T>[]): T {
+    for(const evaluator of evaluators) {
+      const match = input.match(evaluator.expression);
         if(match) {
-          return 60000 / parseFloat(match[1]);
+          return evaluator.evaluate(match);
         }
     }
-    throw new Error('unsupported length format');
+    throw new Error(`unable to parse string '${input}'`);
   }
 
+  private evalTempo(input: ExpressionInput): number {
+    if(typeof input == 'string') {
+      return this.evaluate(input, [BpmToMsEvaluator]);
+    }
+    throw new Error('unsupported offset format');
+  }
 
+  private evalOffset(input: ExpressionInput): number {
+    if(typeof input == 'string') {
+      return this.evaluate(input, [
+        PrecentToFactorEvaluator,
+        FloatEvaluator]);
+    };
+    throw new Error('unsupported offset format');
+  }
   // return endTime
   private evalPhrase(phrase: Phrase, context: Context, totalPhrases: number, startTime: number, events: SequenceEvent[]): number {
     if(!phrase.length) {
@@ -94,12 +136,21 @@ export class SequenceBuilder implements ISequenceBuilder {
     if(phrase.events) {
       phrase.events.forEach((e,k) => {
         let values = new Map<string,EventValue>();
-        e.forEach((v,k) => {
+        e.values.forEach((v,k) => {
           if(typeof v != 'string') {
             throw new Error('not supported event value type');
           }
           values.set(k,v);
         });
+        const phraseDuration = endTime - startTime
+        if(e.startOffset) {
+          const factor = this.evalOffset(e.startOffset)
+          startTime = startTime + phraseDuration * factor
+        }
+        if(e.endOffset) {
+          const factor = this.evalOffset(e.endOffset)
+          endTime = endTime + phraseDuration * factor
+        }
         events.push({
           startTimeMs: startTime,
           durationMs: endTime - startTime,

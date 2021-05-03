@@ -37,7 +37,7 @@ class TempoAssigner extends Assigner {
     }
 
     assign(value : string) {
-      this._phrase.tempo = [value];
+      this._phrase.tempo = value;
     }
 
 }
@@ -50,7 +50,9 @@ enum PhrasaSymbol {
   Length = "length",
   Branches = "branches",
   Sequences = "sequences",
-  Events = "events"
+  Events = "events",
+  EventStartOffset = "start",
+  EventEndOffset = "end",
 }
 
 class PitchAssigner extends Assigner {
@@ -107,31 +109,38 @@ class SequencesAssigner extends Assigner {
 
 class EventAssigner extends Assigner {
   constructor(
-    private _events: Map<string,Tree.InstrumentEvent>, 
-    private _eventKey : string){
+    private _event: Tree.PhraseEvent, 
+    private _valueKey : string){
     super();
   }
   assign(value: string) {
-    this._events.set(this._eventKey, value);
+    if(value === PhrasaSymbol.EventStartOffset) {
+      this._event.startOffset = value;
+    } else if(value === PhrasaSymbol.EventEndOffset) {
+      this._event.endOffset = value;
+    } else {
+      this._event.values.set(this._valueKey, value);
+
+    }
   }
 }
 
 class InstrumentEventsAssigner extends Assigner {
-  constructor(private _events: Map<string,Tree.InstrumentEvent>){
+  constructor(private event: Tree.PhraseEvent){
     super();
   }
   getInnerAssigner(propertyName: string) : Assigner {
-    return new EventAssigner(this._events, propertyName);
+    return new EventAssigner(this.event, propertyName);
   }
 }
 
 class EventsAssigner extends Assigner {
-  constructor(private _events: Map<string,Map<string,Tree.InstrumentEvent>>){
+  constructor(private _events: Map<string,Tree.PhraseEvent>){
     super();
   }
   getInnerAssigner(instrument: string) : Assigner {
     if(!this._events.has(instrument)) {
-      this._events.set(instrument, new Map<string,Tree.InstrumentEvent>());
+      this._events.set(instrument, {values: new Map<string, Tree.ExpressionInput>()});
     }
     return new InstrumentEventsAssigner(this._events.get(instrument));
   }
@@ -170,7 +179,7 @@ class PhraseAssigner extends Assigner {
           return new SequencesAssigner(this._phrase.sequences);
         case PhrasaSymbol.Events:
           if(!this._phrase.events) {
-            this._phrase.events = new Map<string, Map<string,Tree.ExpressionInput>>();
+            this._phrase.events = new Map<string, Tree.PhraseEvent>();
           }
           return new EventsAssigner(this._phrase.events);
       }

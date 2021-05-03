@@ -1,6 +1,6 @@
 {
   "name": "phrasa",
-  "version": "0.0.3",
+  "version": "0.1.1",
   "author": "Erez Blumenstock",
   "repository": {
     "url": "https://github.com/progressive-instruments/phrasa",
@@ -9,9 +9,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "antlr4": "^4.9.2",
-    "tsconfig-paths": "^3.9.0",
-    "tscpaths": "0.0.9"
+    "antlr4": "^4.9.2"
   },
   "devDependencies": {
     "@babel/cli": "^7.13.16",
@@ -25,7 +23,7 @@
     "typescript": "^4.2.4"
   },
   "type": "module",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "generate": "antlr4 grammar/Phrasa.g4 -Dlanguage=JavaScript -o src/generated-parser && babel src/generated-parser --out-dir=src/generated-parser",
     "build": "tsc",
