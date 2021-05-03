@@ -93,6 +93,32 @@ export class SequenceBuilder implements ISequenceBuilder {
     };
     throw new Error('unsupported offset format');
   }
+
+  private midiInHertz(noteNumber: number) {
+    return 440 * Math.pow(2.0, (noteNumber - 69) / 12.0);
+  }
+
+  private noteToFreq(noteName: string) {
+    const noteToValue = {c:0,d:2,e:4,f:5,g:7,a:9,b:11};
+    let res : number;
+    const regex = /([a-zA-Z])(#*|b*)(-?\d)/;
+    const found = regex.exec(noteName);
+    if(!found) {
+      throw new Error("invalid note");
+    }
+    res = noteToValue[found[1].toLowerCase()]
+
+    if(found[2].startsWith('#')) {
+      res = res + found[2].length;
+    } else if(found[2].startsWith('b')) {
+      res = res - found[2].length;
+    }
+
+    res = res + 12*(parseInt(found[3]) + 1);
+    res = this.midiInHertz(res)
+    return res;
+  }
+
   // return endTime
   private evalPhrase(phrase: Phrase, context: Context, totalPhrases: number, phraseStartTime: number, events: SequenceEvent[]): number {
     if(!phrase.length) {
@@ -134,13 +160,33 @@ export class SequenceBuilder implements ISequenceBuilder {
     if(phrase.sounds) {
       for(const [k,s] of phrase.sounds) {
         for(const [eventIndex,e] of s.events) {
+
           let values = new Map<string,EventValue>();
-          e.values.forEach((v,k) => {
-            if(typeof v != 'string') {
-              throw new Error('not supported event value type');
+          if(e.values) {
+            for(const [k,v] of e.values) {
+              if(typeof v != 'string') {
+                throw new Error('unsupported event value type');
+              }
+              values.set(k,v);
             }
-            values.set(k,v);
-          });
+          }
+          if(e.frequency) {
+            if(typeof e.frequency.value != 'string') {
+              throw new Error('unsupported event value type');
+            }
+            let frequency: number;
+            switch(e.frequency.type) {
+              case 'pitch':
+                throw new Error('pitch events is not supported');
+              case 'note':
+                frequency = this.noteToFreq(e.frequency.value);
+                break;
+              case 'frequency':
+                frequency = this.evaluate(e.frequency.value,[FloatEvaluator]);
+                break;
+            }
+            values.set('frequency',frequency);
+          }
           const phraseDuration = phraseEndTime - phraseStartTime;
           let startTime = phraseStartTime;
           let endTime = phraseEndTime;

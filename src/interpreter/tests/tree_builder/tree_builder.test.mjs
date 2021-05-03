@@ -25,14 +25,18 @@ describe("tree builder", function() {
     expect(phrases[0].sounds.has('saw_synth')).toBeTrue();
     let sawSynth = phrases[0].sounds.get('saw_synth');
     expect(sawSynth.events.size).toEqual(1);
-    expect(sawSynth.events.get(0).values.has('frequency')).toBeTrue();
-    expect(sawSynth.events.get(0).values.get('frequency')).toEqual("C3");
+    expect(sawSynth.events.get(0).frequency).toBeDefined();
+    expect(sawSynth.events.get(0).frequency.type).toEqual('frequency');
+    expect(sawSynth.events.get(0).frequency.value).toEqual("440");
+    expect(sawSynth.events.get(0).values.has('cutoff')).toBeTrue();
+    expect(sawSynth.events.get(0).values.get('cutoff')).toEqual("90%");
 
     expect(phrases[1].sounds.has('saw_synth')).toBeTrue();
     sawSynth = phrases[1].sounds.get('saw_synth');
     expect(sawSynth.events.size).toEqual(1);
-    expect(sawSynth.events.get(0).values.has('frequency')).toBeTrue();
-    expect(sawSynth.events.get(0).values.get('frequency')).toEqual("D3");
+    expect(sawSynth.events.get(0).frequency).toBeDefined();
+    expect(sawSynth.events.get(0).frequency.type).toEqual('note');
+    expect(sawSynth.events.get(0).frequency.value).toEqual("D3");
   });
 
   it('offset', function () {

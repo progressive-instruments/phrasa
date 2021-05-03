@@ -44,7 +44,10 @@ class TempoAssigner extends Assigner {
 
 enum PhrasaSymbol { 
   Beat = "beat",
-  Pitch = "pitch",
+  PitchProperty = "pitch",
+  PitchEventValue = "pitch",
+  FrequencyEventValue = "frequency",
+  NoteEventValue = "note",
   Tempo = "tempo",
   Phrases = "phrases",
   Length = "length",
@@ -134,6 +137,12 @@ class EventValueAssigner extends Assigner {
       this._event.startOffset = value;
     } else if(this._valueKey === PhrasaSymbol.EventEndOffset) {
       this._event.endOffset = value;
+    } else if(this._valueKey === PhrasaSymbol.PitchEventValue) {
+      this._event.frequency = {type: 'pitch', value: value};
+    } else if(this._valueKey === PhrasaSymbol.FrequencyEventValue) {
+      this._event.frequency = {type: 'frequency', value: value};
+    } else if(this._valueKey === PhrasaSymbol.NoteEventValue) {
+      this._event.frequency = {type: 'note', value: value};
     } else {
       this._event.values.set(this._valueKey, value);
     }
@@ -190,7 +199,7 @@ class PhraseAssigner extends Assigner {
   }
     getInnerAssigner(propertyName: string) : Assigner {
       switch(propertyName) {
-        case PhrasaSymbol.Pitch:
+        case PhrasaSymbol.PitchProperty:
           return new PitchAssigner(this._phrase);
         case PhrasaSymbol.Tempo:
           return new TempoAssigner(this._phrase);

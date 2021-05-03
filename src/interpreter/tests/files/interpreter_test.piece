@@ -3,7 +3,7 @@ phrases.2 beat
 phrases
   1.length 1/4
   1
-    saw_synth.event.frequency C3
+    saw_synth.event.note C3
   2.saw_synth
     event
-      frequency D3
+      note D3

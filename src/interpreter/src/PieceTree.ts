@@ -55,14 +55,13 @@ export interface Sound {
 
 export interface FrequencyExpression {
   type: 'pitch' | 'frequency' | 'note';
-  value: FrequencyExpression;
+  value: ExpressionInput;
 }
 
 export type Sequence = ExpressionInput;
 export interface PhraseEvent {
   frequency?: FrequencyExpression;
-  values: Map<string, EventPropertyValue>
+  values?: Map<string, ExpressionInput>
   startOffset?: ExpressionInput
   endOffset?: ExpressionInput
 }
-export type EventPropertyValue = ExpressionInput;

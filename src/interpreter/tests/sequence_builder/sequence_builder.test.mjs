@@ -13,7 +13,11 @@ describe("sequence builder", function() {
             [
               'saw_synth', 
               {
-                events: new Map([[0, {values: new Map([['frequency', 'D3']]) } ]])
+                events: new Map([[0, 
+                  {
+                    values: new Map([['cutoff', '100%']]),
+                    frequency: {type: 'frequency', value: '440'}
+                  }]])
               }
               
             ]
@@ -26,7 +30,10 @@ describe("sequence builder", function() {
             [
               'saw_synth', 
               {
-                events: new Map([[0,{values: new Map([['frequency', 'C3']])}]])
+                events: new Map([[0,
+                  {
+                    frequency: {type: 'note', value: 'C3'}
+                  }]])
               }
               
             ]
@@ -40,8 +47,14 @@ describe("sequence builder", function() {
     expect(sequence.events.length).toEqual(2);
     expect(sequence.events[0].startTimeMs).toBeCloseTo(0);
     expect(sequence.events[0].durationMs).toBeCloseTo(500);
+    expect(sequence.events[0].values.has('cutoff')).toBeTrue();
+    expect(sequence.events[0].values.get('cutoff')).toEqual('100%');
+    expect(sequence.events[0].values.has('frequency')).toBeTrue();
+    expect(sequence.events[0].values.get('frequency')).toBeCloseTo('440');
     expect(sequence.events[1].startTimeMs).toBeCloseTo(500);
     expect(sequence.events[1].durationMs).toBeCloseTo(500);
+    expect(sequence.events[1].values.has('frequency')).toBeTrue();
+    expect(sequence.events[1].values.get('frequency')).toBeCloseTo(130.81);
   });
 
   it('offset', function () {
