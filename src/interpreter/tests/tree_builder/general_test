@@ -8,3 +8,4 @@ phrases
   2
     saw_synth.event
       note D3
+>1-2.saw_synth.event.attack 80%

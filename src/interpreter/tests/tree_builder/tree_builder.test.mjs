@@ -30,6 +30,8 @@ describe("tree builder", function() {
     expect(sawSynth.events.get(0).frequency.value).toEqual("440");
     expect(sawSynth.events.get(0).values.has('cutoff')).toBeTrue();
     expect(sawSynth.events.get(0).values.get('cutoff')).toEqual("90%");
+    expect(sawSynth.events.get(0).values.has('attack')).toBeTrue();
+    expect(sawSynth.events.get(0).values.get('attack')).toEqual("80%");
 
     expect(phrases[1].sounds.has('saw_synth')).toBeTrue();
     sawSynth = phrases[1].sounds.get('saw_synth');
@@ -37,6 +39,9 @@ describe("tree builder", function() {
     expect(sawSynth.events.get(0).frequency).toBeDefined();
     expect(sawSynth.events.get(0).frequency.type).toEqual('note');
     expect(sawSynth.events.get(0).frequency.value).toEqual("D3");
+    expect(sawSynth.events.get(0).values.has('attack')).toBeTrue();
+    expect(sawSynth.events.get(0).values.get('attack')).toEqual("80%");
+
   });
 
   it('offset', function () {

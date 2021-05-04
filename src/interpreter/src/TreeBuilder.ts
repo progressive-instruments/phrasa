@@ -100,6 +100,21 @@ function fromOneBasedInteger(input: string): number {
   return null;
 }
 
+function fromOneBasedIntegerRange(input: string): [number,number] {
+  const match = input.match(/^([1-9]\d*)-([1-9]\d*$)/);
+  if(match) 
+  {
+    let range: [number,number] = [parseInt(match[1])-1,parseInt(match[2])-1];
+    if(range[0] > range[1]) { 
+      return null;
+    } else {
+      return range;
+    }
+  }
+  return null;
+}
+
+
 function getOrCreate<T,U>(map: Map<T,U> , key: T, defaultValue: ()=>U): U {
   if(!map.has(key)) {
     map.set(key, defaultValue());
@@ -115,14 +130,25 @@ class PhrasesAssigner extends Assigner {
     super();
   }
   getInnerAssigner(propertyName: string) : Assigner {
+    let range : [number,number];
     let index = fromOneBasedInteger(propertyName);
     if(index != null) {
-      while(index >= this._phrases.length) {
-        this._phrases.push(JSON.parse(JSON.stringify(this._defaultPhrase)));
+      range = [index,index];
+    } else {
+      range = fromOneBasedIntegerRange(propertyName);
+      if(range == null) {
+        return super.getInnerAssigner(propertyName);
       }
-      return new PhraseAssigner(this._phrases[index]);
     }
-    return super.getInnerAssigner(propertyName);
+
+    while(range[1] >= this._phrases.length) {
+      this._phrases.push(JSON.parse(JSON.stringify(this._defaultPhrase)));
+    }
+    let assigners :Assigner[] = []; 
+    for(let i = range[0] ; i <= range[1] ; ++i) {
+      assigners.push(new PhraseAssigner(this._phrases[i]));
+    }
+    return new MultiAssigner(assigners);
   }
 }
 
@@ -132,6 +158,20 @@ class LengthAssigner extends Assigner {
   }
   assign(value : string) {
     this._phrase.length = value;
+  }
+}
+
+class MultiAssigner extends Assigner {
+  constructor(private _assigners: Assigner[]) {
+    super();
+  }
+  getInnerAssigner(propertyName: string) : Assigner {
+    return new MultiAssigner(this._assigners.map(a => a.getInnerAssigner(propertyName)));
+  }
+  assign(value: string) {
+    for(const assigner of this._assigners) {
+      assigner.assign(value);
+    }
   }
 }
 
