@@ -10,6 +10,8 @@ import { ParseTreeWalker } from 'antlr4/src/antlr4/tree/Tree.js'
 import { TerminalNode } from 'antlr4/tree/Tree'
 import { ErrorStrategy } from 'antlr4/error/ErrorStrategy'
 
+import * as Evaluator from './Evaluator.js'
+
 interface ExtendedPhrase extends Tree.Phrase {
   defaultInnerPhrase? : Tree.Phrase;
 }
@@ -94,35 +96,6 @@ class PitchAssigner extends Assigner {
   }
 }
 
-function fromInteger(input: string): number {
-  if(input.match(/^\d+$/)) 
-  {
-    return parseInt(input);
-  }
-  return null;
-}
-
-function fromOneBasedInteger(input: string): number {
-  if(input.match(/^[1-9]\d*$/)) 
-  {
-    return parseInt(input)-1;
-  }
-  return null;
-}
-
-function fromOneBasedIntegerRange(input: string): [number,number] {
-  const match = input.match(/^([1-9]\d*)-([1-9]\d*$)/);
-  if(match) 
-  {
-    let range: [number,number] = [parseInt(match[1])-1,parseInt(match[2])-1];
-    if(range[0] > range[1]) { 
-      return null;
-    } else {
-      return range;
-    }
-  }
-  return null;
-}
 
 
 function getOrCreate<T,U>(map: Map<T,U> , key: T, defaultValue: ()=>U): U {
@@ -138,11 +111,7 @@ class PhrasesLengthAssigner extends Assigner {
     super();
   }
   assign(value: string) { 
-    const num = fromInteger(value);
-    if(num == null) {
-      super.assign(value);
-      return;
-    }
+    const num = Evaluator.evaluate(value, [Evaluator.ToInteger]);
     for(let i = this._parentPhrase.phrases.length ; i < num ; ++i) {
       this._parentPhrase.phrases.push(JSON.parse(JSON.stringify(this._parentPhrase.defaultInnerPhrase)));
     }
@@ -159,16 +128,7 @@ class PhrasesAssigner extends Assigner {
     if(propertyName == Property.PhrasesTotal){
       return new PhrasesLengthAssigner(this._parentPhrase);
     } else {
-      let range : [number,number];
-      let index = fromOneBasedInteger(propertyName);
-      if(index != null) {
-        range = [index,index];
-      } else {
-        range = fromOneBasedIntegerRange(propertyName);
-        if(range == null) {
-          return super.getInnerAssigner(propertyName);
-        }
-      }
+      let range = Evaluator.evaluate(propertyName,[Evaluator.OneBasedToZeroBasedWithRange]);
   
       while(range[1] >= this._parentPhrase.phrases.length) {
         this._parentPhrase.phrases.push(JSON.parse(JSON.stringify(this._parentPhrase.phrases)));
@@ -262,7 +222,7 @@ class EventsAssigner extends Assigner {
     super();
   }
   getInnerAssigner(eventNum: string) : Assigner {
-    let index = fromOneBasedInteger(eventNum);
+    let index = Evaluator.evaluate(eventNum,[Evaluator.OneBasedToZeroBased]);
     if(index == null) { 
       throw new Error('invalid event key');
     }

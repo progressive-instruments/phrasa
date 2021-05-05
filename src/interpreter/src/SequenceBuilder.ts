@@ -1,40 +1,11 @@
 import {ISequenceBuilder} from './ISequenceBuilder'
 import {Sequence, SequenceEvent, EventValue} from './Sequence'
 import {PieceTree, Phrase, ExpressionInput, Expression} from './PieceTree'
+import * as Evaluator from './Evaluator.js'
 
 interface Context {
   contextLength: number;
 }
-
-
-
-interface ExpressionEvaluator<T> {
-  expression: RegExp;
-  evaluate(matchArr: RegExpMatchArray):T;
-}
-
-const BpmToMsEvaluator: ExpressionEvaluator<number> =  {
-  expression: /^(\d*[.]?\d+)bpm$/,
-  evaluate(matches) {
-    return 60000 / parseFloat(matches[1]);
-  }
-}
-
-const FloatEvaluator: ExpressionEvaluator<number> =  {
-  expression: /^-?\d*[.]?\d+$/,
-  evaluate(matches) {
-    return parseFloat(matches[0]);
-  }
-}
-
-
-const PrecentToFactorEvaluator: ExpressionEvaluator<number> =  {
-  expression: /^(-?\d*[.]?\d+)%$/,
-  evaluate(matches) {
-    return parseFloat(matches[1])/100.0;
-  }
-}
-
 
 export class SequenceBuilder implements ISequenceBuilder {
   private _relativeBeatLength?: number;
@@ -68,56 +39,24 @@ export class SequenceBuilder implements ISequenceBuilder {
     }
     throw new Error('unsupported length format');
   }
-  private evaluate<T>(input: string, evaluators: ExpressionEvaluator<T>[]): T {
-    for(const evaluator of evaluators) {
-      const match = input.match(evaluator.expression);
-        if(match) {
-          return evaluator.evaluate(match);
-        }
-    }
-    throw new Error(`unable to parse string '${input}'`);
-  }
 
   private evalTempo(input: ExpressionInput): number {
     if(typeof input == 'string') {
-      return this.evaluate(input, [BpmToMsEvaluator]);
+      return Evaluator.evaluate(input, [Evaluator.BpmToMs]);
     }
     throw new Error('unsupported offset format');
   }
 
   private evalOffset(input: ExpressionInput): number {
     if(typeof input == 'string') {
-      return this.evaluate(input, [
-        PrecentToFactorEvaluator,
-        FloatEvaluator]);
+      return Evaluator.evaluate(input, [
+        Evaluator.PrecentToFactor,
+        Evaluator.ToFloat]);
     };
     throw new Error('unsupported offset format');
   }
 
-  private midiInHertz(noteNumber: number) {
-    return 440 * Math.pow(2.0, (noteNumber - 69) / 12.0);
-  }
-
-  private noteToFreq(noteName: string) {
-    const noteToValue = {c:0,d:2,e:4,f:5,g:7,a:9,b:11};
-    let res : number;
-    const regex = /([a-zA-Z])(#*|b*)(-?\d)/;
-    const found = regex.exec(noteName);
-    if(!found) {
-      throw new Error("invalid note");
-    }
-    res = noteToValue[found[1].toLowerCase()]
-
-    if(found[2].startsWith('#')) {
-      res = res + found[2].length;
-    } else if(found[2].startsWith('b')) {
-      res = res - found[2].length;
-    }
-
-    res = res + 12*(parseInt(found[3]) + 1);
-    res = this.midiInHertz(res)
-    return res;
-  }
+  
 
   // return endTime
   private evalPhrase(phrase: Phrase, context: Context, totalPhrases: number, phraseStartTime: number, events: SequenceEvent[]): number {
@@ -180,10 +119,10 @@ export class SequenceBuilder implements ISequenceBuilder {
               case 'pitch':
                 throw new Error('pitch events is not supported');
               case 'note':
-                frequency = this.noteToFreq(e.frequency.value);
+                frequency = Evaluator.evaluate(e.frequency.value, [Evaluator.NoteToFrequency]);
                 break;
               case 'frequency':
-                frequency = this.evaluate(e.frequency.value,[FloatEvaluator]);
+                frequency = Evaluator.evaluate(e.frequency.value,[Evaluator.ToFloat]);
                 break;
             }
             values.set('frequency',frequency);
