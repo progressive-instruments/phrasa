@@ -8,7 +8,7 @@ describe("sequence builder", function() {
       tempo: '120bpm',
       phrases: [
         {
-          length: '1/2',
+          phraseLength: '1/2',
           sounds: new Map([
             [
               'saw_synth', 
@@ -25,7 +25,7 @@ describe("sequence builder", function() {
         },
         {
           beat: true,
-          length: '1/2',
+          phraseLength: '1/2',
           sounds: new Map([
             [
               'saw_synth', 
@@ -94,5 +94,39 @@ describe("sequence builder", function() {
     expect(sequence.events[0].durationMs).toBeCloseTo(400);
     expect(sequence.events[1].startTimeMs).toBeCloseTo(100);
     expect(sequence.events[1].durationMs).toBeCloseTo(300);
+  });
+
+  it('lengthtest', function () {
+    let tree = {};
+    const phrase = {
+      phraseLength: '1/2',
+      sounds: new Map([
+        [
+          'saw_synth', 
+          {
+            events: new Map([[0, 
+              {
+                frequency: {type: 'frequency', value: '440'}
+              }]])
+          }
+          
+        ]
+      ])
+    };
+    tree.rootPhrase = {
+      tempo: '120bpm',
+      beat: true,
+      phrases: [
+        phrase,phrase,phrase
+      ],
+      totalPhrases: 2,
+    };
+    let sequenceBuilder = new SequenceBuilder();
+    let sequence = sequenceBuilder.build(tree);
+    expect(sequence.events.length).toEqual(2);
+    expect(sequence.events[0].startTimeMs).toBeCloseTo(0);
+    expect(sequence.events[0].durationMs).toBeCloseTo(250);
+    expect(sequence.events[1].startTimeMs).toBeCloseTo(250);
+    expect(sequence.events[1].durationMs).toBeCloseTo(250);
   });
 });

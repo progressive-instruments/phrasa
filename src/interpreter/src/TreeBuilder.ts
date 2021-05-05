@@ -62,6 +62,7 @@ enum Property {
   EventEndOffset = "end",
   EventStartOffset = "start",
   Sequences = "sequences",
+  PhrasesTotal = 'total'
 }
 
 const KeyPrefixes:Map<string,Property> = new Map<string,Property>([
@@ -92,6 +93,15 @@ class PitchAssigner extends Assigner {
     super();
   }
 }
+
+function fromInteger(input: string): number {
+  if(input.match(/^\d+$/)) 
+  {
+    return parseInt(input);
+  }
+  return null;
+}
+
 function fromOneBasedInteger(input: string): number {
   if(input.match(/^[1-9]\d*$/)) 
   {
@@ -122,33 +132,54 @@ function getOrCreate<T,U>(map: Map<T,U> , key: T, defaultValue: ()=>U): U {
   return map.get(key);
 }
 
+class PhrasesLengthAssigner extends Assigner {
+  constructor(
+    private _parentPhrase: ExtendedPhrase) {
+    super();
+  }
+  assign(value: string) { 
+    const num = fromInteger(value);
+    if(num == null) {
+      super.assign(value);
+      return;
+    }
+    for(let i = this._parentPhrase.phrases.length ; i < num ; ++i) {
+      this._parentPhrase.phrases.push(JSON.parse(JSON.stringify(this._parentPhrase.defaultInnerPhrase)));
+    }
+    this._parentPhrase.totalPhrases = num;
+  }
+}
 
 class PhrasesAssigner extends Assigner {
   constructor(
-    private _phrases: ExtendedPhrase[], 
-    private _defaultPhrase: Tree.Phrase){
+    private _parentPhrase: ExtendedPhrase){
     super();
   }
   getInnerAssigner(propertyName: string) : Assigner {
-    let range : [number,number];
-    let index = fromOneBasedInteger(propertyName);
-    if(index != null) {
-      range = [index,index];
+    if(propertyName == Property.PhrasesTotal){
+      return new PhrasesLengthAssigner(this._parentPhrase);
     } else {
-      range = fromOneBasedIntegerRange(propertyName);
-      if(range == null) {
-        return super.getInnerAssigner(propertyName);
+      let range : [number,number];
+      let index = fromOneBasedInteger(propertyName);
+      if(index != null) {
+        range = [index,index];
+      } else {
+        range = fromOneBasedIntegerRange(propertyName);
+        if(range == null) {
+          return super.getInnerAssigner(propertyName);
+        }
       }
+  
+      while(range[1] >= this._parentPhrase.phrases.length) {
+        this._parentPhrase.phrases.push(JSON.parse(JSON.stringify(this._parentPhrase.phrases)));
+      }
+      let assigners :Assigner[] = []; 
+      for(let i = range[0] ; i <= range[1] ; ++i) {
+        assigners.push(new PhraseAssigner(this._parentPhrase.phrases[i]));
+      }
+      return new MultiAssigner(assigners);
     }
-
-    while(range[1] >= this._phrases.length) {
-      this._phrases.push(JSON.parse(JSON.stringify(this._defaultPhrase)));
-    }
-    let assigners :Assigner[] = []; 
-    for(let i = range[0] ; i <= range[1] ; ++i) {
-      assigners.push(new PhraseAssigner(this._phrases[i]));
-    }
-    return new MultiAssigner(assigners);
+    
   }
 }
 
@@ -157,7 +188,7 @@ class LengthAssigner extends Assigner {
     super();
   }
   assign(value : string) {
-    this._phrase.length = value;
+    this._phrase.phraseLength = value;
   }
 }
 
@@ -278,7 +309,7 @@ class PhraseAssigner extends Assigner {
           if(!this._phrase.defaultInnerPhrase) {
             this._phrase.defaultInnerPhrase = {};
           }
-          return new PhrasesAssigner(this._phrase.phrases, this._phrase.defaultInnerPhrase);
+          return new PhrasesAssigner(this._phrase);
         case Property.Length:
           return new LengthAssigner(this._phrase);
         case Property.Branches:

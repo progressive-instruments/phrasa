@@ -1,6 +1,7 @@
 tempo 120bpm
 >2 beat
 phrases
+  total 2
   1.length 1/4
   1
     saw_synth~.frequency 440

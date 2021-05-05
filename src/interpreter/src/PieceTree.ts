@@ -40,11 +40,12 @@ export class Pitch {
 export interface Phrase {
   pitch?: Pitch;
   variables? : Map<string, ExpressionInput>
-  length? : ExpressionInput;
+  phraseLength? : ExpressionInput;
   tempo? : ExpressionInput;
   beat? : boolean;
   branches? : Map<string,Phrase>
   phrases? : Phrase[]
+  totalPhrases? : number // should be expression input. Add another property for default phrase to be used in tree builder after evaluation
   sequences? : Map<string, Sequence>
   sounds? : Map<string,Sound>
 }

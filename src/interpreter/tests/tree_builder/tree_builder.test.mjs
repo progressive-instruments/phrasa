@@ -16,9 +16,10 @@ describe("tree builder", function() {
     let tree = treeBuilder.build(new TextContent("bla", "tests/tree_builder/general_test"), null ,null)
     let root = tree.rootPhrase;
     expect(root.tempo).toEqual("120bpm");
+    expect(root.totalPhrases).toEqual(2);
     let phrases = root.phrases;
     expect(phrases.length).toEqual(2);
-    expect(phrases[0].length).toEqual("1/4");
+    expect(phrases[0].phraseLength).toEqual("1/4");
     expect(phrases[0].beat == undefined || phrases[0].beat == false).toBeTrue();
     expect(phrases[1].beat).toBeTrue();
 

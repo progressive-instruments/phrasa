@@ -3,7 +3,7 @@ import {Sequence, SequenceEvent, EventValue} from './Sequence'
 import {PieceTree, Phrase, ExpressionInput, Expression} from './PieceTree'
 
 interface Context {
-  length: number;
+  contextLength: number;
 }
 
 
@@ -44,7 +44,7 @@ export class SequenceBuilder implements ISequenceBuilder {
     }
     let betLength = this.evalTempo(tree.rootPhrase.tempo);
     let events: SequenceEvent[] = [];
-    let endTime = this.evalPhrase(tree.rootPhrase, {length: 1},1, 0, events);
+    let endTime = this.evalPhrase(tree.rootPhrase, {contextLength: 1},1, 0, events);
     if(!this._relativeBeatLength) {
       throw new Error('beat length must is not defined');
     }
@@ -121,16 +121,16 @@ export class SequenceBuilder implements ISequenceBuilder {
 
   // return endTime
   private evalPhrase(phrase: Phrase, context: Context, totalPhrases: number, phraseStartTime: number, events: SequenceEvent[]): number {
-    if(!phrase.length) {
-      context.length /= totalPhrases;
+    if(!phrase.phraseLength) {
+      context.contextLength /= totalPhrases;
     } else {
-      context.length = this.evalLength(context.length, phrase.length);
+      context.contextLength = this.evalLength(context.contextLength, phrase.phraseLength);
     }
     if(phrase.beat) {
       if(this._relativeBeatLength) {
         throw new Error('only one beat definition is allowed');
       }
-      this._relativeBeatLength = context.length;
+      this._relativeBeatLength = context.contextLength;
     }
     if(phrase.pitch) {
       throw new Error('pitch is not supported');
@@ -144,17 +144,18 @@ export class SequenceBuilder implements ISequenceBuilder {
     if(phrase.variables) { 
       throw new Error('variables are not supported');
     }
-    let phraseEndTime = phraseStartTime + context.length;
+    let phraseEndTime = phraseStartTime + context.contextLength;
     if(phrase.phrases && phrase.phrases.length > 0) {
       phraseEndTime = phraseStartTime;
-      phrase.phrases.forEach(ph => {
+      let totalPhrases = phrase.totalPhrases ?? phrase.phrases.length;
+      for(let i = 0 ; i < totalPhrases ; ++i) {
         phraseEndTime = this.evalPhrase(
-          ph, 
+          phrase.phrases[i], 
           JSON.parse(JSON.stringify(context)),
-          phrase.phrases.length,
+          totalPhrases,
           phraseEndTime,
           events);
-      })
+      }
     }
 
     if(phrase.sounds) {
