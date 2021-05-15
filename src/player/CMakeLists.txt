@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON) # required for oredering projects within solution
+# set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 project(PhrasaPlayer VERSION 0.0.1)
 
@@ -31,7 +32,6 @@ target_sources(${PROJECT_NAME}
         Source/PhrasaPlayerApp.cpp
         Source/PhrasaPlayerApp.h
         Source/JuceMain.cpp)
-
 
 
 target_compile_definitions(${PROJECT_NAME}
@@ -73,4 +73,40 @@ source_group(juce REGULAR_EXPRESSION juce_.*)
 
 set_target_properties (gmock gmock_main gtest gtest_main PROPERTIES
     FOLDER googletest
+)
+
+set(SURGE_TARGETS
+  surge-xt
+  surge-xt_All
+  surge-xt_Standalone
+  surge-xt_VST3
+  surge-fx
+  surge-fx_All
+  surge-fx_Standalone
+  surge-fx_VST3
+  airwindows
+  ci-pull-req
+  code-quality-pipeline-checks
+  download-extra-content
+  eurorack
+  git-info
+  oddsound-mts
+  sqlite
+  stage-extra-content
+  Surge-Effects-Bank-Packaged
+  surge-fx-binary
+  surge-headless
+  surge-shared
+  surge-shared-binary
+  surge-staged-assets
+  surge-staged-nonbuilt-assets
+  surge-xt-binary
+  surge-xt-distribution
+  Surge-XT-Packaged
+  surge-xt-run-standalone
+  tinyxml
+  )
+
+set_target_properties (${SURGE_TARGETS} PROPERTIES
+    FOLDER surge
 )

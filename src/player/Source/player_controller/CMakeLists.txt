@@ -12,6 +12,10 @@ target_link_libraries(player_controller
   debug "C:/protobuf/debug/lib/libprotobufd.lib"
   optimized "C:/protobuf/lib/libprotobuf.lib")
 
+# target_link_libraries(player_controller
+#   PRIVATE
+#     "C:/protobuf/lib/libprotobuf.lib")
+
  target_include_directories(player_controller 
   PUBLIC 
     . 
