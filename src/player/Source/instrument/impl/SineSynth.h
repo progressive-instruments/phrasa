@@ -148,7 +148,7 @@ struct SineSynth : public phrasa::instrument::IInstrument
 
     void processBlock(phrasa::audio::AudioBuffer& buffer, const SequenceTrack& track/*, real time events*/) override
     {
-        juce::AudioBuffer juceBuff(buffer.data, buffer.numChannels, buffer.numSamples);
+        juce::AudioBuffer juceBuff(buffer.getWriteData(), buffer.getNumChannels(), buffer.getNumSamples());
         juceBuff.clear();
 
         juce::MidiBuffer incomingMidi;
@@ -168,8 +168,8 @@ struct SineSynth : public phrasa::instrument::IInstrument
                     m_eventPool.addEvent(event->event, event->relativeTime);
                 }
             }
-            
         }
+
         m_eventPool.advance(track.Duration);
         while (true) {
             auto event = m_eventPool.getNextEvent();
@@ -181,9 +181,8 @@ struct SineSynth : public phrasa::instrument::IInstrument
                 auto midi = getMidiNote(event->event->values["frequency"]->getValue());
                 incomingMidi.addEvent(juce::MidiMessage::noteOff(1, midi), sample);
             }
-
         }
-        synth.renderNextBlock(juceBuff, incomingMidi, 0, buffer.numSamples);
+        synth.renderNextBlock(juceBuff, incomingMidi, 0, buffer.getNumSamples());
     }
 
     double m_sampleTimeMs;

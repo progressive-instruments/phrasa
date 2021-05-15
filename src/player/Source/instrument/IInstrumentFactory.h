@@ -3,6 +3,11 @@
 #include "IInstrument.h"
 
 namespace phrasa::instrument {
+namespace builtin {
+    static const char* BASS = "bass";
+    static const char* LEAD = "lead";
+}
+
 
 class IInstrumentFactory
 {
@@ -13,7 +18,7 @@ public:
      * @param instrumentType 
      * @return 
     */
-    virtual std::unique_ptr<IInstrument> createInstrument(InstrumentType instrumentType) = 0;
+    virtual std::unique_ptr<IInstrument> createInstrument(std::string instrumentType) = 0;
 };
 
 }

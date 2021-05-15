@@ -15,6 +15,7 @@ export type EventValue = string | number | RangedValue;
 
 
 export interface SequenceEvent {
+  instrument: string
   startTimeMs: number
   durationMs :number
   values: Map<string,EventValue>

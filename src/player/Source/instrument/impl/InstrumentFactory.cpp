@@ -4,9 +4,16 @@
 #include "SineSynth.h"
 namespace phrasa::instrument::impl {
 
-std::unique_ptr<IInstrument> InstrumentFactory::createInstrument(InstrumentType instrumentType)
+
+
+std::unique_ptr<IInstrument> InstrumentFactory::createInstrument(std::string instrumentType)
 {
+	if (instrumentType == builtin::BASS) {
 		return std::unique_ptr<IInstrument>(new SurgeInstrument(2));
+	} else if (instrumentType == builtin::LEAD) {
+		return std::unique_ptr<IInstrument>(new SurgeInstrument(3));
+	}
+	throw std::invalid_argument("unknown instrument type " + instrumentType);
 }
 
 }

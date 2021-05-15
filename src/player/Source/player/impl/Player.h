@@ -4,9 +4,10 @@
 #include "IPlayer.h"
 #include "IPlayerAudioProcessor.h"
 #include "UniquePtrLockFreeQueue.h"
+#include "AudioBuffer.h"
 #include "IInstrumentFactory.h"
-#include <IInstrumentFactory.h>
-#include <SequenceTrack.h>
+#include "SequenceTrack.h"
+#include "ManagedAudioBuffer.h"
 
 namespace phrasa::player::impl {
 
@@ -21,7 +22,7 @@ public:
 	{}
 
 	// IPlayer
-	virtual void setSequence(std::unique_ptr<Sequence> sequence, SequenceTime endTime) override;
+	virtual void setSequence(UniqueSequenceMap sequenceMap, SequenceTime endTime) override;
 
 	// IPlayerAudioProcessor
 	virtual void prepareForProcessing(double sampleRate, size_t expectedBlockSize) override;
@@ -30,20 +31,22 @@ public:
 private:
 	struct ProcessorMessage
 	{
-		std::unique_ptr<Sequence> newSequence;
+		UniqueSequenceMap newSequenceMap;
 		std::optional<SequenceTime> newEndTime;
 	};
 
 	class Processor
 	{
-		const size_t QUEUE_SIZE = 128;
-
+		static const size_t NUM_CHANNELS = 2;
+		static const size_t QUEUE_SIZE = 128;
 	public:
 		Processor(std::shared_ptr<instrument::IInstrumentFactory> factory)
-		:	m_factory(factory),
-			m_queue(QUEUE_SIZE)
+		:	m_queue(QUEUE_SIZE),
+			m_sampleTimeMs(0)
 		{
-			m_sineInstrument = m_factory->createInstrument(instrument::InstrumentType::SineSynth);
+			m_managedBuffer.setChannels(NUM_CHANNELS);
+			m_instruments[instrument::builtin::BASS] = factory->createInstrument(instrument::builtin::BASS);
+			m_instruments[instrument::builtin::LEAD] = factory->createInstrument(instrument::builtin::LEAD);
 		}
 
 		void send(std::unique_ptr<ProcessorMessage> message);
@@ -51,13 +54,12 @@ private:
 		void processBlock(audio::AudioBuffer& buffer);
 		void processingEnded();
 	private:
+
 		UniquePtrLockFreeQueue<ProcessorMessage> m_queue;
 		double m_sampleTimeMs;
-		std::shared_ptr<instrument::IInstrumentFactory> m_factory;
-
-		std::unique_ptr<instrument::IInstrument> m_sineInstrument;
+		std::map <InstrumentID, std::unique_ptr<instrument::IInstrument>> m_instruments;
 		instrument::SequenceTrack m_track;
-
+		ManagedAudioBuffer m_managedBuffer;
 	};
 
 	Processor m_processor;

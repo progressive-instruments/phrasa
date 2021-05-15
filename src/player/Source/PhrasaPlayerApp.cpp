@@ -58,13 +58,32 @@ void PhrasaPlayerApp::releaseResources()
     m_player->processingEnded();
 }
 
+class JuceAudioBufferWrapper : public audio::AudioBuffer {
+public:
+    JuceAudioBufferWrapper(const juce::AudioSourceChannelInfo& buffer)
+        : m_buffer(buffer)
+    {}
+    virtual float* const* getWriteData() override {
+        return m_buffer.buffer->getArrayOfWritePointers();
+    }
+    virtual const float* const* getReadData() const override {
+        return m_buffer.buffer->getArrayOfReadPointers();
+    }
+    virtual unsigned int getNumChannels() const override {
+        return m_buffer.buffer->getNumChannels();
+    }
+    virtual size_t getNumSamples() const override {
+        return m_buffer.numSamples;
+    }
+private:
+    const juce::AudioSourceChannelInfo& m_buffer;
+};
+
+
 void PhrasaPlayerApp::getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill)
 {
-    audio::AudioBuffer buffer;
-    buffer.data = bufferToFill.buffer->getArrayOfWritePointers();
-    buffer.numSamples = bufferToFill.numSamples;
-    buffer.numChannels = bufferToFill.buffer->getNumChannels();
-    m_player->processBlock(buffer);
+    JuceAudioBufferWrapper bufferWrapper(bufferToFill);
+    m_player->processBlock(bufferWrapper);
 }
 
 }

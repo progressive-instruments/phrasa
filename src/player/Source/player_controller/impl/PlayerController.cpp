@@ -25,20 +25,27 @@ private:
     double m_value;
 };
 
-void PlayerController::parseSetSequenceMessage(const shift_processor::SetSequenceMessage& msg, std::unique_ptr<phrasa::Sequence>& sequenceOutput, SequenceTime& sequenceLengthOut) {
+void PlayerController::parseSetSequenceMessage(const shift_processor::SetSequenceMessage& msg, UniqueSequenceMap& sequenceMapOutput, SequenceTime& sequenceLengthOut) {
 
-    sequenceOutput.reset(new Sequence());
-    for (auto e : msg.events()) {
-        auto outputEvent = std::make_shared<Event>(SequenceTime::FromMilliseconds(e.duration()));
-        auto values = e.values();
-        for (auto val : values) {
-            if (val.second.value_case() != shift_processor::EventValue::ValueCase::kNumericValue) {
-                throw std::runtime_error("player supported only numberic values");
+    sequenceMapOutput.reset(new std::map<InstrumentID, std::unique_ptr<Sequence>>());
+    for (auto instrumentEvents : msg.instrumentevents()) {
+        const std::string& instrumentID = instrumentEvents.instrument();
+        for (auto e : instrumentEvents.events()) {
+            auto outputEvent = std::make_shared<Event>(SequenceTime::FromMilliseconds(e.duration()));
+            auto values = e.values();
+            for (auto val : values) {
+                if (val.second.value_case() != shift_processor::EventValue::ValueCase::kNumericValue) {
+                    throw std::runtime_error("player supported only numberic values");
+                }
+                outputEvent->values[val.first] = std::unique_ptr<phrasa::IEventValue>(
+                    new EventValue(val.second.numericvalue()));;
             }
-            outputEvent->values[val.first] = std::unique_ptr<phrasa::IEventValue>(
-                new EventValue(val.second.numericvalue()));;
+            if (sequenceMapOutput->count(instrumentID) == 0) {
+                (*sequenceMapOutput)[instrumentID] = std::make_unique<Sequence>();
+            }
+            (*sequenceMapOutput)[instrumentID]->events.insert({ SequenceTime::FromMilliseconds(e.eventtime()), outputEvent });
+
         }
-        sequenceOutput->events.insert({ SequenceTime::FromMilliseconds(e.eventtime()), outputEvent });
     }
     sequenceLengthOut = SequenceTime::FromMilliseconds(msg.sequencelength());
 }
@@ -67,11 +74,11 @@ void phrasa::playerctrl::impl::PlayerController::communicationRoutine(PlayerCont
                 if (message.message_case() != shift_processor::ShiftPlayerMessage::MessageCase::kSetSequence) {
                     throw std::runtime_error("unsupported message type");
                 }
-                std::unique_ptr<Sequence> sequence;
+                UniqueSequenceMap sequenceMap;
                 SequenceTime sequenceLength;
-                controller->parseSetSequenceMessage(message.setsequence(), sequence, sequenceLength);
+                controller->parseSetSequenceMessage(message.setsequence(), sequenceMap, sequenceLength);
 
-                controller->m_player->setSequence(std::move(sequence), sequenceLength);
+                controller->m_player->setSequence(std::move(sequenceMap), sequenceLength);
             }
         }
         catch (connection::ConnectionClosedException& ex) {

@@ -12,7 +12,7 @@ class IPlayer
 public:
 	virtual ~IPlayer() {}
 
-	virtual void setSequence(std::unique_ptr<Sequence> sequence, SequenceTime endTime) = 0;
+	virtual void setSequence(UniqueSequenceMap sequence, SequenceTime endTime) = 0;
 };
 
 }

@@ -10,6 +10,11 @@ message ShiftPlayerMessage {
 
 message SetSequenceMessage {
   double sequenceLength = 1;
+  repeated InstrumentEvents instrumentEvents = 2;
+}
+
+message InstrumentEvents {
+  string instrument = 1;
   repeated SequenceEvent events = 2;
 }
 

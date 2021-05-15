@@ -8,8 +8,6 @@
 
 namespace phrasa::instrument {
 
-enum class InstrumentType { SineSynth };
-
 /**
  * @brief Abstraction for instrument
  * 

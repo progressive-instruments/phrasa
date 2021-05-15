@@ -127,16 +127,16 @@ export class SequenceBuilder implements ISequenceBuilder {
     }
 
     if(phrase.sounds) {
-      for(const [k,s] of phrase.sounds) {
+      for(const [soundKey,s] of phrase.sounds) {
         for(const [eventIndex,e] of s.events) {
 
           let values = new Map<string,EventValue>();
           if(e.values) {
-            for(const [k,v] of e.values) {
+            for(const [valueKey,v] of e.values) {
               if(typeof v != 'string') {
                 throw new Error('unsupported event value type');
               }
-              values.set(k,v);
+              values.set(valueKey,v);
             }
           }
           if(e.frequency) {
@@ -169,6 +169,7 @@ export class SequenceBuilder implements ISequenceBuilder {
             endTime = endTime + phraseDuration * factor
           }
           events.push({
+            instrument: soundKey,
             startTimeMs: startTime,
             durationMs: endTime - startTime,
             values: values
