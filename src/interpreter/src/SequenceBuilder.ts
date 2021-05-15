@@ -1,10 +1,12 @@
 import {ISequenceBuilder} from './ISequenceBuilder'
 import {Sequence, SequenceEvent, EventValue} from './Sequence'
-import {PieceTree, Phrase, ExpressionInput, Expression} from './PieceTree'
+import {PieceTree, Phrase, ExpressionInput, Expression, Pitch} from './PieceTree'
 import * as Evaluator from './Evaluator.js'
+import * as _ from 'lodash'
 
 interface Context {
   contextLength: number;
+  pitch?: Pitch
 }
 
 export class SequenceBuilder implements ISequenceBuilder {
@@ -56,7 +58,34 @@ export class SequenceBuilder implements ISequenceBuilder {
     throw new Error('unsupported offset format');
   }
 
-  
+  private getClosestValuesIndex(array: number[], value: number): [number,number] {
+    let lo = -1, hi = array.length;
+    while (hi - lo > 1) {
+        var mid = Math.round((lo + hi)/2);
+        if (array[mid] <= value) {
+            lo = mid;
+        } else {
+            hi = mid;
+        }
+    }
+    if (array[lo] == value) hi = lo;
+    return [lo, hi];
+  }
+
+  private frequencyFromPitch(pitchContext: Pitch, value: string): number {
+    let pitchOffset = Evaluator.evaluate(value, [Evaluator.ToInteger]);
+    
+    if(pitchContext.zone == null || pitchContext.grid == null) {
+      throw new Error('no pitch context defined');
+    }
+    let closest = this.getClosestValuesIndex(pitchContext.grid, pitchContext.zone);
+    let index = closest[0] + pitchOffset;
+    if(index < 0 || index >= pitchContext.grid.length) {
+      throw new Error('pitch offset out of range');
+    }
+
+    return pitchContext.grid[index];
+  }
 
   // return endTime
   private evalPhrase(phrase: Phrase, context: Context, totalPhrases: number, phraseStartTime: number, events: SequenceEvent[]): number {
@@ -72,7 +101,7 @@ export class SequenceBuilder implements ISequenceBuilder {
       this._relativeBeatLength = context.contextLength;
     }
     if(phrase.pitch) {
-      throw new Error('pitch is not supported');
+      context.pitch = phrase.pitch;
     }
     if(phrase.branches) {
       throw new Error('branches are not supported');
@@ -117,8 +146,9 @@ export class SequenceBuilder implements ISequenceBuilder {
             let frequency: number;
             switch(e.frequency.type) {
               case 'pitch':
-                throw new Error('pitch events is not supported');
-              case 'note':
+                frequency = this.frequencyFromPitch(context.pitch, e.frequency.value);
+                break;
+                case 'note':
                 frequency = Evaluator.evaluate(e.frequency.value, [Evaluator.NoteToFrequency]);
                 break;
               case 'frequency':

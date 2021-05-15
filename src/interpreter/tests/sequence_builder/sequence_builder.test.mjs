@@ -96,37 +96,49 @@ describe("sequence builder", function() {
     expect(sequence.events[1].durationMs).toBeCloseTo(300);
   });
 
-  it('lengthtest', function () {
+  it('pitch', function () {
     let tree = {};
-    const phrase = {
-      phraseLength: '1/2',
-      sounds: new Map([
-        [
-          'saw_synth', 
-          {
-            events: new Map([[0, 
-              {
-                frequency: {type: 'frequency', value: '440'}
-              }]])
-          }
-          
-        ]
-      ])
-    };
     tree.rootPhrase = {
       tempo: '120bpm',
       beat: true,
+      pitch: {
+        grid: [50, 100, 200, 300, 400],
+        zone: 260
+      },
       phrases: [
-        phrase,phrase,phrase
-      ],
-      totalPhrases: 2,
+        {
+          sounds: new Map([
+            [
+              'saw_synth', 
+              {
+                events: new Map(
+                  [
+                    [
+                      0, 
+                      {
+                        frequency: {type: 'pitch', value: '2'}
+                      }
+                    ],
+                    [
+                      1, 
+                      {
+                        frequency: {type: 'pitch', value: '-1'}
+                      }
+                    ]
+                  ])
+              }
+              
+            ]
+          ])
+        }
+      ]
     };
     let sequenceBuilder = new SequenceBuilder();
     let sequence = sequenceBuilder.build(tree);
     expect(sequence.events.length).toEqual(2);
-    expect(sequence.events[0].startTimeMs).toBeCloseTo(0);
-    expect(sequence.events[0].durationMs).toBeCloseTo(250);
-    expect(sequence.events[1].startTimeMs).toBeCloseTo(250);
-    expect(sequence.events[1].durationMs).toBeCloseTo(250);
+    expect(sequence.events[0].values.has('frequency')).toBeTrue();
+    expect(sequence.events[0].values.get('frequency')).toBeCloseTo(400);
+    expect(sequence.events[1].values.has('frequency')).toBeTrue();
+    expect(sequence.events[1].values.get('frequency')).toBeCloseTo(100);
   });
 });

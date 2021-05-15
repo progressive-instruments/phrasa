@@ -44,10 +44,11 @@ function midiInHertz (noteNumber: number) {
   return 440 * Math.pow(2.0, (noteNumber - 69) / 12.0);
 }
 
+const noteToValue = {c:0,d:2,e:4,f:5,g:7,a:9,b:11};
+
 export const NoteToFrequency: RegexEvaluator<number> =  {
   expression: /([a-zA-Z])(#*|b*)(-?\d)/,
   evaluate(matches) {
-    const noteToValue = {c:0,d:2,e:4,f:5,g:7,a:9,b:11};
     let res : number;
     res = noteToValue[matches[1].toLowerCase()]
 
@@ -63,7 +64,52 @@ export const NoteToFrequency: RegexEvaluator<number> =  {
   }
 }
 
+function positiveModulo(num: number,mod: number) {
+  return ((num%mod)+mod)%mod;
+};
+
+
+function buildGrid(gridBase: readonly number[], key: string, sig?: string): number[] {
+  let shift = noteToValue[key.toLowerCase()]
+  if(sig == '#') {
+    shift++
+  } else if(sig =='b') {
+    shift--
+  }
+  const shiftedGrid = gridBase.map(note => positiveModulo(note+shift,12)).sort();
+  
+  let frequencyGrid: number[] = [];
+  for(let i = 0 ; i < 10 ; ++i) {
+    frequencyGrid.push(...shiftedGrid.map(note => midiInHertz(note + 12*i)));
+  }
+  return frequencyGrid;
+}
+
+export const ChordToGrid: RegexEvaluator<number[]> =  {
+  expression: /^([a-g])(b|#)?-(min|maj)$/i,
+  evaluate(matches) {
+    const gridBase = matches[3].toLowerCase() == 'maj' ? [0,4,7] : [0,3,7]
+    return buildGrid(gridBase, matches[1], matches[2]);
+
+  }
+}
+
+export const ScaleToGrid: RegexEvaluator<number[]> =  {
+  expression: /^([a-g])(b|#)?-(min|maj)$/i,
+  evaluate(matches) {
+    const gridBase = matches[3].toLowerCase() == 'maj' ? [0,2,4,5,7,9,11] : [0,2,4,5,7,9,11]
+    return buildGrid(gridBase, matches[1], matches[2]);
+  }
+}
+
 export const ToInteger: RegexEvaluator<number> =  {
+  expression: /^-?\d+$/,
+  evaluate(matches) {
+    return parseInt(matches[0]);
+  }
+}
+
+export const ToUnsignedInteger: RegexEvaluator<number> =  {
   expression: /^\d+$/,
   evaluate(matches) {
     return parseInt(matches[0]);

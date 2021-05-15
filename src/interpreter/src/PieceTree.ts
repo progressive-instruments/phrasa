@@ -28,14 +28,10 @@ export class Expression {
 
 export type ExpressionInputItem = ((string | Variable | Expression | ArithmeticExpression) & TextLocation);  
 export type ExpressionInput = ExpressionInputItem[] | ExpressionInputItem;   
-export interface PitchGrid {
-  root: number; // frequency
-  octaveGrid: number[] // array of 0-11
-}
 
 export class Pitch {
-  grid: PitchGrid[];
-  zone: number; // frequency
+  grid?: number[]; // guaranteed to be sorted
+  zone?: number; // frequency
 }
 export interface Phrase {
   pitch?: Pitch;

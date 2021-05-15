@@ -71,4 +71,21 @@ describe("tree builder", function() {
     expect(events.get(0).values.get('cutoff')).toEqual("80%");
     expect(events.get(0).values.get('attack')).toEqual("90%");
   });
+
+  it('pitchtest', function () {
+    let treeBuilder = new TreeBuilder();
+    let tree = treeBuilder.build(new TextContent("bla", "tests/tree_builder/pitch_test"), null ,null)
+    let root = tree.rootPhrase;
+    expect(root.pitch.zone).toBeCloseTo(293.66);
+    expect(root.pitch.grid[14]).toBeCloseTo(196);
+    expect(root.pitch.grid[15]).toBeCloseTo(261.63);
+    expect(root.pitch.grid[16]).toBeCloseTo(329.63);
+    expect(root.pitch.grid[17]).toBeCloseTo(392);
+    let events = root.phrases[0].sounds.get('saw_synth').events
+    expect(events.get(0).frequency.type).toEqual("pitch");
+    expect(events.get(0).frequency.value).toEqual("2");
+    events = root.phrases[1].sounds.get('saw_synth').events
+    expect(events.get(0).frequency.type).toEqual("pitch");
+    expect(events.get(0).frequency.value).toEqual("-1");
+  });
 });

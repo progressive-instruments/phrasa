@@ -1,6 +1,6 @@
 {
   "name": "phrasa",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "author": "Erez Blumenstock",
   "repository": {
     "url": "https://github.com/progressive-instruments/phrasa",
@@ -9,7 +9,9 @@
   },
   "license": "MIT",
   "dependencies": {
-    "antlr4": "^4.9.2"
+    "@types/lodash": "^4.14.168",
+    "antlr4": "^4.9.2",
+    "lodash": "^4.17.21"
   },
   "devDependencies": {
     "@babel/cli": "^7.13.16",
