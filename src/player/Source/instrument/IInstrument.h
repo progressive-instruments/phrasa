@@ -3,6 +3,7 @@
 #include <vector>
 #include <cstdint>
 #include "Event.h"
+#include "Sequence.h"
 #include "AudioBuffer.h"
 #include "SequenceTrack.h"
 
@@ -40,7 +41,7 @@ public:
 	 * @brief Set new sequence to be owned by instrument
 	 * @param sequence 
 	*/
-	virtual void setSequence(std::unique_ptr<Sequence>& sequence)=0;
+	virtual void setSequence(std::unique_ptr<Sequence<std::shared_ptr<Event>>>& sequence)=0;
 };
 
 }

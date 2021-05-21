@@ -22,7 +22,7 @@ public:
 	{}
 
 	// IPlayer
-	virtual void setSequence(UniqueSequenceMap sequenceMap, SequenceTime endTime) override;
+	virtual void setSequence(UniqueSequenceMap<std::shared_ptr<Event>> sequenceMap, SequenceTime endTime) override;
 
 	// IPlayerAudioProcessor
 	virtual void prepareForProcessing(double sampleRate, size_t expectedBlockSize) override;
@@ -31,7 +31,7 @@ public:
 private:
 	struct ProcessorMessage
 	{
-		UniqueSequenceMap newSequenceMap;
+		UniqueSequenceMap<std::shared_ptr<Event>> newSequenceMap;
 		std::optional<SequenceTime> newEndTime;
 	};
 

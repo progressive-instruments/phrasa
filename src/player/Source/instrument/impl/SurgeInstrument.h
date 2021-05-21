@@ -22,8 +22,8 @@ public:
 private:
     int m_blockPos;
     double m_sampleTimeMs;
-    SequenceProcessor m_sequenceProcessor;
-    EventHolder m_eventPool;
+    SequenceProcessor<std::shared_ptr<Event>> m_sequenceProcessor;
+    EventHolder<std::shared_ptr<Event>> m_eventPool;
 	std::unique_ptr<SurgeSynthesizer> m_surge;
 
 
@@ -37,40 +37,29 @@ private:
         return std::round(log(freq / 440.0) / log(2) * 12 + 69);
     }
 
+
+
 	virtual void processBlock(audio::AudioBuffer& buffer, const SequenceTrack& track) override {
-        m_sequenceProcessor.setSequenceTrack(track);
-
-        while (true) {
-            auto event = m_sequenceProcessor.getNextEvent();
-            if (!event.has_value()) {
-                break;
-            }
-
-            // put this after
-            int sample = event->relativeTime.getMilliSeconds() / m_sampleTimeMs;
-            if (event->event->values.count("frequency")) {
-                auto midi = getMidiNote(event->event->values["frequency"]->getValue());
+        m_sequenceProcessor.consume(track, [this](auto event) {
+            int sample = event.relativeTime.getMilliSeconds() / m_sampleTimeMs;
+            if (event.event->values.count("frequency")) {
+                auto midi = getMidiNote(event.event->values["frequency"]->getValue());
                 if (midi >= 0) {
 
                     m_surge->playNote(1, midi, 127, 0);
-                    m_eventPool.addEvent(event->event, event->relativeTime);
+                    m_eventPool.addEvent(event.event, event.relativeTime + event.event->duration);
                 }
             }
-
-        }
-        m_eventPool.advance(track.Duration);
-        while (true) {
-            auto event = m_eventPool.getNextEvent();
-            if (!event.has_value()) {
-                break;
-            }
-            if (event->event->values.count("frequency")) {
-                int sample = event->relativeTime.getMilliSeconds() / m_sampleTimeMs;
-                auto midi = getMidiNote(event->event->values["frequency"]->getValue());
+        });
+        
+        m_eventPool.consume(track.Duration, [this](auto event) {
+            if (event.event->values.count("frequency")) {
+                int sample = event.relativeTime.getMilliSeconds() / m_sampleTimeMs;
+                auto midi = getMidiNote(event.event->values["frequency"]->getValue());
                 m_surge->releaseNote(1, midi, 127);
             }
+        });
 
-        }
         auto data = buffer.getWriteData();
         for (int i = 0; i < buffer.getNumSamples(); i++)
         {
@@ -88,7 +77,7 @@ private:
 	virtual void processingEnded() override {
 	}
 
-	virtual void setSequence(std::unique_ptr<Sequence>& sequence) override {
+	virtual void setSequence(std::unique_ptr<Sequence<std::shared_ptr<Event>>>& sequence) override {
         m_sequenceProcessor.setSequence(sequence);
 	}
 

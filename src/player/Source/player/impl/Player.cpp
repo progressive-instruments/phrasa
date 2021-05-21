@@ -64,7 +64,7 @@ inline void Player::Processor::processingEnded()
 
 
 
-void Player::setSequence(UniqueSequenceMap sequenceMap, SequenceTime endTime)
+void Player::setSequence(UniqueSequenceMap<std::shared_ptr<Event>> sequenceMap, SequenceTime endTime)
 {
 	auto msg = std::make_unique<ProcessorMessage>();
 	msg->newSequenceMap = std::move(sequenceMap);

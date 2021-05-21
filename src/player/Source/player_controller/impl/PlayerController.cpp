@@ -25,9 +25,9 @@ private:
     double m_value;
 };
 
-void PlayerController::parseSetSequenceMessage(const shift_processor::SetSequenceMessage& msg, UniqueSequenceMap& sequenceMapOutput, SequenceTime& sequenceLengthOut) {
+void PlayerController::parseSetSequenceMessage(const shift_processor::SetSequenceMessage& msg, UniqueSequenceMap<std::shared_ptr<Event>>& sequenceMapOutput, SequenceTime& sequenceLengthOut) {
 
-    sequenceMapOutput.reset(new std::map<InstrumentID, std::unique_ptr<Sequence>>());
+    sequenceMapOutput.reset(new std::map<InstrumentID, std::unique_ptr<Sequence<std::shared_ptr<Event>>>>());
     for (auto instrumentEvents : msg.instrumentevents()) {
         const std::string& instrumentID = instrumentEvents.instrument();
         for (auto e : instrumentEvents.events()) {
@@ -41,7 +41,7 @@ void PlayerController::parseSetSequenceMessage(const shift_processor::SetSequenc
                     new EventValue(val.second.numericvalue()));;
             }
             if (sequenceMapOutput->count(instrumentID) == 0) {
-                (*sequenceMapOutput)[instrumentID] = std::make_unique<Sequence>();
+                (*sequenceMapOutput)[instrumentID] = std::make_unique<Sequence<std::shared_ptr<Event>>>();
             }
             (*sequenceMapOutput)[instrumentID]->events.insert({ SequenceTime::FromMilliseconds(e.eventtime()), outputEvent });
 
@@ -74,7 +74,7 @@ void phrasa::playerctrl::impl::PlayerController::communicationRoutine(PlayerCont
                 if (message.message_case() != shift_processor::ShiftPlayerMessage::MessageCase::kSetSequence) {
                     throw std::runtime_error("unsupported message type");
                 }
-                UniqueSequenceMap sequenceMap;
+                UniqueSequenceMap<std::shared_ptr<Event>> sequenceMap;
                 SequenceTime sequenceLength;
                 controller->parseSetSequenceMessage(message.setsequence(), sequenceMap, sequenceLength);
 

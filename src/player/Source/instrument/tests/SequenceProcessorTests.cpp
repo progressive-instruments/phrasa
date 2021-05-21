@@ -11,11 +11,11 @@ using namespace phrasa::instrument::impl;
 using namespace std::chrono_literals;
 
 TEST(SequenceProcessor, Construct) {
-	SequenceProcessor processor;
+	SequenceProcessor<std::shared_ptr<Event>> processor;
 	ASSERT_FALSE(processor.getNextEvent().has_value());
 }
 
-void assertEvent(SequenceProcessor& processor , SequenceTime expectedTime, std::shared_ptr<Event> expectedEvent) {
+void assertEvent(SequenceProcessor<std::shared_ptr<Event>>& processor , SequenceTime expectedTime, std::shared_ptr<Event> expectedEvent) {
 	auto resEvent = processor.getNextEvent();
 	ASSERT_TRUE(resEvent.has_value());
 	ASSERT_TRUE(resEvent->event == expectedEvent);
@@ -26,10 +26,10 @@ void assertEvent(SequenceProcessor& processor , SequenceTime expectedTime, std::
 TEST(SequenceProcessor, OneEvent) {
 	auto firstEvent = std::make_pair(SequenceTime(80us), std::make_shared<Event>(phrasa::SequenceTime()));
 
-	std::unique_ptr<Sequence> seq(new Sequence());
+	std::unique_ptr<Sequence<std::shared_ptr<Event>>> seq(new Sequence<std::shared_ptr<Event>>());
 	seq->events.insert(firstEvent);
 
-	SequenceProcessor processor;
+	SequenceProcessor<std::shared_ptr<Event>> processor;
 	processor.setSequence(seq);
 
 	SequenceTrack track;
@@ -60,11 +60,11 @@ TEST(SequenceProcessor, ZeroEvent) {
 	auto firstEvent = std::make_pair(SequenceTime(0us), std::make_shared<Event>(phrasa::SequenceTime()));
 	auto secondEvent = std::make_pair(SequenceTime(1000us), std::make_shared<Event>(phrasa::SequenceTime()));
 
-	std::unique_ptr<Sequence> seq(new Sequence());
+	std::unique_ptr<Sequence<std::shared_ptr<Event>>> seq(new Sequence<std::shared_ptr<Event>>());
 	seq->events.insert(firstEvent);
 	seq->events.insert(secondEvent);
 
-	SequenceProcessor processor;
+	SequenceProcessor<std::shared_ptr<Event>> processor;
 	processor.setSequence(seq);
 
 	SequenceTrack track;
@@ -101,12 +101,12 @@ TEST(SequenceProcessor, Processing) {
 	auto secondEvent = std::make_pair(SequenceTime(1200us), std::make_shared<Event>(phrasa::SequenceTime()));
 	auto thirdEvent = std::make_pair(SequenceTime(1400us),std::make_shared<Event>(phrasa::SequenceTime()));
 	
-	std::unique_ptr<Sequence> seq (new Sequence());
+	std::unique_ptr<Sequence<std::shared_ptr<Event>>> seq (new Sequence<std::shared_ptr<Event>>());
 	seq->events.insert(thirdEvent);
 	seq->events.insert(firstEvent);
 	seq->events.insert(secondEvent);
 
-	SequenceProcessor processor;
+	SequenceProcessor<std::shared_ptr<Event>> processor;
 	processor.setSequence(seq);
 	
 	ASSERT_FALSE(processor.getNextEvent().has_value());
@@ -144,15 +144,15 @@ TEST(SequenceProcessor, Processing) {
 }
 
 TEST(EventHolder, Construct) {
-	EventHolder holder;
+	EventHolder<std::shared_ptr<Event>> holder;
 	ASSERT_FALSE(holder.getNextEvent().has_value());
 }
 
 TEST(EventHolder, Process) {
-	EventHolder holder;
+	EventHolder<std::shared_ptr<Event>> holder;
 	SequenceTime time = 100us;
 	auto ev = std::make_shared<Event>(phrasa::SequenceTime(150us));
-	holder.addEvent(ev);
+	holder.addEvent(ev, ev->duration);
 	holder.advance(time);
 	ASSERT_FALSE(holder.getNextEvent().has_value());
 	holder.advance(time);

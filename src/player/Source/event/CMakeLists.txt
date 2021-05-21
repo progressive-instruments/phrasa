@@ -5,6 +5,7 @@ set_property(TARGET event PROPERTY CXX_STANDARD 17)
 target_sources( event
   PRIVATE
     Event.h 
+    Sequence.h
     IEventValue.h
     ShiftTime.h)
 

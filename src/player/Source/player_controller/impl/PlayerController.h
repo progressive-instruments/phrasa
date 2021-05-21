@@ -16,7 +16,7 @@ public:
 	PlayerController(std::shared_ptr<player::IPlayer> player, std::shared_ptr<connection::IConnection> connection);
 
 private:
-	void PlayerController::parseSetSequenceMessage(const shift_processor::SetSequenceMessage& msg, UniqueSequenceMap& sequenceOutput, SequenceTime& sequenceLengthOut);
+	void PlayerController::parseSetSequenceMessage(const shift_processor::SetSequenceMessage& msg, UniqueSequenceMap<std::shared_ptr<Event>>& sequenceOutput, SequenceTime& sequenceLengthOut);
 
 	static void communicationRoutine(PlayerController* communication);
 

@@ -1,29 +1,29 @@
 #pragma once
 
-#include <memory>
-
-#include "SequenceTrack.h"
 #include "Event.h"
+#include "SequenceTrack.h"
+#include "Sequence.h"
 #include <optional>
 
 using namespace std::literals::chrono_literals;
 
 namespace phrasa::instrument::impl {
 
-typedef std::multimap<SequenceTime,std::shared_ptr<Event>>::const_iterator EventMapIterator;
+template <typename T>
+using EventMapIterator = typename std::multimap<SequenceTime,T>::const_iterator;
 
-
+template<class T>
 struct RelativeEvent {
 
-	RelativeEvent(std::shared_ptr<Event> event, SequenceTime relativeTime)
+	RelativeEvent(T event, SequenceTime relativeTime)
 		:event(event),
 		relativeTime(relativeTime)
 	{}
 	SequenceTime relativeTime;
-	std::shared_ptr<Event> event;
-
+	T event;
 };
 
+template<class T>
 class EventHolder {
 public:
 	void advance(SequenceTime time)
@@ -38,66 +38,132 @@ public:
 		}
 	}
 
-	void addEvent(std::shared_ptr<Event> event, SequenceTime startOffsetTime = std::chrono::microseconds(0))
+	void addEvent(T event, SequenceTime startOffsetTime = std::chrono::microseconds(0))
 	{
-		SequenceTime time = startOffsetTime + event->duration + m_currentTime;
+		SequenceTime time = startOffsetTime + m_currentTime;
 		m_pool.insert({ time, event });
 	}
 
-	std::optional<RelativeEvent> getNextEvent(bool includeFutureEvents = false) {
-		if (m_pool.begin() == m_pool.end() || 
-			(!includeFutureEvents && 
+	/**
+	 * @brief Consume all left events in current time frame.
+	 * @tparam Consumer
+	 * @param consumer
+	*/
+	template<class Consumer>
+	void consume(Consumer consumer) {
+		auto event = getNextEvent();
+		while (event.has_value()) {
+			consumer((RelativeEvent<T>&)event.value());
+			event = getNextEvent();
+		}
+	}
+
+	/**
+	 * @brief Set new time and consume all new events.
+	 * @tparam Consumer
+	 * @param consumer
+	 * @param sequenceTrack
+	*/
+	template<class Consumer>
+	void consume(SequenceTime sequenceTime, Consumer consumer) {
+		advance(sequenceTime);
+		consume(consumer);
+	}
+
+	std::optional<RelativeEvent<T>> getNextEvent(bool includeFutureEvents = false) {
+		if (m_pool.begin() == m_pool.end() ||
+			(!includeFutureEvents &&
 				m_pool.begin()->first > m_currentTime)) {
 			return std::nullopt;
 		}
 
-		auto res = RelativeEvent(m_pool.begin()->second, m_pool.begin()->first - m_prevTime);
+		auto res = RelativeEvent<T>(m_pool.begin()->second, m_pool.begin()->first - m_prevTime);
 		m_pool.erase(m_pool.begin());
 		return res;
 	}
-	
+
 private:
 	SequenceTime m_prevTime;
 	SequenceTime m_currentTime;
-	std::multimap<SequenceTime, std::shared_ptr<Event>> m_pool;
+	std::multimap<SequenceTime, T> m_pool;
 };
-
 
 /**
  * @brief Synchronous handling
 */
+template<class T>
 class SequenceProcessor
 {
 	
 public:
 	SequenceProcessor(bool addOffEvents = true) 
 		:
-		 m_sequence(new Sequence()),
+		 m_sequence(new Sequence<T>()),
 		m_nextEventItr(m_sequence->events.cend())
 	{}
 
-	void setSequence(std::unique_ptr<Sequence>& sequence)
+	/**
+	 * @brief Set new sequence.
+	 * @param sequence 
+	*/
+	void setSequence(std::unique_ptr<Sequence<T>>& sequence)
 	{
 		m_sequence = std::move(sequence);
 		sequenceChanged = true;
 	}
 
+	/**
+	 * @brief Consume all left events in current sequence track.
+	 * @tparam Consumer 
+	 * @param consumer 
+	*/
+	template<class Consumer>
+	void consume(Consumer consumer) {
+		auto event = getNextEvent();
+		while (event.has_value()) {
+			consumer((RelativeEvent<T>&)event.value());
+			event = getNextEvent();
+		}
+	}
+
+	/**
+	 * @brief Set new sequence track and consume all new events.
+	 * @tparam Consumer 
+	 * @param consumer 
+	 * @param sequenceTrack 
+	*/
+	template<class Consumer>
+	void consume(const SequenceTrack& sequenceTrack, Consumer consumer) {
+		setSequenceTrack(sequenceTrack);
+		consume(consumer);
+	}
+
+	/**
+	 * @brief set new sequence track 
+	 * @param sequenceTrack 
+	*/
 	void setSequenceTrack(const SequenceTrack& sequenceTrack) {
-		
+
 		if (sequenceChanged || sequenceTrack.Time != m_track.expectedNextTime())
 		{
 			m_nextEventItr = findNextEvent(sequenceTrack.Time);
 			sequenceChanged = false;
-		} else {
-			while (getNextEvent().has_value()) 
-			{}
+		}
+		else {
+			while (getNextEvent().has_value())
+			{
+			}
 		}
 		m_track = sequenceTrack;
 		m_currentTime = m_track.Time;
 		m_durationLeft = m_track.Duration;
 	}
 
-	std::optional<RelativeEvent> getNextEvent()
+	/**
+	 * @brief get next event in current sequence track.
+	 * @return next event or null if none.
+	*/
+	std::optional<RelativeEvent<T>> getNextEvent()
 	{
 		if (m_track.SequenceLength == SequenceTime(0us)) {
 			return std::nullopt;
@@ -113,15 +179,15 @@ public:
 		}
 		m_durationLeft -= distanceFromCurrent;
 		m_currentTime = m_nextEventItr->first;
-		
-		RelativeEvent res(m_nextEventItr->second, m_track.Duration - m_durationLeft);
+
+		RelativeEvent<T> res(m_nextEventItr->second, m_track.Duration - m_durationLeft);
 		++m_nextEventItr;
 		return res;
 	}
 
 private:
 
-	EventMapIterator findNextEvent(SequenceTime time) {
+	EventMapIterator<T> findNextEvent(SequenceTime time) {
 		auto res = m_sequence->events.upper_bound(time);
 		if (res == m_sequence->events.begin()) {
 			return res;
@@ -150,11 +216,11 @@ private:
 		return END_ITR_PASSED;
 	}
 
-	std::unique_ptr<phrasa::Sequence> m_sequence;
+	std::unique_ptr<phrasa::Sequence<T>> m_sequence;
 	bool sequenceChanged;
 
 	SequenceTrack m_track;
-	EventMapIterator m_nextEventItr;
+	EventMapIterator<T> m_nextEventItr;
 	SequenceTime m_currentTime;
 	SequenceTime m_durationLeft;
 };

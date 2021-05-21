@@ -6,6 +6,7 @@
 #include "IInstrument.h"
 #include "SequenceProcessor.h"
 
+
 namespace phrasa::instrument::impl {
 
 struct SineWaveSound : public juce::SynthesiserSound
@@ -133,7 +134,7 @@ struct SineSynth : public phrasa::instrument::IInstrument
         m_sampleTimeMs = 1.0 / sampleRate / 1000;
     }
 
-    virtual void setSequence(std::unique_ptr<phrasa::Sequence>& sequence)
+    virtual void setSequence(std::unique_ptr<phrasa::Sequence<std::shared_ptr<Event>>>& sequence)
     {
         m_sequenceProcessor.setSequence(sequence);
     }
@@ -152,43 +153,34 @@ struct SineSynth : public phrasa::instrument::IInstrument
         juceBuff.clear();
 
         juce::MidiBuffer incomingMidi;
-        m_sequenceProcessor.setSequenceTrack(track);
-        
-        while (true) {
-            auto event = m_sequenceProcessor.getNextEvent();
-            if (!event.has_value()) {
-                break;
-            }
-                
-            int sample = event->relativeTime.getMilliSeconds() / m_sampleTimeMs;
-            if (event->event->values.count("frequency")) {
-                auto midi = getMidiNote(event->event->values["frequency"]->getValue());
+        m_sequenceProcessor.consume(track,[this, &incomingMidi](auto event) {
+            int sample = event.relativeTime.getMilliSeconds() / m_sampleTimeMs;
+            if (event.event->values.count("frequency")) {
+                auto midi = getMidiNote(event.event->values["frequency"]->getValue());
                 if (midi >= 0) {
                     incomingMidi.addEvent(juce::MidiMessage::noteOn(1, midi, (juce::uint8)127), sample);
-                    m_eventPool.addEvent(event->event, event->relativeTime);
+                    m_eventPool.addEvent(event.event, event.relativeTime + event.event->duration);
                 }
             }
-        }
+        });
+        
 
-        m_eventPool.advance(track.Duration);
-        while (true) {
-            auto event = m_eventPool.getNextEvent();
-            if (!event.has_value()) {
-                break;
-            }
-            if (event->event->values.count("frequency")) {
-                int sample = event->relativeTime.getMilliSeconds() / m_sampleTimeMs;
-                auto midi = getMidiNote(event->event->values["frequency"]->getValue());
+
+        m_eventPool.consume(track.Duration, [this,&incomingMidi](auto event) {
+            if (event.event->values.count("frequency")) {
+                int sample = event.relativeTime.getMilliSeconds() / m_sampleTimeMs;
+                auto midi = getMidiNote(event.event->values["frequency"]->getValue());
                 incomingMidi.addEvent(juce::MidiMessage::noteOff(1, midi), sample);
             }
-        }
+        });
+
         synth.renderNextBlock(juceBuff, incomingMidi, 0, buffer.getNumSamples());
     }
 
     double m_sampleTimeMs;
     juce::Synthesiser synth;
-    SequenceProcessor m_sequenceProcessor;
-    EventHolder m_eventPool;
+    SequenceProcessor<std::shared_ptr<Event>> m_sequenceProcessor;
+    EventHolder<std::shared_ptr<Event>> m_eventPool;
 };
 
 
