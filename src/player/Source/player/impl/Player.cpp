@@ -53,6 +53,7 @@ inline void Player::Processor::processBlock(audio::AudioBuffer& buffer)
 		itr->second->processBlock(m_managedBuffer, m_track);
 		AudioBufferOperations::add(m_managedBuffer, buffer);
 	}
+	AudioBufferOperations::gain(buffer, 0.4);
 }
 
 inline void Player::Processor::processingEnded()

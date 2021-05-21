@@ -14,6 +14,12 @@ public:
 		}
 	}
 
+	inline static void gain(audio::AudioBuffer& dest, float factor) {
+		for (int i = 0; i < dest.getNumChannels(); ++i) {
+			juce::FloatVectorOperations::multiply(dest.getWriteData()[i], factor, dest.getNumSamples());
+		}
+	}
+
 	inline static void add(const audio::AudioBuffer& src, audio::AudioBuffer& dest) {
 		validateEqual(src, dest);
 		for (int i = 0; i < src.getNumChannels(); ++i) {
