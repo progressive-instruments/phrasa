@@ -131,7 +131,7 @@ struct SineSynth : public phrasa::instrument::IInstrument
     void prepareForProcessing(double sampleRate, size_t expectedBlockSize) override
     {
         synth.setCurrentPlaybackSampleRate(sampleRate);
-        m_sampleTimeMs = 1.0 / sampleRate / 1000;
+        m_sampleTimeMs = 1.0 / sampleRate * 1000;
     }
 
     virtual void setSequence(std::unique_ptr<phrasa::Sequence<std::shared_ptr<Event>>>& sequence)
