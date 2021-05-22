@@ -85,6 +85,10 @@ private:
         m_sequenceProcessor.setSequence(sequence);
 	}
 
+    virtual void clearSequence() {
+        m_sequenceProcessor.clearSequence();
+    }
+
 };
 
 }

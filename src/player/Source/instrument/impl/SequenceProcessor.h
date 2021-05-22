@@ -36,12 +36,14 @@ public:
 		else {
 			m_currentTime += time;
 		}
+		m_pool.reserve(128);
 	}
 
 	void addEvent(T event, SequenceTime startOffsetTime = std::chrono::microseconds(0))
 	{
 		SequenceTime time = startOffsetTime + m_currentTime;
-		m_pool.insert({ time, event });
+		m_pool.push_back(std::make_pair(time, event));
+		std::sort(m_pool.begin(), m_pool.end(), [](auto a, auto b) {return a.first > b.first;});
 	}
 
 	/**
@@ -73,19 +75,19 @@ public:
 	std::optional<RelativeEvent<T>> getNextEvent(bool includeFutureEvents = false) {
 		if (m_pool.begin() == m_pool.end() ||
 			(!includeFutureEvents &&
-				m_pool.begin()->first > m_currentTime)) {
+				m_pool.back().first > m_currentTime)) {
 			return std::nullopt;
 		}
 
-		auto res = RelativeEvent<T>(m_pool.begin()->second, m_pool.begin()->first - m_prevTime);
-		m_pool.erase(m_pool.begin());
+		auto res = RelativeEvent<T>(m_pool.back().second, m_pool.back().first - m_prevTime);
+		m_pool.pop_back();
 		return res;
 	}
 
 private:
 	SequenceTime m_prevTime;
 	SequenceTime m_currentTime;
-	std::multimap<SequenceTime, T> m_pool;
+	std::vector<std::pair<SequenceTime, T>> m_pool;
 };
 
 /**
@@ -97,9 +99,6 @@ class SequenceProcessor
 	
 public:
 	SequenceProcessor(bool addOffEvents = true) 
-		:
-		 m_sequence(new Sequence<T>()),
-		m_nextEventItr(m_sequence->events.cend())
 	{}
 
 	/**
@@ -109,6 +108,11 @@ public:
 	void setSequence(std::unique_ptr<Sequence<T>>& sequence)
 	{
 		m_sequence = std::move(sequence);
+		sequenceChanged = true;
+	}
+
+	void clearSequence() {
+		m_sequence = nullptr;
 		sequenceChanged = true;
 	}
 
@@ -143,7 +147,9 @@ public:
 	 * @param sequenceTrack 
 	*/
 	void setSequenceTrack(const SequenceTrack& sequenceTrack) {
-
+		if (m_sequence == nullptr) {
+			return;
+		}
 		if (sequenceChanged || sequenceTrack.Time != m_track.expectedNextTime())
 		{
 			m_nextEventItr = findNextEvent(sequenceTrack.Time);
@@ -165,7 +171,7 @@ public:
 	*/
 	std::optional<RelativeEvent<T>> getNextEvent()
 	{
-		if (m_track.SequenceLength == SequenceTime(0us)) {
+		if (m_sequence == nullptr || m_track.SequenceLength == SequenceTime(0us)) {
 			return std::nullopt;
 		}
 		while (m_nextEventItr == m_sequence->events.end()) {

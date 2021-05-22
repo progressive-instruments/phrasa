@@ -29,12 +29,12 @@ inline void Player::Processor::processBlock(audio::AudioBuffer& buffer)
 	if (m_queue.pop(msg))
 	{
 		if (msg->newSequenceMap != nullptr) {
-			for (auto itr = msg->newSequenceMap->begin(); itr != msg->newSequenceMap->end(); ++itr) {
-				if (m_instruments.count(itr->first) > 0) {
-					m_instruments[itr->first]->setSequence(itr->second);
+			for (auto itr = m_instruments.begin(); itr != m_instruments.end(); ++itr) {
+				if (msg->newSequenceMap->count(itr->first) > 0) {
+					itr->second->setSequence((*msg->newSequenceMap)[itr->first]);
 				}
 				else {
-					// instrument does not exist
+					itr->second->clearSequence();
 				}
 			}
 		}

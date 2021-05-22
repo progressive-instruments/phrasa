@@ -42,6 +42,13 @@ public:
 	 * @param sequence 
 	*/
 	virtual void setSequence(std::unique_ptr<Sequence<std::shared_ptr<Event>>>& sequence)=0;
+	
+	/**
+	 * @brief Clear sequence if exists
+	 * @param
+	*/
+	virtual void clearSequence() = 0;
+
 };
 
 }

@@ -139,6 +139,11 @@ struct SineSynth : public phrasa::instrument::IInstrument
         m_sequenceProcessor.setSequence(sequence);
     }
 
+    virtual void clearSequence()
+    {
+        m_sequenceProcessor.clearSequence();
+    }
+
 
     void processingEnded() override {
     }
