@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 
-import {PhrasaInterpreter} from '../dist/index.js'
+import {Interpreter} from '../dist/index.js'
 
 
 class TextContent {
@@ -14,7 +14,7 @@ class TextContent {
 
 describe("interpreter", function() {
   it('interpret', function () {
-    let interpreter = new PhrasaInterpreter();
+    let interpreter = new Interpreter();
     let sequence = interpreter.parseEvents(new TextContent("bla", "tests/files/interpreter_test.piece"), null ,null)
     expect(sequence.endTime).toEqual(750);
     expect(sequence.events.length).toEqual(2);

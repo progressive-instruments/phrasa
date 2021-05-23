@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import {TreeBuilder} from '../../dist/src/TreeBuilder.js'
-
+import {SequenceTrigger} from '../../dist/src/PieceTree.js'
 class TextContent {
     constructor(name,file) {
       this.name = name;
@@ -87,5 +87,30 @@ describe("tree builder", function() {
     events = root.phrases[1].sounds.get('saw_synth').events
     expect(events.get(0).frequency.type).toEqual("pitch");
     expect(events.get(0).frequency.value).toEqual("-1");
+  });
+
+  it('sequencetest', function () {
+    let treeBuilder = new TreeBuilder();
+    let tree = treeBuilder.build(new TextContent("bla", "tests/tree_builder/sequence_test"), null ,null)
+    let root = tree.rootPhrase;
+    expect(root.sequences.has('seq1')).toBeTrue();
+    expect(root.sequences.get('seq1')).toEqual(['3','2','1']);
+    expect(root.phrases[0].sequences.has('seq1')).toBeTrue();
+    expect(root.phrases[0].sequences.get('seq1')).toEqual(['4']);
+    expect(root.phrases[1].sequences.has('seq2')).toBeTrue();
+    expect(root.phrases[1].sequences.get('seq2')).toEqual(['4','erez','-1']);
+    let inst = root.sounds.get('inst1'); 
+    let val = inst.events.get(0).frequency.value;
+
+    expect(val).toBeInstanceOf(SequenceTrigger);
+    expect(val.name).toEqual('seq1');
+    expect(val.steps).toEqual(-2);
+
+    inst = root.sounds.get('inst2'); 
+    val = inst.events.get(0).frequency.value;
+
+    expect(val).toBeInstanceOf(SequenceTrigger);
+    expect(val.name).toEqual('seq2');
+    expect(val.steps).toEqual(3);
   });
 });

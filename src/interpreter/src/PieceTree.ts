@@ -50,15 +50,28 @@ export interface Sound {
   events: Map<number,PhraseEvent>
 }
 
-export interface FrequencyExpression {
-  type: 'pitch' | 'frequency' | 'note';
-  value: ExpressionInput;
+export class SequenceTrigger {
+  constructor(name: string, steps: number) {
+    this.name = name;
+    this.steps = steps;
+  }
+  name: string;
+  steps: number;
 }
 
-export type Sequence = ExpressionInput;
+export type EventValue = string | string[] | SequenceTrigger;
+export type OffsetValue = string | SequenceTrigger;
+
+export interface FrequencyExpression {
+  type: 'pitch' | 'frequency' | 'note';
+  value: EventValue;
+}
+
+export type Sequence = string[];
+
 export interface PhraseEvent {
   frequency?: FrequencyExpression;
-  values?: Map<string, ExpressionInput>
-  startOffset?: ExpressionInput
-  endOffset?: ExpressionInput
+  values?: Map<string, EventValue>
+  startOffset?: OffsetValue
+  endOffset?: OffsetValue
 }

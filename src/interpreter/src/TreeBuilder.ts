@@ -4,7 +4,7 @@ import PhrasaParser from "./generated-parser/PhrasaParser.js"
 import Listener from "./generated-parser/PhrasaListener.js"
 
 import {ITreeBuilder} from './ITreeBuilder'
-import * as Tree from './PieceTree'
+import * as Tree from './PieceTree.js'
 import {TextContent} from './TextContent'
 import { ParseTreeWalker } from 'antlr4/src/antlr4/tree/Tree.js'
 import { TerminalNode } from 'antlr4/tree/Tree'
@@ -32,9 +32,13 @@ abstract class ExpressionEvaluator {
   getInnerExprEvaulator(evaluatorSubject: string) {
     return this.getInnerAssigner(evaluatorSubject);
   }
-  setValue(value : string) {
+  setStringValue(value : string) {
     throw new Error("value assign is not supported");
   }
+  setSequenceExpression(sequence: Tree.SequenceTrigger) {
+    throw new Error("sequence trigger is not supported");
+  }
+  assignEnd() {}
 }
 
 class TempoAssigner extends ExpressionEvaluator {
@@ -42,10 +46,9 @@ class TempoAssigner extends ExpressionEvaluator {
       super();
     }
 
-    setValue(value : string) {
+    setStringValue(value : string) {
       this._phrase.tempo = value;
     }
-
 }
 
 enum PhrasaSymbol { 
@@ -72,12 +75,37 @@ enum Property {
   PitchZone = 'zone'
 }
 
-const KeyPrefixes:Map<string,Property> = new Map<string,Property>([
+const KeyPrefixes: Map<string,Property> = new Map<string,Property>([
   ['>', Property.Phrases],
   ['$', Property.Sequences],
   ['&', Property.Branches]
 ])
 
+function splitAssignKey(path: string) : string[] {
+  let res: string[] = [];
+  for(let key of path.split('.')) {
+
+      let prefix = key.charAt(0);
+      if(KeyPrefixes.has(key.charAt(0))) {
+        key = key.slice(1);
+        res.push(KeyPrefixes.get(prefix));
+      }
+
+      res.push(key);
+
+      let postfixMatch = key.match(EventsPostifxRegex);
+      if(postfixMatch) {
+        res[res.length-1] = postfixMatch[1];
+        if(postfixMatch[2]) {
+          res.push(Property.Events)
+          res.push(postfixMatch[2]);
+        } else {
+          res.push(Property.Event);
+        }
+      }
+    }
+    return res;
+}
 
 
 class SelectorAssigner extends ExpressionEvaluator {
@@ -104,7 +132,7 @@ class ChordEvaluator extends ExpressionEvaluator {
   constructor(private _pitch: Tree.Pitch) {
     super();
   }
-  setValue(value: string) {
+  setStringValue(value: string) {
     this._pitch.grid = ValueEvaluator.evaluate(value,[ValueEvaluator.ChordToGrid])
   }
 }
@@ -113,7 +141,7 @@ class ScaleEvaluator extends ExpressionEvaluator {
   constructor(private _pitch: Tree.Pitch) {
     super();
   }
-  setValue(value: string) {
+  setStringValue(value: string) {
     this._pitch.grid = ValueEvaluator.evaluate(value,[ValueEvaluator.ScaleToGrid])
   }
 }
@@ -131,7 +159,7 @@ class PitchGridAssigner extends ExpressionEvaluator {
     return super.getInnerAssigner(assigner);
   }
 
-  setValue(value: string) {
+  setStringValue(value: string) {
     this._pitch.grid = ValueEvaluator.evaluate(value,[ValueEvaluator.ScaleToGrid])
   }
 }
@@ -141,7 +169,7 @@ class PitchZoneAssigner extends ExpressionEvaluator {
     super();
   }
 
-  setValue(value: string) {
+  setStringValue(value: string) {
     this._pitch.zone = ValueEvaluator.evaluate(value,[ValueEvaluator.NoteToFrequency])
   }
 }
@@ -176,7 +204,7 @@ class PhrasesLengthAssigner extends ExpressionEvaluator {
     private _parentPhrase: ExtendedPhrase) {
     super();
   }
-  setValue(value: string) { 
+  setStringValue(value: string) { 
     const num = ValueEvaluator.evaluate(value, [ValueEvaluator.ToUnsignedInteger]);
     for(let i = this._parentPhrase.phrases.length ; i < num ; ++i) {
       this._parentPhrase.phrases.push(JSON.parse(JSON.stringify(this._parentPhrase.defaultInnerPhrase)));
@@ -215,7 +243,7 @@ class LengthAssigner extends ExpressionEvaluator {
   constructor(private _phrase: ExtendedPhrase){
     super();
   }
-  setValue(value : string) {
+  setStringValue(value : string) {
     this._phrase.phraseLength = value;
   }
 }
@@ -230,9 +258,9 @@ class MultiExpressionEvaluator extends ExpressionEvaluator {
   getInnerExprEvaulator(propertyName: string) : ExpressionEvaluator {
     return new MultiExpressionEvaluator(this._assigners.map(a => a.getInnerExprEvaulator(propertyName)));
   }
-  setValue(value: string) {
+  setStringValue(value: string) {
     for(const assigner of this._assigners) {
-      assigner.setValue(value);
+      assigner.setStringValue(value);
     }
   }
 }
@@ -253,8 +281,60 @@ class SequencesAssigner extends ExpressionEvaluator {
   constructor(private _sequences: Map<string, Tree.Sequence>){
     super();
   }
+  getInnerAssigner(propertyName: string) : ExpressionEvaluator {
+    if(!this._sequences.has(propertyName)) {
+      this._sequences.set(propertyName,[]);
+    }
+    return new SequenceAssigner(this._sequences.get(propertyName));
+  }
 }
 
+class SequenceAssigner extends ExpressionEvaluator {
+  constructor(private _sequence: Tree.Sequence){
+    super();
+    _sequence.length = 0; 
+  }
+  setStringValue(value: string) {
+    this._sequence.push(value);
+  }
+}
+
+const StepsExpression = /(^\++$)|(^-+$)/
+class SequenceTriggerAssigner extends ExpressionEvaluator {
+  _name : string;
+  _steps : number;
+  constructor(private _valueAssigner: EventValueAssigner) {
+    super()
+    this._steps = 1;
+  }
+  getInnerAssigner(propertyName: string) : ExpressionEvaluator {
+    this._name = propertyName;
+    return this;
+  }
+  getInnerExprEvaulator(propertyName: string) : ExpressionEvaluator {
+    throw new Error('name of sequence trigger unspecified')
+  }
+
+  setStringValue(propertyName: string) {
+    let match = propertyName.match(StepsExpression)
+    if(!match) {
+      throw new Error('invalid sequence trigger argument');
+    }
+    this._steps = propertyName.length;
+    if(propertyName.startsWith('-')) {
+      this._steps *= -1;
+    }
+  }
+
+  assignEnd() {
+    if(this._name == undefined) {
+      throw new Error('name of sequence trigger unspecified')
+    }
+    this._valueAssigner.setSequenceExpression(new Tree.SequenceTrigger (this._name, this._steps))
+  }
+
+
+} 
 
 class EventValueAssigner extends ExpressionEvaluator {
   constructor(
@@ -262,7 +342,26 @@ class EventValueAssigner extends ExpressionEvaluator {
     private _valueKey : string){
     super();
   }
-  setValue(value: string) {
+
+  getInnerExprEvaulator(property: string): ExpressionEvaluator {
+    let keys = splitAssignKey(property);
+    if(keys.length == 1 && keys[0] == Property.Sequences) {
+      return new SequenceTriggerAssigner(this);
+    } else if(keys.length == 2 && keys[0] == Property.Sequences) {
+      return new SequenceTriggerAssigner(this).getInnerAssigner(keys[1]);
+    }
+    return super.getInnerAssigner(property);
+  }
+
+  setStringValue(value: string) {
+    this.setValue(value);
+  }
+
+  setSequenceExpression(sequenceTrigger:Tree.SequenceTrigger ) {
+    this.setValue(sequenceTrigger);
+  }
+
+  private setValue(value: string | Tree.SequenceTrigger) {
     if(this._valueKey === Property.EventStartOffset) {
       this._event.startOffset = value;
     } else if(this._valueKey === Property.EventEndOffset) {
@@ -298,7 +397,7 @@ class EventsAssigner extends ExpressionEvaluator {
       throw new Error('invalid event key');
     }
     if(!this._events.has(index)) {
-      this._events.set(index, {values: new Map<string, Tree.ExpressionInput>()});
+      this._events.set(index, {values: new Map<string, Tree.EventValue>()});
     }
     return new EventAssigner(this._events.get(index));
   }
@@ -315,7 +414,7 @@ class SoundAssigner extends ExpressionEvaluator {
     if(input == Property.Events) {
       return new EventsAssigner(this._sound.events);
     } else if(input == Property.Event) {
-      const firstEvent = getOrCreate(this._sound.events, 0, ()=>{return {values: new Map<string, Tree.ExpressionInput>()};});
+      const firstEvent = getOrCreate(this._sound.events, 0, ()=>{return {values: new Map<string, Tree.EventValue>()};});
       return new EventAssigner(firstEvent);
     } else {
       throw new Error('unknown instrument property');
@@ -353,7 +452,7 @@ class PhraseAssigner extends ExpressionEvaluator {
           return new BranchesAssigner(this._phrase.branches);
         case Property.Sequences:
           if(!this._phrase.sequences) {
-            this._phrase.sequences = new Map<string, Tree.ExpressionInput>();
+            this._phrase.sequences = new Map<string, Tree.Sequence>();
           }
           return new SequencesAssigner(this._phrase.sequences);
         default:
@@ -364,11 +463,11 @@ class PhraseAssigner extends ExpressionEvaluator {
           return new SoundAssigner(soundEvents);
       }
     }
-    setValue(value : string) {
+    setStringValue(value : string) {
       if(value == PhrasaSymbol.Beat) {
         this._phrase.beat = true;
       } else {
-        super.setValue(value);
+        super.setStringValue(value);
       }
     }
 }
@@ -393,62 +492,44 @@ export class TreeBuilder extends Listener implements ITreeBuilder {
 
     return this._tree;
   }
-  splitAssignKey(path: string) : string[] {
-    let res: string[] = [];
-    for(let key of path.split('.')) {
-
-        let prefix = key.charAt(0);
-        if(KeyPrefixes.has(key.charAt(0))) {
-          key = key.slice(1);
-          res.push(KeyPrefixes.get(prefix));
-        }
-
-        res.push(key);
-
-        let postfixMatch = key.match(EventsPostifxRegex);
-        if(postfixMatch) {
-          res[res.length-1] = postfixMatch[1];
-          if(postfixMatch[2]) {
-            res.push(Property.Events)
-            res.push(postfixMatch[2]);
-          } else {
-            res.push(Property.Event);
-          }
-        }
-      }
-      return res;
-  }
 
   enterKey(ctx: PhrasaParser.KeyContext) {
       let key = ctx.TEXT();
       let newEvaluator = this._exprEvaluatorsStack[this._exprEvaluatorsStack.length-1];
       let text = ctx.TEXT().getText();
-      const path = this.splitAssignKey(text);
+      const path = splitAssignKey(text);
       for(let i=0 ; i<path.length; ++i ){
         if(path[i] == PhrasaSymbol.SelectorSymbol) {
           newEvaluator = new SelectorAssigner(path.slice(i+1),newEvaluator);
           break;
         }
-        newEvaluator = newEvaluator.getInnerExprEvaulator(path[i])
+        if(i == 0){ 
+          newEvaluator = newEvaluator.getInnerExprEvaulator(path[i])
+        } else {
+          newEvaluator = newEvaluator.getInnerAssigner(path[i])
+        }
       }
       this._exprEvaluatorsStack.push(newEvaluator);
   }
+
 
   enterValue(ctx: PhrasaParser.ValueContext) {
     let assigner = this._exprEvaluatorsStack[this._exprEvaluatorsStack.length-1];
     if(ctx.TEXT()) {
       let text = ctx.TEXT().getText();
-      assigner.setValue(text);
+      assigner.setStringValue(text);
     } else{
       let op = ctx.operation();
-      assigner.setValue(op.TEXT(0).getText() + op.OPERATOR().getText() + op.TEXT(1).getText());
+      assigner.setStringValue(op.TEXT(0).getText() + op.OPERATOR().getText() + op.TEXT(1).getText());
     }
   }
 
   exitNewline_expr(ctx: PhrasaParser.Newline_exprContext) {
+    this._exprEvaluatorsStack[this._exprEvaluatorsStack.length-1].assignEnd()
     this._exprEvaluatorsStack.pop();
   }
   exitInline_expr(ctx: PhrasaParser.Newline_exprContext) {
+    this._exprEvaluatorsStack[this._exprEvaluatorsStack.length-1].assignEnd()
     this._exprEvaluatorsStack.pop();
   }
 
