@@ -1,6 +1,6 @@
 import {ISequenceBuilder} from './ISequenceBuilder'
 import {Sequence, SequenceEvent, EventValue} from './Sequence'
-import {PieceTree, Phrase, ExpressionInput, Expression, Pitch} from './PieceTree'
+import {PieceTree, Phrase, ExpressionInput, Expression, Pitch} from './PieceTree.js'
 import * as Evaluator from './Evaluator.js'
 import * as _ from 'lodash'
 
@@ -101,7 +101,16 @@ export class SequenceBuilder implements ISequenceBuilder {
       this._relativeBeatLength = context.contextLength;
     }
     if(phrase.pitch) {
-      context.pitch = phrase.pitch;
+      if(!context.pitch) {
+        context.pitch = new Pitch();
+      }
+      if(phrase.pitch.zone) {
+        context.pitch.zone = phrase.pitch.zone;
+      }
+      if(phrase.pitch.grid) {
+        context.pitch.grid = phrase.pitch.grid
+      }
+      
     }
     if(phrase.branches) {
       throw new Error('branches are not supported');
