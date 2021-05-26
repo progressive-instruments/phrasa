@@ -275,10 +275,11 @@ class BranchesAssigner extends ExpressionEvaluator {
     super();
   }
   getInnerAssigner(propertyName: string) : ExpressionEvaluator {
+    
     if(!this._branches.has(propertyName)) {
-      this._branches[propertyName] = {};
+      this._branches.set(propertyName,{});
     }
-    return new PhraseAssigner(this._branches[propertyName]);
+    return new PhraseAssigner(this._branches.get(propertyName));
   }
 }
 

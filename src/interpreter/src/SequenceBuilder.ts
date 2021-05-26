@@ -199,9 +199,6 @@ export class SequenceBuilder implements ISequenceBuilder {
       }
       
     }
-    if(phrase.branches) {
-      throw new Error('branches are not supported');
-    }
     if(phrase.sequences) {
       if(!context.sequences){
         context.sequences = phrase.sequences
@@ -212,7 +209,19 @@ export class SequenceBuilder implements ISequenceBuilder {
     if(phrase.variables) { 
       throw new Error('variables are not supported');
     }
-    let phraseEndTime = phraseStartTime + context.contextLength;
+    if(phrase.branches) {
+      for(let branch of phrase.branches) {
+        this.evalPhrase(
+          branch[1],
+          _.cloneDeep(context),
+          totalPhrases,
+          phraseStartTime,
+          events)
+      }
+
+    }
+
+    let phraseEndTime: number;
     if(phrase.phrases && phrase.phrases.length > 0) {
       phraseEndTime = phraseStartTime;
       let totalPhrases = phrase.totalPhrases ?? phrase.phrases.length;
@@ -224,6 +233,8 @@ export class SequenceBuilder implements ISequenceBuilder {
           phraseEndTime,
           events);
       }
+    } else {
+      phraseEndTime = phraseStartTime + context.contextLength
     }
 
     if(phrase.sounds) {
