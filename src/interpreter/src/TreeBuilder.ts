@@ -263,6 +263,11 @@ class MultiExpressionEvaluator extends ExpressionEvaluator {
       assigner.setStringValue(value);
     }
   }
+  assignEnd() {
+    for(const assigner of this._assigners) {
+      assigner.assignEnd();
+    }
+  }
 }
 
 class BranchesAssigner extends ExpressionEvaluator {
@@ -299,7 +304,7 @@ class SequenceAssigner extends ExpressionEvaluator {
   }
 }
 
-const StepsExpression = /(^\++$)|(^-+$)/
+const StepsExpression = /(^>+$)|(^<+$)/
 class SequenceTriggerAssigner extends ExpressionEvaluator {
   _name : string;
   _steps : number;
@@ -321,7 +326,7 @@ class SequenceTriggerAssigner extends ExpressionEvaluator {
       throw new Error('invalid sequence trigger argument');
     }
     this._steps = propertyName.length;
-    if(propertyName.startsWith('-')) {
+    if(propertyName.startsWith('<')) {
       this._steps *= -1;
     }
   }

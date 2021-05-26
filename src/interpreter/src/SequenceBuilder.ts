@@ -1,16 +1,51 @@
 import {ISequenceBuilder} from './ISequenceBuilder'
 import {Sequence, SequenceEvent, EventValue} from './Sequence'
-import {PieceTree, Phrase, ExpressionInput, Expression, Pitch} from './PieceTree.js'
+import {PieceTree, Phrase, ExpressionInput, Expression, Pitch, Sequence as TreeSequence, SequenceTrigger, Sound, OffsetValue} from './PieceTree.js'
 import * as Evaluator from './Evaluator.js'
-import * as _ from 'lodash'
+import _ from 'lodash'
+
 
 interface Context {
   contextLength: number;
   pitch?: Pitch
+  sequences?: Map<string,TreeSequence>
+}
+
+class TreeSequenceState {
+  private indexes: Map<string,number>;
+  constructor() {
+    this.indexes = new Map<string,number>();
+  }
+  getNext(name: string, sequence: string[], steps: number): string {
+    let index = 0;
+    if(this.indexes.has(name)){
+      index = this.indexes.get(name);
+      index = Math.min(index,sequence.length-1);
+      index = (index + 1) % sequence.length;
+    }
+    this.indexes.set(name,index);
+    return sequence[index];
+  }
 }
 
 export class SequenceBuilder implements ISequenceBuilder {
+  private _sequenceState: TreeSequenceState;
   private _relativeBeatLength?: number;
+
+  constructor() {
+    this._sequenceState = new TreeSequenceState();
+  }
+
+  fetchEventValue(value: string | SequenceTrigger, context: Context): string {
+    if(value instanceof SequenceTrigger) {
+      if(!context.sequences || !context.sequences.has(value.name)) {
+        throw new Error(`sequence ${value.name} does not exists in context`);
+      }
+      return this._sequenceState.getNext(value.name, context.sequences.get(value.name), value.steps)
+    }
+    return value
+  }
+ 
   build(tree: PieceTree) : Sequence {
     if(!tree.rootPhrase.tempo) {
       throw new Error('tempo must be specified in root phrase');
@@ -49,13 +84,11 @@ export class SequenceBuilder implements ISequenceBuilder {
     throw new Error('unsupported offset format');
   }
 
-  private evalOffset(input: ExpressionInput): number {
-    if(typeof input == 'string') {
-      return Evaluator.evaluate(input, [
-        Evaluator.PrecentToFactor,
-        Evaluator.ToFloat]);
-    };
-    throw new Error('unsupported offset format');
+  private evalOffset(input: OffsetValue, context: Context): number {
+    let fetchedValue = this.fetchEventValue(input,context)
+    return Evaluator.evaluate(fetchedValue, [
+      Evaluator.PrecentToFactor,
+      Evaluator.ToFloat]);
   }
 
   private getClosestValuesIndex(array: number[], value: number): [number,number] {
@@ -87,6 +120,60 @@ export class SequenceBuilder implements ISequenceBuilder {
     return pitchContext.grid[index];
   }
 
+  private buildEvents(sounds: Map<string,Sound>, context: Context, phraseStartTime: number, phraseEndTime: number, events: SequenceEvent[]) {
+    for(const [soundKey,s] of sounds) {
+      for(const [eventIndex,e] of s.events) {
+
+        let values = new Map<string,EventValue>();
+        if(e.values) {
+          for(const [valueKey,v] of e.values) {
+            let fetchedValue = this.fetchEventValue(v, context);
+            let outValue: number|string;
+            try {
+              outValue = Evaluator.evaluate(fetchedValue, [Evaluator.ToFloat])
+            } catch {
+              outValue = fetchedValue;
+            }
+            values.set(valueKey,outValue);
+          }
+        }
+        if(e.frequency) {
+          let fetchedValue = this.fetchEventValue(e.frequency.value, context);
+          let frequency: number;
+          switch(e.frequency.type) {
+            case 'pitch':
+              frequency = this.frequencyFromPitch(context.pitch, fetchedValue);
+              break;
+              case 'note':
+              frequency = Evaluator.evaluate(fetchedValue, [Evaluator.NoteToFrequency]);
+              break;
+            case 'frequency':
+              frequency = Evaluator.evaluate(fetchedValue,[Evaluator.ToFloat]);
+              break;
+          }
+          values.set('frequency',frequency);
+        }
+        const phraseDuration = phraseEndTime - phraseStartTime;
+        let startTime = phraseStartTime;
+        let endTime = phraseEndTime;
+        if(e.startOffset) {
+          const factor = this.evalOffset(e.startOffset, context)
+          startTime = startTime + phraseDuration * factor
+        }
+        if(e.endOffset) {
+          const factor = this.evalOffset(e.endOffset, context)
+          endTime = endTime + phraseDuration * factor
+        }
+        events.push({
+          instrument: soundKey,
+          startTimeMs: startTime,
+          durationMs: endTime - startTime,
+          values: values
+        });
+      }
+    }
+  }
+
   // return endTime
   private evalPhrase(phrase: Phrase, context: Context, totalPhrases: number, phraseStartTime: number, events: SequenceEvent[]): number {
     if(!phrase.phraseLength) {
@@ -116,7 +203,11 @@ export class SequenceBuilder implements ISequenceBuilder {
       throw new Error('branches are not supported');
     }
     if(phrase.sequences) {
-      throw new Error('sequences are not supported');
+      if(!context.sequences){
+        context.sequences = phrase.sequences
+      } else {
+        context.sequences = new Map([...context.sequences,...phrase.sequences]);
+      }
     }
     if(phrase.variables) { 
       throw new Error('variables are not supported');
@@ -127,8 +218,8 @@ export class SequenceBuilder implements ISequenceBuilder {
       let totalPhrases = phrase.totalPhrases ?? phrase.phrases.length;
       for(let i = 0 ; i < totalPhrases ; ++i) {
         phraseEndTime = this.evalPhrase(
-          phrase.phrases[i], 
-          JSON.parse(JSON.stringify(context)),
+          phrase.phrases[i],
+          _.cloneDeep(context),
           totalPhrases,
           phraseEndTime,
           events);
@@ -136,55 +227,7 @@ export class SequenceBuilder implements ISequenceBuilder {
     }
 
     if(phrase.sounds) {
-      for(const [soundKey,s] of phrase.sounds) {
-        for(const [eventIndex,e] of s.events) {
-
-          let values = new Map<string,EventValue>();
-          if(e.values) {
-            for(const [valueKey,v] of e.values) {
-              if(typeof v != 'string') {
-                throw new Error('unsupported event value type');
-              }
-              values.set(valueKey,v);
-            }
-          }
-          if(e.frequency) {
-            if(typeof e.frequency.value != 'string') {
-              throw new Error('unsupported event value type');
-            }
-            let frequency: number;
-            switch(e.frequency.type) {
-              case 'pitch':
-                frequency = this.frequencyFromPitch(context.pitch, e.frequency.value);
-                break;
-                case 'note':
-                frequency = Evaluator.evaluate(e.frequency.value, [Evaluator.NoteToFrequency]);
-                break;
-              case 'frequency':
-                frequency = Evaluator.evaluate(e.frequency.value,[Evaluator.ToFloat]);
-                break;
-            }
-            values.set('frequency',frequency);
-          }
-          const phraseDuration = phraseEndTime - phraseStartTime;
-          let startTime = phraseStartTime;
-          let endTime = phraseEndTime;
-          if(e.startOffset) {
-            const factor = this.evalOffset(e.startOffset)
-            startTime = startTime + phraseDuration * factor
-          }
-          if(e.endOffset) {
-            const factor = this.evalOffset(e.endOffset)
-            endTime = endTime + phraseDuration * factor
-          }
-          events.push({
-            instrument: soundKey,
-            startTimeMs: startTime,
-            durationMs: endTime - startTime,
-            values: values
-          });
-        }
-      }
+      this.buildEvents(phrase.sounds, context, phraseStartTime, phraseEndTime, events);
     }
 
     return phraseEndTime;

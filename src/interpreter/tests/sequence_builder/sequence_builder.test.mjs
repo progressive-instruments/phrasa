@@ -1,5 +1,6 @@
 
 import {SequenceBuilder} from '../../dist/src/SequenceBuilder.js'
+import {SequenceTrigger} from '../../dist/src/PieceTree.js'
 
 describe("sequence builder", function() {
   it('builddd', function () {
@@ -141,4 +142,49 @@ describe("sequence builder", function() {
     expect(sequence.events[1].values.has('frequency')).toBeTrue();
     expect(sequence.events[1].values.get('frequency')).toBeCloseTo(100);
   });
+
+  it('frequency', function () {
+    let tree = {};
+    tree.rootPhrase = {
+      tempo: '120bpm',
+      beat: true,
+      sequences: new Map([
+        ['seq1', ['C3','D4','F3']]
+      ]),
+      phrases: []
+    };
+    for(let i = 0 ; i < 2; ++i) {
+      let phrase = {phrases:[]};
+      tree.rootPhrase.phrases.push(phrase);
+      for(let j = 0 ; j < 4; ++j) {
+        phrase.phrases.push({sounds: new Map([
+          [
+            'saw_synth', 
+            {
+              events: new Map(
+                [
+                  [
+                    0, 
+                    {
+                      frequency: {type: 'note', value: new SequenceTrigger('seq1',1)}
+                    }
+                  ]
+                ])
+            }
+            
+          ]
+        ])});
+      }
+    }
+    let sequenceBuilder = new SequenceBuilder();
+    let sequence = sequenceBuilder.build(tree);
+    expect(sequence.events.length).toEqual(8);
+    let expectedValues = [130.81, 293.66, 174.61, 130.81, 293.66, 174.61, 130.81, 293.66];
+    for(let i = 0 ; i < sequence.events.length ; ++i) {
+      expect(sequence.events[i].values.has('frequency')).toBeTrue();
+      expect(sequence.events[i].values.get('frequency')).toBeCloseTo(expectedValues[i]);
+    }
+
+  });
+
 });

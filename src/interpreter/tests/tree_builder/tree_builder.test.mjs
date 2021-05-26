@@ -105,12 +105,17 @@ describe("tree builder", function() {
     expect(val).toBeInstanceOf(SequenceTrigger);
     expect(val.name).toEqual('seq1');
     expect(val.steps).toEqual(-2);
+    
+    for(let i = 0 ; i < 2 ; ++i) {
+      inst = root.phrases[i].sounds.get('inst2');
+      let e = inst.events.get(0);
+      let freqVal  = e.frequency.value;
+      expect(freqVal).toBeInstanceOf(SequenceTrigger);
+      expect(freqVal.name).toEqual('seq2');
+      expect(freqVal.steps).toEqual(1);
+    }
 
-    inst = root.sounds.get('inst2'); 
-    val = inst.events.get(0).frequency.value;
 
-    expect(val).toBeInstanceOf(SequenceTrigger);
-    expect(val.name).toEqual('seq2');
-    expect(val.steps).toEqual(3);
+
   });
 });

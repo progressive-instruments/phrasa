@@ -59,7 +59,7 @@ export class SequenceTrigger {
   steps: number;
 }
 
-export type EventValue = string | string[] | SequenceTrigger;
+export type EventValue = string | SequenceTrigger;
 export type OffsetValue = string | SequenceTrigger;
 
 export interface FrequencyExpression {
