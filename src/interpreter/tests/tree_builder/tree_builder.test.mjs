@@ -43,6 +43,13 @@ describe("tree builder", function() {
     expect(sawSynth.events.get(0).values.has('attack')).toBeTrue();
     expect(sawSynth.events.get(0).values.get('attack')).toEqual("80%");
 
+    expect(root.branches.has('b')).toBeTrue();
+    let branch = root.branches.get('b');
+    expect(branch.phrases.length).toEqual(2);
+    for(let i = 0 ; i < branch.phrases.length ; ++i) {
+      sawSynth = branch.phrases[i].sounds.get('saw_synth');
+      expect(sawSynth.events.get(0).frequency.value).toEqual('220');
+    }
   });
 
   it('offset', function () {
@@ -114,8 +121,21 @@ describe("tree builder", function() {
       expect(freqVal.name).toEqual('seq2');
       expect(freqVal.steps).toEqual(1);
     }
-
-
-
   });
+
+  it('each', function () {
+    let treeBuilder = new TreeBuilder();
+    let tree = treeBuilder.build(new TextContent("bla", "tests/tree_builder/each_test"), null ,null)
+    let root = tree.rootPhrase;
+    expect(root.phrases.length).toEqual(4)
+    let freqs = ['330','220','330','330']
+    for(let i = 0 ; i < root.phrases.length; ++i) {
+      let event = root.phrases[i].sounds.get('saw_synth').events.get(0);
+      expect(event.frequency.value).toEqual(freqs[i]);
+      if(i == 2) {
+        expect(event.values.get('cutoff')).toEqual('100%');
+      }
+    }
+  });
+
 });

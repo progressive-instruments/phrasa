@@ -12,6 +12,8 @@ import { ErrorStrategy } from 'antlr4/error/ErrorStrategy'
 
 import * as ValueEvaluator from './Evaluator.js'
 
+import _ from 'lodash'
+
 interface ExtendedPhrase extends Tree.Phrase {
   defaultInnerPhrase? : Tree.Phrase;
 }
@@ -72,7 +74,8 @@ enum Property {
   Sequences = "sequences",
   PhrasesTotal = 'total',
   PitchGrid = 'grid',
-  PitchZone = 'zone'
+  PitchZone = 'zone',
+  PhrasesEach = 'each'
 }
 
 const KeyPrefixes: Map<string,Property> = new Map<string,Property>([
@@ -207,7 +210,7 @@ class PhrasesLengthAssigner extends ExpressionEvaluator {
   setStringValue(value: string) { 
     const num = ValueEvaluator.evaluate(value, [ValueEvaluator.ToUnsignedInteger]);
     for(let i = this._parentPhrase.phrases.length ; i < num ; ++i) {
-      this._parentPhrase.phrases.push(JSON.parse(JSON.stringify(this._parentPhrase.defaultInnerPhrase)));
+      this._parentPhrase.phrases.push(_.cloneDeep(this._parentPhrase.defaultInnerPhrase));
     }
     this._parentPhrase.totalPhrases = num;
   }
@@ -223,11 +226,21 @@ class PhrasesAssigner extends ExpressionEvaluator {
   getInnerAssigner(propertyName: string) : ExpressionEvaluator {
     if(propertyName == Property.PhrasesTotal){
       return new PhrasesLengthAssigner(this._parentPhrase);
+    }
+    else if(propertyName == Property.PhrasesEach) {
+      let assigners :ExpressionEvaluator[] = 
+        [
+          new PhraseAssigner(this._parentPhrase.defaultInnerPhrase),
+        ];
+      if(this._parentPhrase.phrases) {
+        assigners.push(...this._parentPhrase.phrases.map(phrase => new PhraseAssigner(phrase)));
+      }
+      return new MultiExpressionEvaluator(assigners);
     } else {
       let range = ValueEvaluator.evaluate(propertyName,[ValueEvaluator.OneBasedToZeroBasedWithRange]);
   
       while(range[1] >= this._parentPhrase.phrases.length) {
-        this._parentPhrase.phrases.push(JSON.parse(JSON.stringify(this._parentPhrase.phrases)));
+        this._parentPhrase.phrases.push(_.cloneDeep(this._parentPhrase.defaultInnerPhrase));
       }
       let assigners :ExpressionEvaluator[] = []; 
       for(let i = range[0] ; i <= range[1] ; ++i) {
