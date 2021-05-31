@@ -155,7 +155,7 @@ export class SequenceBuilder implements ISequenceBuilder {
         }
         const phraseDuration = phraseEndTime - phraseStartTime;
         let startTime = phraseStartTime;
-        let endTime = phraseEndTime;
+        let endTime: number;
         if(e.startOffset) {
           const factor = this.evalOffset(e.startOffset, context)
           startTime = startTime + phraseDuration * factor
@@ -163,6 +163,8 @@ export class SequenceBuilder implements ISequenceBuilder {
         if(e.endOffset) {
           const factor = this.evalOffset(e.endOffset, context)
           endTime = endTime + phraseDuration * factor
+        } else {
+          endTime = phraseEndTime - 0.000001
         }
         events.push({
           instrument: soundKey,
@@ -183,7 +185,9 @@ export class SequenceBuilder implements ISequenceBuilder {
     }
     if(phrase.beat) {
       if(this._relativeBeatLength) {
-        throw new Error('only one beat definition is allowed');
+        if(Math.abs(context.contextLength - this._relativeBeatLength) > 0.000000001) {
+          throw new Error('multiple beats with different lengths were defined');
+        }
       }
       this._relativeBeatLength = context.contextLength;
     }
