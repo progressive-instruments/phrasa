@@ -160,11 +160,13 @@ export class SequenceBuilder implements ISequenceBuilder {
           const factor = this.evalOffset(e.startOffset, context)
           startTime = startTime + phraseDuration * factor
         }
+        endTime = phraseEndTime;
         if(e.endOffset) {
           const factor = this.evalOffset(e.endOffset, context)
           endTime = endTime + phraseDuration * factor
         } else {
-          endTime = phraseEndTime - 0.000001
+          // compensation for surgee!!!
+          endTime = endTime - 0.000001
         }
         events.push({
           instrument: soundKey,
