@@ -70,7 +70,7 @@ describe("sequence builder", function() {
             events: new Map([[0, {
               values: new Map([['frequency', 'D3']]),
               startOffset: '10%',
-              endOffset: '-10%',
+              endOffset: '90%',
             }]])
           }
           
@@ -81,7 +81,7 @@ describe("sequence builder", function() {
             events: new Map([[0, {
               values: new Map([['frequency', 'D3']]),
               startOffset: '0.2',
-              endOffset: '-0.2',
+              endOffset: '0.8',
             }]])
           }
           
