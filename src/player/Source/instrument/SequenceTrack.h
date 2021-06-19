@@ -6,9 +6,8 @@ namespace phrasa::instrument {
 
 struct SequenceTrack
 {
-	void Advance(SequenceTime newDuration) {
+	void Advance() {
 		Time = (Time + Duration) % SequenceLength;
-		Duration = newDuration;
 	}
 	SequenceTime expectedNextTime() {
 		return (Time + Duration) % SequenceLength;

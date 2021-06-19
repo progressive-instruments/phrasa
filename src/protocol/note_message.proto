@@ -5,7 +5,18 @@ package shift_processor;
 message ShiftPlayerMessage {
   oneof message {
     SetSequenceMessage setSequence = 1;
+    SetPlayMode setPlayMode = 2;
   }
+}
+
+enum PlayMode {
+  Play = 0;
+  Stop = 1;
+  Pause = 2;
+}
+
+message SetPlayMode {
+  PlayMode playMode = 1;
 }
 
 message SetSequenceMessage {
