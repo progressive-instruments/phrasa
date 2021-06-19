@@ -165,7 +165,7 @@ export class SequenceBuilder implements ISequenceBuilder {
           endTime = phraseStartTime + phraseDuration * factor
         } else {
           // compensation for surgee!!!
-          endTime = phraseEndTime - 0.000001
+          endTime = phraseEndTime - 0.001
         }
         events.push({
           instrument: soundKey,
