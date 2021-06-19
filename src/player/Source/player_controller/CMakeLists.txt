@@ -8,18 +8,13 @@ target_sources( player_controller
       JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1)
 
 target_link_libraries(player_controller
-  PRIVATE
-  debug "C:/protobuf/debug/lib/libprotobufd.lib"
-  optimized "C:/protobuf/lib/libprotobuf.lib")
+libprotobuf)
 
-# target_link_libraries(player_controller
-#   PRIVATE
-#     "C:/protobuf/lib/libprotobuf.lib")
 
  target_include_directories(player_controller 
   PUBLIC 
     . 
-    "C:/protobuf/include"
+    ${PROTOBUF_ROOT_DIR}/src
   PRIVATE
     ../player 
     ../connection

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON) # required for oredering projects within solution
-# set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 project(PhrasaPlayer VERSION 0.0.1)
 
@@ -10,6 +10,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 add_subdirectory(JUCE)                    # If you've put JUCE in a subdirectory called JUCE
 add_subdirectory(googletest)                    # If you've put JUCE in a subdirectory called JUCE
+
+SET(protobuf_BUILD_TESTS OFF)
+add_subdirectory(protobuf/cmake)
+
 add_subdirectory(Source/connection)
 add_subdirectory(Source/audio)
 add_subdirectory(Source/event)
@@ -75,6 +79,10 @@ set_target_properties (gmock gmock_main gtest gtest_main PROPERTIES
     FOLDER googletest
 )
 
+set_target_properties (libprotobuf libprotobuf-lite PROPERTIES
+    FOLDER protobuf
+)
+
 set(SURGE_TARGETS
   surge-xt
   surge-xt_All
@@ -105,6 +113,7 @@ set(SURGE_TARGETS
   Surge-XT-Packaged
   surge-xt-run-standalone
   tinyxml
+  filesystem
   )
 
 set_target_properties (${SURGE_TARGETS} PROPERTIES
