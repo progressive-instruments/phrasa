@@ -1,4 +1,5 @@
 import {TerminalNode} from 'antlr4/tree/Tree'
+import antlr4 from 'antlr4'
 import Lexer from './PhrasaLexer'
 
 declare class PhrasaParser {
@@ -55,7 +56,7 @@ declare namespace PhrasaParser {
     export { Inline_exprContext };
 }
 export default PhrasaParser;
-declare class MainContext {
+declare class MainContext extends antlr4.ParserRuleContext {
     constructor(parser: any, parent: any, invokingState: any);
     parser: any;
     ruleIndex: number;
@@ -63,7 +64,7 @@ declare class MainContext {
     enterRule(listener: any): void;
     exitRule(listener: any): void;
 }
-declare class Newline_expr_insContext {
+declare class Newline_expr_insContext extends antlr4.ParserRuleContext {
     constructor(parser: any, parent: any, invokingState: any);
     parser: any;
     ruleIndex: number;
@@ -72,7 +73,7 @@ declare class Newline_expr_insContext {
     enterRule(listener: any): void;
     exitRule(listener: any): void;
 }
-declare class Newline_expr_inContext {
+declare class Newline_expr_inContext extends antlr4.ParserRuleContext {
     constructor(parser: any, parent: any, invokingState: any);
     parser: any;
     ruleIndex: number;
@@ -81,7 +82,7 @@ declare class Newline_expr_inContext {
     enterRule(listener: any): void;
     exitRule(listener: any): void;
 }
-declare class Newline_exprContext {
+declare class Newline_exprContext extends antlr4.ParserRuleContext {
     constructor(parser: any, parent: any, invokingState: any);
     parser: any;
     ruleIndex: number;
@@ -95,15 +96,15 @@ declare class Newline_exprContext {
     enterRule(listener: any): void;
     exitRule(listener: any): void;
 }
-declare class KeyContext {
+declare class KeyContext extends antlr4.ParserRuleContext {
     constructor(parser: any, parent: any, invokingState: any);
     parser: any;
     ruleIndex: number;
-    TEXT(): TerminalNode;
+    TEXT(): TerminalNode[];
     enterRule(listener: any): void;
     exitRule(listener: any): void;
 }
-declare class Inline_expr_insContext {
+declare class Inline_expr_insContext extends antlr4.ParserRuleContext {
     constructor(parser: any, parent: any, invokingState: any);
     parser: any;
     ruleIndex: number;
@@ -112,7 +113,7 @@ declare class Inline_expr_insContext {
     enterRule(listener: any): void;
     exitRule(listener: any): void;
 }
-declare class Inline_expr_inContext {
+declare class Inline_expr_inContext extends antlr4.ParserRuleContext {
     constructor(parser: any, parent: any, invokingState: any);
     parser: any;
     ruleIndex: number;
@@ -122,7 +123,7 @@ declare class Inline_expr_inContext {
     enterRule(listener: any): void;
     exitRule(listener: any): void;
 }
-declare class ValueContext {
+declare class ValueContext extends antlr4.ParserRuleContext {
     constructor(parser: any, parent: any, invokingState: any);
     parser: any;
     ruleIndex: number;
@@ -131,7 +132,7 @@ declare class ValueContext {
     enterRule(listener: any): void;
     exitRule(listener: any): void;
 }
-declare class OperationContext {
+declare class OperationContext extends antlr4.ParserRuleContext {
     constructor(parser: any, parent: any, invokingState: any);
     parser: any;
     ruleIndex: number;
@@ -141,7 +142,7 @@ declare class OperationContext {
     enterRule(listener: any): void;
     exitRule(listener: any): void;
 }
-declare class Inline_exprContext {
+declare class Inline_exprContext extends antlr4.ParserRuleContext {
     constructor(parser: any, parent: any, invokingState: any);
     parser: any;
     ruleIndex: number;

@@ -1,7 +1,12 @@
-import {ParseTreeListener} from 'antlr4/tree/Tree'
 import Parser from './PhrasaParser'
+import {ErrorNode, ParseTreeListener, TerminalNode} from 'antlr4/tree/Tree'
+import { ParserRuleContext } from 'antlr4'
 
-export default class PhrasaListener extends ParseTreeListener {
+export default class PhrasaListener implements ParseTreeListener {
+    visitTerminal(node: TerminalNode): void
+    visitErrorNode(node: ErrorNode): void
+    enterEveryRule(node: ParserRuleContext): void
+    exitEveryRule(node: ParserRuleContext): void
     enterMain(ctx: Parser.MainContext): void;
     exitMain(ctx: Parser.MainContext): void;
     enterNewline_expr_ins(ctx: Parser.Newline_expr_insContext): void;

@@ -237,14 +237,13 @@ class PhrasesAssigner extends ExpressionEvaluator {
       }
       return new MultiExpressionEvaluator(assigners);
     } else {
-      let range = ValueEvaluator.evaluate(propertyName,[ValueEvaluator.OneBasedToZeroBasedWithRange]);
-  
-      while(range[1] >= this._parentPhrase.phrases.length) {
-        this._parentPhrase.phrases.push(_.cloneDeep(this._parentPhrase.defaultInnerPhrase));
-      }
+      const phraseIndexes = ValueEvaluator.evaluate(propertyName,[ValueEvaluator.OneBasedToZeroBaseRanged]);
       let assigners :ExpressionEvaluator[] = []; 
-      for(let i = range[0] ; i <= range[1] ; ++i) {
-        assigners.push(new PhraseAssigner(this._parentPhrase.phrases[i]));
+      for(const phraseIndex of phraseIndexes) {
+        while(phraseIndex >= this._parentPhrase.phrases.length) {
+          this._parentPhrase.phrases.push(_.cloneDeep(this._parentPhrase.defaultInnerPhrase));
+        }
+        assigners.push(new PhraseAssigner(this._parentPhrase.phrases[phraseIndex]));
       }
       return new MultiExpressionEvaluator(assigners);
     }
@@ -515,7 +514,7 @@ export class TreeBuilder extends Listener implements ITreeBuilder {
   enterKey(ctx: PhrasaParser.KeyContext) {
       let key = ctx.TEXT();
       let newEvaluator = this._exprEvaluatorsStack[this._exprEvaluatorsStack.length-1];
-      let text = ctx.TEXT().getText();
+      let text = ctx.getText();
       const path = splitAssignKey(text);
       for(let i=0 ; i<path.length; ++i ){
         if(path[i] == PhrasaSymbol.SelectorSymbol) {

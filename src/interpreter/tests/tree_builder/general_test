@@ -11,4 +11,4 @@ phrases
       note D3
 >1-2.saw_synth.event.attack 80%
 branches.b
-  >1-2.saw_synth~.frequency 220
+  >1,2.saw_synth~.frequency 220
