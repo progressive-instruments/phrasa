@@ -1,90 +1,15 @@
-import {InputStream, Token, CommonTokenStream, Recognizer} from 'antlr4'
-import PhrasaLexer from "./generated-parser/PhrasaLexer.js"
-import PhrasaParser from "./generated-parser/PhrasaParser.js"
-import Listener from "./generated-parser/PhrasaListener.js"
-
-import {ITreeBuilder} from './ITreeBuilder'
-import * as Tree from './PieceTree.js'
-import {TextContent} from './TextContent'
-import { ParseTreeWalker } from 'antlr4/src/antlr4/tree/Tree.js'
-import { TerminalNode } from 'antlr4/tree/Tree'
-import { ErrorStrategy } from 'antlr4/error/ErrorStrategy'
-
-import * as ValueEvaluator from './Evaluator.js'
-
+import { KeyPrefixes, Property, ExpressionSubject, PhrasaSymbol } from "./symbols.js";
+import * as Tree from '../PieceTree.js'
+import * as ValueEvaluator from '../Evaluator.js'
 import _ from 'lodash'
 
-interface ExtendedPhrase extends Tree.Phrase {
+
+export interface ExtendedPhrase extends Tree.Phrase {
   defaultInnerPhrase? : Tree.Phrase;
 }
 
-interface ExtendedTree extends Tree.PieceTree {
-  rootPhrase :ExtendedPhrase
-}
-
-class GetNotesErrorRecognizer {
-  syntaxError(recognizer: Recognizer, offendingSymbol: Token, line: number, column: number, msg: string, e: any): void {
-      console.error(`lexer/parser error line: ${line} column: ${column} msg: ${msg}`)
-      throw new Error('lexer/parser error');
-  }
-}
-
-abstract class ExpressionEvaluator {
-  getInnerAssigner(propertyName: string) : ExpressionEvaluator {throw new Error(`property ${propertyName} unknown`);}
-  getInnerExprEvaulator(evaluatorSubject: string) {
-    return this.getInnerAssigner(evaluatorSubject);
-  }
-  setStringValue(value : string) {
-    throw new Error("value assign is not supported");
-  }
-  setSequenceExpression(sequence: Tree.SequenceTrigger) {
-    throw new Error("sequence trigger is not supported");
-  }
-  assignEnd() {}
-}
-
-class TempoAssigner extends ExpressionEvaluator {
-  constructor(private _phrase: ExtendedPhrase){
-      super();
-    }
-
-    setStringValue(value : string) {
-      this._phrase.tempo = value;
-    }
-}
-
-enum PhrasaSymbol { 
-  Beat = "beat",
-  PitchEventValue = "pitch",
-  FrequencyEventValue = "frequency",
-  NoteEventValue = "note",
-  SelectorSymbol = "#",
-}
-
-enum Property {
-  Pitch = "pitch",
-  Tempo = "tempo",
-  Length = "length",
-  Branches = "branches",
-  Events = "events",
-  Event = "event",
-  Phrases = "phrases",
-  EventEndOffset = "end",
-  EventStartOffset = "start",
-  Sequences = "sequences",
-  PhrasesTotal = 'total',
-  PitchGrid = 'grid',
-  PitchZone = 'zone',
-  PhrasesEach = 'each'
-}
-
-const KeyPrefixes: Map<string,Property> = new Map<string,Property>([
-  ['>', Property.Phrases],
-  ['$', Property.Sequences],
-  ['&', Property.Branches]
-])
-
-function splitAssignKey(path: string) : string[] {
+const EventsPostifxRegex = /(.+)~([1-9]\d*)?$/;
+export function splitAssignKey(path: string) : string[] {
   let res: string[] = [];
   for(let key of path.split('.')) {
 
@@ -111,7 +36,72 @@ function splitAssignKey(path: string) : string[] {
 }
 
 
-class SelectorAssigner extends ExpressionEvaluator {
+export abstract class ExpressionEvaluator {
+  getInnerAssigner(propertyName: string) : ExpressionEvaluator {throw new Error(`property ${propertyName} unknown`);}
+  getInnerExprEvaulator(evaluatorSubject: string) {
+    return this.getInnerAssigner(evaluatorSubject);
+  }
+  setStringValue(value : string) {
+    throw new Error("value assign is not supported");
+  }
+  setSequenceExpression(sequence: Tree.SequenceTrigger) {
+    throw new Error("sequence trigger is not supported");
+  }
+  assignEnd() {}
+}
+
+
+export class PhraseAssigner extends ExpressionEvaluator {
+  constructor(private _phrase: ExtendedPhrase){
+    super();
+  }
+    getInnerAssigner(propertyName: string) : ExpressionEvaluator {
+      switch(propertyName) {
+        case Property.Pitch:
+          if(!this._phrase.pitch) {
+            this._phrase.pitch = {};
+          }
+          return new PitchAssigner(this._phrase.pitch);
+        case Property.Tempo:
+          return new TempoAssigner(this._phrase);
+        case Property.Phrases:
+          if(!this._phrase.phrases) {
+            this._phrase.phrases = [];
+          }
+          if(!this._phrase.defaultInnerPhrase) {
+            this._phrase.defaultInnerPhrase = {};
+          }
+          return new PhrasesAssigner(this._phrase);
+        case Property.Length:
+          return new LengthAssigner(this._phrase);
+        case Property.Branches:
+          if(!this._phrase.branches) {
+            this._phrase.branches = new Map<string, Tree.Phrase>();
+          }
+          return new BranchesAssigner(this._phrase.branches);
+        case Property.Sequences:
+          if(!this._phrase.sequences) {
+            this._phrase.sequences = new Map<string, Tree.Sequence>();
+          }
+          return new SequencesAssigner(this._phrase.sequences);
+        default:
+          if(!this._phrase.sounds) {
+            this._phrase.sounds = new Map<string,Tree.Sound>();
+          }
+          let soundEvents = getOrCreate(this._phrase.sounds, propertyName, ()=> {return {events: new Map<number, Tree.PhraseEvent>()}});
+          return new SoundAssigner(soundEvents);
+      }
+    }
+    setStringValue(value : string) {
+      if(value == PhrasaSymbol.Beat) {
+        this._phrase.beat = true;
+      } else {
+        super.setStringValue(value);
+      }
+    }
+}
+
+export class SelectorAssigner extends ExpressionEvaluator {
   constructor(
     private _path:string[], 
     private _innerAssigner: ExpressionEvaluator) {
@@ -126,10 +116,17 @@ class SelectorAssigner extends ExpressionEvaluator {
   }
 }
 
-enum ExpressionSubject {
-  Chord = 'chord',
-  Scale = 'scale'
+
+class TempoAssigner extends ExpressionEvaluator {
+  constructor(private _phrase: ExtendedPhrase){
+      super();
+    }
+
+    setStringValue(value : string) {
+      this._phrase.tempo = value;
+    }
 }
+
 
 class ChordEvaluator extends ExpressionEvaluator {
   constructor(private _pitch: Tree.Pitch) {
@@ -438,117 +435,4 @@ class SoundAssigner extends ExpressionEvaluator {
       throw new Error('unknown instrument property');
     }
   }
-}
-
-class PhraseAssigner extends ExpressionEvaluator {
-  constructor(private _phrase: ExtendedPhrase){
-    super();
-  }
-    getInnerAssigner(propertyName: string) : ExpressionEvaluator {
-      switch(propertyName) {
-        case Property.Pitch:
-          if(!this._phrase.pitch) {
-            this._phrase.pitch = {};
-          }
-          return new PitchAssigner(this._phrase.pitch);
-        case Property.Tempo:
-          return new TempoAssigner(this._phrase);
-        case Property.Phrases:
-          if(!this._phrase.phrases) {
-            this._phrase.phrases = [];
-          }
-          if(!this._phrase.defaultInnerPhrase) {
-            this._phrase.defaultInnerPhrase = {};
-          }
-          return new PhrasesAssigner(this._phrase);
-        case Property.Length:
-          return new LengthAssigner(this._phrase);
-        case Property.Branches:
-          if(!this._phrase.branches) {
-            this._phrase.branches = new Map<string, Tree.Phrase>();
-          }
-          return new BranchesAssigner(this._phrase.branches);
-        case Property.Sequences:
-          if(!this._phrase.sequences) {
-            this._phrase.sequences = new Map<string, Tree.Sequence>();
-          }
-          return new SequencesAssigner(this._phrase.sequences);
-        default:
-          if(!this._phrase.sounds) {
-            this._phrase.sounds = new Map<string,Tree.Sound>();
-          }
-          let soundEvents = getOrCreate(this._phrase.sounds, propertyName, ()=> {return {events: new Map<number, Tree.PhraseEvent>()}});
-          return new SoundAssigner(soundEvents);
-      }
-    }
-    setStringValue(value : string) {
-      if(value == PhrasaSymbol.Beat) {
-        this._phrase.beat = true;
-      } else {
-        super.setStringValue(value);
-      }
-    }
-}
-
-const EventsPostifxRegex = /(.+)~([1-9]\d*)?$/;
-
-export class TreeBuilder extends Listener implements ITreeBuilder {
-  private _tree: Tree.PieceTree;
-  private _exprEvaluatorsStack: ExpressionEvaluator[];
-
-
-  build(piece: TextContent, motifs: TextContent[], instruments: TextContent[]) : Tree.PieceTree {
-    this._tree = {rootPhrase: {}};
-    this._exprEvaluatorsStack = [new PhraseAssigner(this._tree.rootPhrase)];
-    const chars = new InputStream(piece.readAll());
-    let lexer = new PhrasaLexer(chars);
-    const stream = new CommonTokenStream(lexer);
-    const parser = new PhrasaParser(stream);
-    let main = parser.main();
-    let walker = new ParseTreeWalker();
-    walker.walk(this,main);
-
-    return this._tree;
-  }
-
-  enterKey(ctx: PhrasaParser.KeyContext) {
-      let key = ctx.TEXT();
-      let newEvaluator = this._exprEvaluatorsStack[this._exprEvaluatorsStack.length-1];
-      let text = ctx.getText();
-      const path = splitAssignKey(text);
-      for(let i=0 ; i<path.length; ++i ){
-        if(path[i] == PhrasaSymbol.SelectorSymbol) {
-          newEvaluator = new SelectorAssigner(path.slice(i+1),newEvaluator);
-          break;
-        }
-        if(i == 0){ 
-          newEvaluator = newEvaluator.getInnerExprEvaulator(path[i])
-        } else {
-          newEvaluator = newEvaluator.getInnerAssigner(path[i])
-        }
-      }
-      this._exprEvaluatorsStack.push(newEvaluator);
-  }
-
-
-  enterValue(ctx: PhrasaParser.ValueContext) {
-    let assigner = this._exprEvaluatorsStack[this._exprEvaluatorsStack.length-1];
-    if(ctx.TEXT()) {
-      let text = ctx.TEXT().getText();
-      assigner.setStringValue(text);
-    } else{
-      let op = ctx.operation();
-      assigner.setStringValue(op.TEXT(0).getText() + op.OPERATOR().getText() + op.TEXT(1).getText());
-    }
-  }
-
-  exitNewline_expr(ctx: PhrasaParser.Newline_exprContext) {
-    this._exprEvaluatorsStack[this._exprEvaluatorsStack.length-1].assignEnd()
-    this._exprEvaluatorsStack.pop();
-  }
-  exitInline_expr(ctx: PhrasaParser.Newline_exprContext) {
-    this._exprEvaluatorsStack[this._exprEvaluatorsStack.length-1].assignEnd()
-    this._exprEvaluatorsStack.pop();
-  }
-
 }

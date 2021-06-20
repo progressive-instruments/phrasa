@@ -5,9 +5,9 @@ import PhrasaListener from "./generated-parser/PhrasaListener"
 import {Sequence} from './Sequence'
 import {TextContent} from './TextContent'
 import {IInterpreter} from './IInterpreter'
-import { TreeBuilder } from './TreeBuilder.js'
+import { TreeBuilder } from './TreeBuilder/TreeBuilder.js'
 import { ISequenceBuilder } from './ISequenceBuilder.js'
-import { ITreeBuilder } from './ITreeBuilder'
+import { ITreeBuilder } from './TreeBuilder/ITreeBuilder'
 import { SequenceBuilder } from './SequenceBuilder.js'
 class GetNotesErrorRecognizer {
         syntaxError(recognizer: Recognizer, offendingSymbol: Token, line: number, column: number, msg: string, e: any): void {
