@@ -47,13 +47,13 @@ describe("sequence builder", function() {
     expect(sequence.endTime).toEqual(1000);
     expect(sequence.events.length).toEqual(2);
     expect(sequence.events[0].startTimeMs).toBeCloseTo(0);
-    expect(sequence.events[0].durationMs).toBeCloseTo(500);
+    expect(sequence.events[0].durationMs).toBeCloseTo(500,-1);
     expect(sequence.events[0].values.has('cutoff')).toBeTrue();
     expect(sequence.events[0].values.get('cutoff')).toEqual('100%');
     expect(sequence.events[0].values.has('frequency')).toBeTrue();
     expect(sequence.events[0].values.get('frequency')).toBeCloseTo('440');
     expect(sequence.events[1].startTimeMs).toBeCloseTo(500);
-    expect(sequence.events[1].durationMs).toBeCloseTo(500);
+    expect(sequence.events[1].durationMs).toBeCloseTo(500,-1);
     expect(sequence.events[1].values.has('frequency')).toBeTrue();
     expect(sequence.events[1].values.get('frequency')).toBeCloseTo(130.81);
   });

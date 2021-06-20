@@ -19,8 +19,8 @@ describe("interpreter", function() {
     expect(sequence.endTime).toEqual(750);
     expect(sequence.events.length).toEqual(2);
     expect(sequence.events[0].startTimeMs).toBeCloseTo(0);
-    expect(sequence.events[0].durationMs).toBeCloseTo(250);
+    expect(sequence.events[0].durationMs).toBeCloseTo(250,-1);
     expect(sequence.events[1].startTimeMs).toBeCloseTo(250);
-    expect(sequence.events[1].durationMs).toBeCloseTo(500);
+    expect(sequence.events[1].durationMs).toBeCloseTo(500,-1);
   });
 });
