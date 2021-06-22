@@ -1,10 +1,10 @@
 import { KeyPrefixes, Property, ExpressionSubject, PhrasaSymbol } from "./symbols.js";
 import * as Tree from '../PieceTree.js'
 import * as ValueEvaluator from '../Evaluator.js'
+import { TextContent } from "../TextContent.js";
 import _ from 'lodash'
-
-
-export interface ExtendedPhrase extends Tree.Phrase {
+import {PhraseFileParser} from './PhraseFileParser.js'
+interface ExtendedPhrase extends Tree.Phrase {
   defaultInnerPhrase? : Tree.Phrase;
 }
 
@@ -50,11 +50,29 @@ export abstract class ExpressionEvaluator {
   assignEnd() {}
 }
 
+export class UseEvaluator extends ExpressionEvaluator {
 
-export class PhraseAssigner extends ExpressionEvaluator {
-  constructor(private _phrase: ExtendedPhrase){
+  constructor(private _phrase: ExtendedPhrase,
+    private _phraseFiles: TextContent[]) {
     super();
   }
+  setStringValue(phraseFile : string) {
+    let index = this._phraseFiles.findIndex((f) => f.name == phraseFile)
+    if(index == -1){
+      throw new Error(`invalid phrase file ${phraseFile}`);
+    }
+    
+    let parser = new PhraseFileParser(this._phraseFiles[index], this._phraseFiles.slice(index), this._phrase);
+    parser.parse();
+  }
+}
+
+export class PhraseAssigner extends ExpressionEvaluator {
+  constructor(private _phrase: ExtendedPhrase,
+    private _phraseFiles: TextContent[]) {
+    super();
+  }
+
     getInnerAssigner(propertyName: string) : ExpressionEvaluator {
       switch(propertyName) {
         case Property.Pitch:
@@ -71,19 +89,21 @@ export class PhraseAssigner extends ExpressionEvaluator {
           if(!this._phrase.defaultInnerPhrase) {
             this._phrase.defaultInnerPhrase = {};
           }
-          return new PhrasesAssigner(this._phrase);
+          return new PhrasesAssigner(this._phrase,this._phraseFiles);
         case Property.Length:
           return new LengthAssigner(this._phrase);
         case Property.Branches:
           if(!this._phrase.branches) {
             this._phrase.branches = new Map<string, Tree.Phrase>();
           }
-          return new BranchesAssigner(this._phrase.branches);
+          return new BranchesAssigner(this._phrase.branches,this._phraseFiles);
         case Property.Sequences:
           if(!this._phrase.sequences) {
             this._phrase.sequences = new Map<string, Tree.Sequence>();
           }
           return new SequencesAssigner(this._phrase.sequences);
+        case ExpressionSubject.Use:
+          return new UseEvaluator(this._phrase, this._phraseFiles);
         default:
           if(!this._phrase.sounds) {
             this._phrase.sounds = new Map<string,Tree.Sound>();
@@ -217,7 +237,8 @@ class PhrasesLengthAssigner extends ExpressionEvaluator {
 
 class PhrasesAssigner extends ExpressionEvaluator {
   constructor(
-    private _parentPhrase: ExtendedPhrase){
+    private _parentPhrase: ExtendedPhrase,
+    private _phraseFiles: TextContent[]){
     super();
   }
   getInnerAssigner(propertyName: string) : ExpressionEvaluator {
@@ -227,10 +248,10 @@ class PhrasesAssigner extends ExpressionEvaluator {
     else if(propertyName == Property.PhrasesEach) {
       let assigners :ExpressionEvaluator[] = 
         [
-          new PhraseAssigner(this._parentPhrase.defaultInnerPhrase),
+          new PhraseAssigner(this._parentPhrase.defaultInnerPhrase, this._phraseFiles),
         ];
       if(this._parentPhrase.phrases) {
-        assigners.push(...this._parentPhrase.phrases.map(phrase => new PhraseAssigner(phrase)));
+        assigners.push(...this._parentPhrase.phrases.map(phrase => new PhraseAssigner(phrase,this._phraseFiles)));
       }
       return new MultiExpressionEvaluator(assigners);
     } else {
@@ -240,7 +261,7 @@ class PhrasesAssigner extends ExpressionEvaluator {
         while(phraseIndex >= this._parentPhrase.phrases.length) {
           this._parentPhrase.phrases.push(_.cloneDeep(this._parentPhrase.defaultInnerPhrase));
         }
-        assigners.push(new PhraseAssigner(this._parentPhrase.phrases[phraseIndex]));
+        assigners.push(new PhraseAssigner(this._parentPhrase.phrases[phraseIndex],this._phraseFiles));
       }
       return new MultiExpressionEvaluator(assigners);
     }
@@ -280,7 +301,8 @@ class MultiExpressionEvaluator extends ExpressionEvaluator {
 }
 
 class BranchesAssigner extends ExpressionEvaluator {
-  constructor(private _branches: Map<string,ExtendedPhrase>) {
+  constructor(private _branches: Map<string,ExtendedPhrase>,
+    private _phraseFiles: TextContent[]) {
     super();
   }
   getInnerAssigner(propertyName: string) : ExpressionEvaluator {
@@ -288,7 +310,7 @@ class BranchesAssigner extends ExpressionEvaluator {
     if(!this._branches.has(propertyName)) {
       this._branches.set(propertyName,{});
     }
-    return new PhraseAssigner(this._branches.get(propertyName));
+    return new PhraseAssigner(this._branches.get(propertyName),this._phraseFiles);
   }
 }
 
@@ -349,7 +371,7 @@ class SequenceTriggerAssigner extends ExpressionEvaluator {
   }
 
 
-} 
+}
 
 class EventValueAssigner extends ExpressionEvaluator {
   constructor(

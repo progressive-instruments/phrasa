@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import {TreeBuilder} from '../../dist/src/TreeBuilder.js'
+import {TreeBuilder} from '../../dist/src/TreeBuilder/TreeBuilder.js'
 import {SequenceTrigger} from '../../dist/src/PieceTree.js'
 class TextContent {
     constructor(name,file) {
@@ -136,6 +136,39 @@ describe("tree builder", function() {
         expect(event.values.get('cutoff')).toEqual('100%');
       }
     }
+  });
+
+  it('multi-file', function () {
+    let treeBuilder = new TreeBuilder();
+    let tree = treeBuilder.build(new TextContent("multifile1", "tests/tree_builder/multifile1"), [new TextContent("multifile2", "tests/tree_builder/multifile2")] ,null)
+    let root = tree.rootPhrase;
+    expect(root.tempo).toEqual("120bpm");
+    expect(root.totalPhrases).toEqual(2);
+    let phrases = root.phrases;
+    expect(phrases.length).toEqual(2);
+    expect(phrases[0].phraseLength).toEqual("1/4");
+    expect(phrases[0].beat == undefined || phrases[0].beat == false).toBeTrue();
+    expect(phrases[1].beat).toBeTrue();
+
+    expect(phrases[0].sounds.has('saw_synth')).toBeTrue();
+    let sawSynth = phrases[0].sounds.get('saw_synth');
+    expect(sawSynth.events.size).toEqual(1);
+    expect(sawSynth.events.get(0).frequency).toBeDefined();
+    expect(sawSynth.events.get(0).frequency.type).toEqual('frequency');
+    expect(sawSynth.events.get(0).frequency.value).toEqual("440");
+    expect(sawSynth.events.get(0).values.has('cutoff')).toBeTrue();
+    expect(sawSynth.events.get(0).values.get('cutoff')).toEqual("90%");
+    expect(sawSynth.events.get(0).values.has('attack')).toBeTrue();
+    expect(sawSynth.events.get(0).values.get('attack')).toEqual("80%");
+
+    expect(phrases[1].sounds.has('saw_synth')).toBeTrue();
+    sawSynth = phrases[1].sounds.get('saw_synth');
+    expect(sawSynth.events.size).toEqual(1);
+    expect(sawSynth.events.get(0).frequency).toBeDefined();
+    expect(sawSynth.events.get(0).frequency.type).toEqual('note');
+    expect(sawSynth.events.get(0).frequency.value).toEqual("D3");
+    expect(sawSynth.events.get(0).values.has('attack')).toBeTrue();
+    expect(sawSynth.events.get(0).values.get('attack')).toEqual("80%");
   });
 
 });

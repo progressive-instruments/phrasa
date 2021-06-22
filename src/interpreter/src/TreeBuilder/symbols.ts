@@ -31,5 +31,6 @@ export const KeyPrefixes: Map<string,Property> = new Map<string,Property>([
 
 export enum ExpressionSubject {
   Chord = 'chord',
-  Scale = 'scale'
+  Scale = 'scale',
+  Use = 'use'
 }

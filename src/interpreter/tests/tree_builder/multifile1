@@ -1,0 +1,4 @@
+tempo 120bpm
+use multifile2
+>2 beat
+>1-2.saw_synth.event.attack 80%
