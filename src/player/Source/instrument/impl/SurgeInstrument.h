@@ -58,15 +58,22 @@ private:
                 SequenceTime time = SequenceTime::FromMilliseconds(m_sampleTimeMs * BLOCK_SIZE);
                 m_offEventPool.consume(time, [this](auto event) {
                     if (event.event->values.count("frequency")) {
-                        auto midi = getMidiNote(event.event->values["frequency"]->getValue());
-                        if (midi >= 0) {
-                            m_surge->releaseNote(1, midi, 127);
+                        auto freq = event.event->values["frequency"];
+                        if (std::holds_alternative<double>(freq)) {
+                            double freqValue = std::get<double>(freq);
+                            auto midi = getMidiNote(freqValue);
+                            if (midi >= 0) {
+                                m_surge->releaseNote(1, midi, 127);
+                            }
                         }
+                        
                     }
                 });
                 m_onEventPool.consume(time, [this](auto event) {
-                    if (event.event->values.count("frequency")) {
-                        auto midi = getMidiNote(event.event->values["frequency"]->getValue());
+                    auto& values = event.event->values;
+                    if (values.count("frequency") && std::holds_alternative<double>(values["frequency"])) {
+                        
+                        auto midi = getMidiNote(std::get<double>(values["frequency"]));
                         if (midi >= 0) {
                             m_surge->playNote(1, midi, 127, 0);
                         }

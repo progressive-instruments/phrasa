@@ -6,7 +6,6 @@ target_sources( event
   PRIVATE
     Event.h 
     Sequence.h
-    IEventValue.h
     ShiftTime.h)
 
 target_include_directories(event INTERFACE .)

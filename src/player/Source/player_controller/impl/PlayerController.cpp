@@ -25,18 +25,6 @@ m_connection(connection)
 	m_commRoutineThread = std::thread(communicationRoutine, this);
 }
 
-class EventValue  : public phrasa::IEventValue
-{
-public:
-    EventValue(double value)
-    {
-        m_value = value;
-    }
-    virtual double getValue() override { return m_value; };
-private:
-    double m_value;
-};
-
 void PlayerController::setSequenceHandler(player::IPlayer& player, const shift_processor::ShiftPlayerMessage& message)
 {
     UniqueSequenceMap<std::shared_ptr<Event>> sequenceMap;
@@ -64,8 +52,7 @@ void PlayerController::parseSetSequenceMessage(const shift_processor::SetSequenc
                 if (val.second.value_case() != shift_processor::EventValue::ValueCase::kNumericValue) {
                     throw std::runtime_error("player supported only numberic values");
                 }
-                outputEvent->values[val.first] = std::unique_ptr<phrasa::IEventValue>(
-                    new EventValue(val.second.numericvalue()));;
+                outputEvent->values[val.first] = val.second.numericvalue();;
             }
             if (sequenceMapOutput->count(instrumentID) == 0) {
                 (*sequenceMapOutput)[instrumentID] = std::make_unique<Sequence<std::shared_ptr<Event>>>();

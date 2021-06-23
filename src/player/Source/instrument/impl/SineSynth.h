@@ -160,8 +160,9 @@ struct SineSynth : public phrasa::instrument::IInstrument
         juce::MidiBuffer incomingMidi;
         m_sequenceProcessor.consume(track,[this, &incomingMidi](auto event) {
             int sample = event.relativeTime.getMilliSeconds() / m_sampleTimeMs;
-            if (event.event->values.count("frequency")) {
-                auto midi = getMidiNote(event.event->values["frequency"]->getValue());
+            auto& values = event.event->values;
+            if (values.count("frequency") && std::holds_alternative<double>(values["frequency"])) {
+                auto midi = getMidiNote(std::get<double>(values["frequency"]));
                 if (midi >= 0) {
                     incomingMidi.addEvent(juce::MidiMessage::noteOn(1, midi, (juce::uint8)127), sample);
                     m_eventPool.addEvent(event.event, event.relativeTime + event.event->duration);
@@ -172,9 +173,11 @@ struct SineSynth : public phrasa::instrument::IInstrument
 
 
         m_eventPool.consume(track.Duration, [this,&incomingMidi](auto event) {
-            if (event.event->values.count("frequency")) {
+            auto& values = event.event->values;
+            if (values.count("frequency") && std::holds_alternative<double>(values["frequency"])) {
+                
                 int sample = event.relativeTime.getMilliSeconds() / m_sampleTimeMs;
-                auto midi = getMidiNote(event.event->values["frequency"]->getValue());
+                auto midi = getMidiNote(std::get<double>(values["frequency"]));
                 incomingMidi.addEvent(juce::MidiMessage::noteOff(1, midi), sample);
             }
         });
