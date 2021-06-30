@@ -9,6 +9,7 @@ target_sources( instrument
     IInstrument.h
     IInstrumentFactory.h
     SequenceTrack.h
+    impl/SamplerInstrument.h
     impl/InstrumentFactory.h
     impl/SurgeInstrument.h)
 

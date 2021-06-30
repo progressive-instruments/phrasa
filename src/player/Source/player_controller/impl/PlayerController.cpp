@@ -49,10 +49,17 @@ void PlayerController::parseSetSequenceMessage(const shift_processor::SetSequenc
             auto outputEvent = std::make_shared<Event>(SequenceTime::FromMilliseconds(e.duration()));
             auto values = e.values();
             for (auto val : values) {
-                if (val.second.value_case() != shift_processor::EventValue::ValueCase::kNumericValue) {
-                    throw std::runtime_error("player supported only numberic values");
+                if (val.second.value_case() == shift_processor::EventValue::ValueCase::kNumericValue) {
+                    outputEvent->values[val.first] = val.second.numericvalue();
                 }
-                outputEvent->values[val.first] = val.second.numericvalue();;
+                else if (val.second.value_case() == shift_processor::EventValue::ValueCase::kStringValue)
+                {
+                    outputEvent->values[val.first] = val.second.stringvalue();
+                }
+                else {
+                    throw std::runtime_error("player supported not supported value");
+                }
+                
             }
             if (sequenceMapOutput->count(instrumentID) == 0) {
                 (*sequenceMapOutput)[instrumentID] = std::make_unique<Sequence<std::shared_ptr<Event>>>();
