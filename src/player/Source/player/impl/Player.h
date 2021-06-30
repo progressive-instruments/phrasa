@@ -1,9 +1,11 @@
 #pragma once 
 
 #include <optional>
+#include <mutex>
+#include <atomic>
+#include <set>
 #include "IPlayer.h"
 #include "IPlayerAudioProcessor.h"
-#include "UniquePtrLockFreeQueue.h"
 #include "AudioBuffer.h"
 #include "IInstrumentFactory.h"
 #include "SequenceTrack.h"
@@ -21,7 +23,7 @@ class Player : public IPlayer, IPlayerAudioProcessor
 public:
 
 	Player(std::shared_ptr<instrument::IInstrumentFactory> instrumentFactory)
-		: m_processor(instrumentFactory)
+		: m_instrumentFactory(instrumentFactory)
 	{}
 
 	// IPlayer
@@ -34,20 +36,26 @@ public:
 	virtual void processingEnded() override;
 private:
 
+	void updateAddedInstruments(const SequenceMap<std::shared_ptr<Event>>& sequence, std::vector<std::pair<InstrumentID, std::unique_ptr<instrument::IInstrument>>>& output);
+
+	void updateRemovedInstruments(const SequenceMap<std::shared_ptr<Event>>& sequence, std::vector<InstrumentID>& output);
+
 	class Processor
 	{
 		static const size_t NUM_CHANNELS = 2;
-		static const size_t QUEUE_SIZE = 128;
 	public:
-		Processor(std::shared_ptr<instrument::IInstrumentFactory> factory)
-		:	m_queue(QUEUE_SIZE),
+		Processor()
+		:	m_newActionPending(false),
+			m_action(nullptr),
 			m_sampleTimeMs(0),
 			m_isPlaying(true)
 		{
 			m_managedBuffer.setChannels(NUM_CHANNELS);
-			m_instruments[instrument::builtin::BASS] = factory->createInstrument(instrument::builtin::BASS);
-			m_instruments[instrument::builtin::LEAD] = factory->createInstrument(instrument::builtin::LEAD);
 		}
+
+		void prepareForProcessing(double sampleRate, size_t expectedBlockSize);
+		void processBlock(audio::AudioBuffer& buffer);
+		void processingEnded();
 
 		class Action {
 		public:
@@ -55,25 +63,30 @@ private:
 			virtual void run(Processor& processor) = 0;
 		};
 
-		void send(std::unique_ptr<Action> action);
-		void prepareForProcessing(double sampleRate, size_t expectedBlockSize);
-		void processBlock(audio::AudioBuffer& buffer);
-		void processingEnded();
+		void run(Action& action);
 
 		class SetSequenceAction: public Action {
 		public:
 			
 			SetSequenceAction(
 				UniqueSequenceMap<std::shared_ptr<Event>> newSequenceMap,
+				std::vector<std::pair<InstrumentID, std::unique_ptr<instrument::IInstrument>>>* newInstruments = nullptr,
+				std::vector<InstrumentID>* instrumentsToBeRemoved = nullptr,
 				std::optional<SequenceTime> newEndTime = std::nullopt)
 				: m_newSequenceMap(std::move(newSequenceMap)),
-					m_newEndTime(newEndTime){}
+					m_instrumentsToBeRemoved(instrumentsToBeRemoved),
+					m_newInstruments(newInstruments),
+					m_newEndTime(newEndTime)
+			{}
 
 			void run(Processor& processor)override;
 		private:
+			std::vector<std::pair<InstrumentID, std::unique_ptr<instrument::IInstrument>>>* m_newInstruments;
+			std::vector<InstrumentID>* m_instrumentsToBeRemoved;
 			UniqueSequenceMap<std::shared_ptr<Event>> m_newSequenceMap;
 			std::optional<SequenceTime> m_newEndTime;
 		};
+
 
 		class SetPlayModeAction : public Action {
 		public:
@@ -87,18 +100,23 @@ private:
 			PlayMode m_mode;
 		};
 
-
 	private:
-
-		UniquePtrLockFreeQueue<Action> m_queue;
+		std::mutex m_actionMutex;
+		std::atomic<bool> m_newActionPending;
+		Action* m_action;
+		
 		double m_sampleTimeMs;
 		std::map <InstrumentID, std::unique_ptr<instrument::IInstrument>> m_instruments;
 		instrument::SequenceTrack m_track;
 		ManagedAudioBuffer m_managedBuffer;
 		bool m_isPlaying;
+		double m_sampleRate;
+		size_t m_expectedBlockSize;
 	};
 
 	Processor m_processor;
+	std::shared_ptr<instrument::IInstrumentFactory> m_instrumentFactory;
+	std::set<InstrumentID> m_activeInstruments;
 };
 
 

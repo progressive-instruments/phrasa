@@ -18,6 +18,7 @@ public:
 };
 
 template <typename T>
-using UniqueSequenceMap = std::unique_ptr<std::map<InstrumentID, std::unique_ptr<Sequence<T>>>>;
-
+using SequenceMap = std::map <InstrumentID, std::unique_ptr<Sequence<T>>>;
+template <typename T>
+using UniqueSequenceMap = std::unique_ptr< SequenceMap <T>>;
 }
