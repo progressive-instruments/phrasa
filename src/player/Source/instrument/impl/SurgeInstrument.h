@@ -3,23 +3,41 @@
 #include "IInstrument.h"
 #include "SurgeSynthesizer.h"
 #include "SequenceProcessor.h"
+#include <fstream>
+#include <algorithm>
+#include <cctype>
+#include <string>
+#include <regex>
+
 
 namespace phrasa::instrument::impl {
 
 
 class SurgeInstrument : public IInstrument, public SurgeSynthesizer::PluginLayer {
 public:
-	SurgeInstrument(int preset) :
+	SurgeInstrument(int patchNumber) :
         m_blockPos(0),
         m_surge(new SurgeSynthesizer(this, "C:\\Users\\erez\\Desktop\\dev\\phrasa\\src\\player\\Source\\instrument\\impl\\surge\\resources\\data"))
     {
+        
         m_surge->storage.initializePatchDb(); 
-        m_surge->programChange(1, preset);
+        m_surge->loadPatch(patchNumber);
     }
 	void surgeParameterUpdated(const SurgeSynthesizer::ID& id, float) override {
 	}
 
+    static void initPatchMap(std::map<std::string, int>& res) {
+        std::unique_ptr<SurgeSynthesizer> surge(new SurgeSynthesizer(nullptr, "C:\\Users\\erez\\Desktop\\dev\\phrasa\\src\\player\\Source\\instrument\\impl\\surge\\resources\\data"));
+        surge->storage.initializePatchDb();
+        std::set<std::string> existedNames;
+        for (int i = 0; i < surge->storage.patch_list.size(); ++i) {
+            std::string newName = formatPatchName(surge->storage.patch_list[i].name, existedNames);
+            res[newName] = i;
+            existedNames.insert(newName);
+        }
 
+    }
+    
 private:
     enum class EventType {ON, OFF};
 
@@ -30,6 +48,59 @@ private:
     EventHolder<std::shared_ptr<Event>> m_offEventPool;
 	std::unique_ptr<SurgeSynthesizer> m_surge;
 
+    static std::string formatPatchName(const std::string& name, std::set<std::string>& existedNames) {
+        std::regex e("(\\s+-?\\s*)");   // matches words beginning by "sub"
+        std::string newName = std::regex_replace(name, e, "-");
+        newName.erase(std::remove(newName.begin(), newName.end(), ','), newName.end());
+        newName.erase(std::remove(newName.begin(), newName.end(), '('), newName.end());
+        newName.erase(std::remove(newName.begin(), newName.end(), ')'), newName.end());
+
+        std::transform(newName.begin(), newName.end(), newName.begin(),
+            [](unsigned char c) { return std::tolower(c); });
+
+        if (existedNames.count(newName) > 0) {
+            newName.push_back('-');
+            std::string uniqueName;
+            for (int i = 1; true; ++i) {
+                std::string uniqueName = newName + std::to_string(i);
+                if (existedNames.count(uniqueName) == 0) {
+                    break;
+                }
+            }
+            newName = uniqueName;
+        }
+        return newName;
+    }
+
+    static void createPatchDocs(SurgeSynthesizer& surgeSynth) {
+        std::ofstream out("C:\\Users\\erez\\Desktop\\synths.txt");
+        std::map<std::string, std::vector<std::string>> patchcategories;
+        for (auto& patch : surgeSynth.storage.patch_list) {
+            if (patchcategories.count(surgeSynth.storage.patch_category[patch.category].name) == 0) {
+                patchcategories[surgeSynth.storage.patch_category[patch.category].name] = std::vector<std::string>();
+            }
+            patchcategories[surgeSynth.storage.patch_category[patch.category].name].push_back(patch.name);
+        }
+        std::set<std::string> existedNames;
+
+        for (auto& category : patchcategories) {
+            out << category.first << std::endl << "-------------" << std::endl;
+
+            for (auto patchname : category.second) {
+                std::string newName = formatPatchName(patchname, existedNames);
+
+                out << newName << std::endl;
+                existedNames.insert(newName);
+            }
+            out << std::endl;
+
+        }
+
+        out.close();
+
+    }
+
+    
 
 	// Inherited via IInstrument
 	virtual void prepareForProcessing(double sampleRate, size_t expectedBlockSize) override {
@@ -57,8 +128,9 @@ private:
             if (m_blockPos == 0) {
                 SequenceTime time = SequenceTime::FromMilliseconds(m_sampleTimeMs * BLOCK_SIZE);
                 m_offEventPool.consume(time, [this](auto event) {
-                    if (event.event->values.count("frequency")) {
-                        auto freq = event.event->values["frequency"];
+                    auto& values = event.event->values;
+                    if (values.count("frequency")) {
+                        auto freq = values["frequency"];
                         if (std::holds_alternative<double>(freq)) {
                             double freqValue = std::get<double>(freq);
                             auto midi = getMidiNote(freqValue);

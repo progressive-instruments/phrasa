@@ -92,8 +92,9 @@ void Player::setSequence(UniqueSequenceMap<std::shared_ptr<Event>> sequenceMap, 
 	std::vector<std::pair<InstrumentID, std::unique_ptr<instrument::IInstrument>>> addedInstruments;
 
 	updateAddedInstruments(*sequenceMap, addedInstruments);
+	updateRemovedInstruments(*sequenceMap, removedInstruments);
 
-	Processor::SetSequenceAction action (std::move(sequenceMap), &addedInstruments, nullptr, endTime);
+	Processor::SetSequenceAction action (std::move(sequenceMap), &addedInstruments, &removedInstruments, endTime);
 	m_processor.run(action);
 }
 

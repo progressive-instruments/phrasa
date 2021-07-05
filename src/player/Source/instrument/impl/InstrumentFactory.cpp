@@ -6,17 +6,18 @@
 
 namespace phrasa::instrument::impl {
 
+InstrumentFactory::InstrumentFactory()
+{
+	SurgeInstrument::initPatchMap(m_surgePatchMap);
+}
 
 std::unique_ptr<IInstrument> InstrumentFactory::createInstrument(std::string instrumentType)
 {
 	static const std::string dir = "C:\\Users\\erez\\Desktop\\dev\\samples";
-
-	if (instrumentType == builtin::BASS) {
-		return std::unique_ptr<IInstrument>(new SurgeInstrument(4));
-	} else if (instrumentType == builtin::LEAD) {
-		return std::unique_ptr<IInstrument>(new SurgeInstrument(7));
+	if (m_surgePatchMap.count(instrumentType) > 0) {
+		return std::unique_ptr<IInstrument>(new SurgeInstrument(m_surgePatchMap[instrumentType]));
 	}
-	else if (instrumentType == builtin::DRUMS) {
+	if (instrumentType == builtin::DRUMS) {
 		std::vector<SampleSettings> samps;
 		samps.push_back(SampleSettings("kick", dir + "\\kick.wav"));
 		samps.push_back(SampleSettings("hi-closed", dir + "\\hi_closed.wav"));
