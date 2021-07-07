@@ -1,5 +1,10 @@
 #pragma once
 
+#ifndef _USE_MATH_DEFINES
+    #define _USE_MATH_DEFINES
+#endif
+#include <cmath>
+
 #include "IInstrument.h"
 #include "SurgeSynthesizer.h"
 #include "SequenceProcessor.h"
@@ -15,14 +20,19 @@ namespace phrasa::instrument::impl {
 
 class SurgeInstrument : public IInstrument, public SurgeSynthesizer::PluginLayer {
 public:
-	SurgeInstrument(int patchNumber) :
+	SurgeInstrument() :
         m_blockPos(0),
         m_surge(new SurgeSynthesizer(this, "C:\\Users\\erez\\Desktop\\dev\\phrasa\\src\\player\\Source\\instrument\\impl\\surge\\resources\\data"))
     {
         
         m_surge->storage.initializePatchDb(); 
-        m_surge->loadPatch(patchNumber);
     }
+
+    void setPatch(int patchNumber) {
+        m_surge->loadPatch(patchNumber);
+
+    }
+
 	void surgeParameterUpdated(const SurgeSynthesizer::ID& id, float) override {
 	}
 

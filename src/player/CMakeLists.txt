@@ -18,6 +18,7 @@ add_subdirectory(googletest)                    # If you've put JUCE in a subdir
 SET(protobuf_BUILD_TESTS OFF)
 add_subdirectory(protobuf/cmake)
 
+add_subdirectory(Source/utils)
 add_subdirectory(Source/connection)
 add_subdirectory(Source/audio)
 add_subdirectory(Source/event)

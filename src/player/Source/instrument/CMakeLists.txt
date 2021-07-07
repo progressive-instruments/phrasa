@@ -23,7 +23,8 @@ target_compile_definitions(instrument PRIVATE
 target_link_libraries(instrument 
   PUBLIC 
   audio 
-  surge-shared)
+  surge-shared
+  utils)
 
 target_include_directories(instrument 
   PRIVATE

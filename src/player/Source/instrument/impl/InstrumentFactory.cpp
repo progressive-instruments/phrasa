@@ -1,21 +1,23 @@
-#include "IInstrumentFactory.h"
 #include "InstrumentFactory.h"
-#include "SurgeInstrument.h"
 #include "SineSynth.h"
 #include "SamplerInstrument.h"
 
 namespace phrasa::instrument::impl {
 
 InstrumentFactory::InstrumentFactory()
+	:m_surgeInstrumentQueue([]{return std::unique_ptr<SurgeInstrument>(new SurgeInstrument());}, MAX_PENDING_SURGE_INSTRUMENTS)
 {
 	SurgeInstrument::initPatchMap(m_surgePatchMap);
 }
+
 
 std::unique_ptr<IInstrument> InstrumentFactory::createInstrument(std::string instrumentType)
 {
 	static const std::string dir = "C:\\Users\\erez\\Desktop\\dev\\samples";
 	if (m_surgePatchMap.count(instrumentType) > 0) {
-		return std::unique_ptr<IInstrument>(new SurgeInstrument(m_surgePatchMap[instrumentType]));
+		auto surgeInst = m_surgeInstrumentQueue.consume();
+		surgeInst->setPatch(m_surgePatchMap[instrumentType]);
+		return std::move(surgeInst);
 	}
 	if (instrumentType == builtin::DRUMS) {
 		std::vector<SampleSettings> samps;
