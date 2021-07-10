@@ -1,9 +1,13 @@
->1
-  saw_synth~.frequency 440
->each
-  saw_synth~.frequency 330
->2
-  saw_synth~.frequency 220
->3
-  saw_synth~.cutoff 100%
+>1.event
+  instrument saw_synth
+  frequency 440
+>each.event
+  instrument saw_synth
+  frequency 330
+>2.event
+  instrument saw_synth
+  frequency 220
+>3.event
+  instrument saw_synth
+  cutoff 100%
 >total 4

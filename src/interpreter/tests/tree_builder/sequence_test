@@ -3,6 +3,6 @@ sequences.seq1 3,2,1
 >2.sequences.seq2 5,6,7,8
 >2.$seq2 4,erez,-1
 
-inst1~.pitch ($seq1 <<)
+event.pitch ($seq1 <<)
 >1-2
-  inst2~.pitch (sequences.seq2 >)
+  event.pitch (sequences.seq2 >)

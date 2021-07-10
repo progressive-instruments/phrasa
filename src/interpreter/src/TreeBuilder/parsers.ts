@@ -104,12 +104,20 @@ export class SectionAssigner extends ExpressionEvaluator {
           return new SequencesAssigner(this._section.sequences);
         case ExpressionSubject.Use:
           return new UseEvaluator(this._section, this._phraseFiles);
-        default:
-          if(!this._section.sounds) {
-            this._section.sounds = new Map<string,Tree.Sound>();
+        case Property.Events:
+        case Property.Event:
+          if(!this._section.events) {
+            this._section.events = new Map<number,Tree.SectionEvent>();
           }
-          let soundEvents = getOrCreate(this._section.sounds, propertyName, ()=> {return {events: new Map<number, Tree.SectionEvent>()}});
-          return new SoundAssigner(soundEvents);
+          const eventsAssigner = new EventsAssigner(this._section.events);
+          if(propertyName == Property.Event) {
+            return eventsAssigner.getInnerAssigner("1");
+          }
+          return eventsAssigner;
+        case Property.DefaultInstrument:
+            return new DefaultInstrumentAssigner(this._section);
+        default:
+            throw new Error(`unknown property ${propertyName}`);
       }
     }
     setStringValue(value : string) {
@@ -119,6 +127,16 @@ export class SectionAssigner extends ExpressionEvaluator {
         super.setStringValue(value);
       }
     }
+}
+
+export class DefaultInstrumentAssigner extends ExpressionEvaluator {
+  constructor(private _section: ExtendedSection){
+    super();
+  }
+
+  setStringValue(value : string) {
+    this._section.defaultInstrument = value;
+  }
 }
 
 export class SelectorAssigner extends ExpressionEvaluator {
@@ -399,7 +417,13 @@ class EventValueAssigner extends ExpressionEvaluator {
   }
 
   private setValue(value: string | Tree.SequenceTrigger) {
-    if(this._valueKey === Property.EventStartOffset) {
+    if(this._valueKey === Property.EventInstrument) {
+      if(typeof(value) == 'string') {
+        this._event.instrument = value;
+      } else {
+        throw new Error('instrument value must be a string')
+      }
+    } else if(this._valueKey === Property.EventStartOffset) {
       this._event.startOffset = value;
     } else if(this._valueKey === Property.EventEndOffset) {
       this._event.endOffset = value;
@@ -437,24 +461,5 @@ class EventsAssigner extends ExpressionEvaluator {
       this._events.set(index, {values: new Map<string, Tree.EventValue>()});
     }
     return new EventAssigner(this._events.get(index));
-  }
-}
-
-
-
-class SoundAssigner extends ExpressionEvaluator {
-  constructor(private _sound: Tree.Sound){
-    super();
-  }
-  getInnerAssigner(input: string) : ExpressionEvaluator {
-
-    if(input == Property.Events) {
-      return new EventsAssigner(this._sound.events);
-    } else if(input == Property.Event) {
-      const firstEvent = getOrCreate(this._sound.events, 0, ()=>{return {values: new Map<string, Tree.EventValue>()};});
-      return new EventAssigner(firstEvent);
-    } else {
-      throw new Error('unknown instrument property');
-    }
   }
 }

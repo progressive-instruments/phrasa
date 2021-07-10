@@ -3,7 +3,8 @@ sections.2 beat
 sections
   1.length 1/4
   1
-    saw_synth.event.note C3
-  2.saw_synth
-    event
-      note D3
+    event.instrument saw_synth
+    event.note C3
+  2.event
+    note D3
+    instrument saw_synth

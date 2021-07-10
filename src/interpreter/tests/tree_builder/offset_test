@@ -1,7 +1,7 @@
 tempo 120bpm
-a.event.frequency C3
-a.event.start 10%
-a.event.end -10%
-b.event.frequency C3
-b.event.start 0.1
-b.event.end -0.1
+events.1.frequency C3
+events.1.start 10%
+events.1.end -10%
+events.2.frequency C3
+events.2.start 0.1
+events.2.end -0.1

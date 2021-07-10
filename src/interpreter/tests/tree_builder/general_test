@@ -1,14 +1,16 @@
 tempo 120bpm
 >2 beat
+instrument saw_synth
 sections
   total 2
   1.length 1/4
-  1
-    saw_synth~.frequency 440
-    saw_synth.event.cutoff 90%
-  2
-    saw_synth.event
-      note D3
->1-2.saw_synth.event.attack 80%
+  1.event
+    instrument sine_synth
+    frequency 440
+    cutoff 90%
+  2.event
+    note D3
+>1-2.event.attack 80%
 branches.b
-  >1,2.saw_synth~.frequency 220
+  >1,2.event
+    frequency 220

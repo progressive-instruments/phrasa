@@ -1,14 +1,15 @@
 import {ISequenceBuilder} from './ISequenceBuilder'
 import {Sequence, SequenceEvent, EventValue} from './Sequence'
-import {PieceTree, Section, ExpressionInput, Expression, Pitch, Sequence as TreeSequence, SequenceTrigger, Sound, OffsetValue} from './PieceTree.js'
+import {PieceTree, Section, ExpressionInput, Expression, Pitch, Sequence as TreeSequence, SequenceTrigger, OffsetValue, SectionEvent} from './PieceTree.js'
 import * as Evaluator from './Evaluator.js'
 import _ from 'lodash'
 
 
 interface Context {
   contextLength: number;
-  pitch?: Pitch
-  sequences?: Map<string,TreeSequence>
+  pitch?: Pitch;
+  sequences?: Map<string,TreeSequence>;
+  defaultInstrument?: string;
 }
 
 class TreeSequenceState {
@@ -120,65 +121,67 @@ export class SequenceBuilder implements ISequenceBuilder {
     return pitchContext.grid[index];
   }
 
-  private buildEvents(sounds: Map<string,Sound>, context: Context, sectionStartTime: number, sectionEndTime: number, events: SequenceEvent[]) {
-    for(const [soundKey,s] of sounds) {
-      for(const [eventIndex,e] of s.events) {
+  private buildEvents(events: Map<number,SectionEvent>, context: Context, sectionStartTime: number, sectionEndTime: number, outEvents: SequenceEvent[]) {
+    for(const [eventIndex,e] of events) {
 
-        let values = new Map<string,EventValue>();
-        if(e.values) {
-          for(const [valueKey,v] of e.values) {
-            let fetchedValue = this.fetchEventValue(v, context);
-            let outValue: number|string;
-            try {
-              outValue = Evaluator.evaluate(fetchedValue, [Evaluator.ToFloat])
-            } catch {
-              outValue = fetchedValue;
-            }
-            values.set(valueKey,outValue);
+      let values = new Map<string,EventValue>();
+      if(e.values) {
+        for(const [valueKey,v] of e.values) {
+          let fetchedValue = this.fetchEventValue(v, context);
+          let outValue: number|string;
+          try {
+            outValue = Evaluator.evaluate(fetchedValue, [Evaluator.ToFloat])
+          } catch {
+            outValue = fetchedValue;
           }
+          values.set(valueKey,outValue);
         }
-        if(e.frequency) {
-          let fetchedValue = this.fetchEventValue(e.frequency.value, context);
-          let frequency: number;
-          switch(e.frequency.type) {
-            case 'pitch':
-              frequency = this.frequencyFromPitch(context.pitch, fetchedValue);
-              break;
-              case 'note':
-              frequency = Evaluator.evaluate(fetchedValue, [Evaluator.NoteToFrequency]);
-              break;
-            case 'frequency':
-              frequency = Evaluator.evaluate(fetchedValue,[Evaluator.ToFloat]);
-              break;
-          }
-          values.set('frequency',frequency);
-        }
-        const sectionDuration = sectionEndTime - sectionStartTime;
-        let startTime = sectionStartTime;
-        let endTime: number;
-        if(e.startOffset) {
-          const factor = this.evalOffset(e.startOffset, context)
-          startTime = startTime + sectionDuration * factor
-        }
-        if(e.endOffset) {
-          const factor = this.evalOffset(e.endOffset, context)
-          endTime = sectionStartTime + sectionDuration * factor
-        } else {
-          // compensation for surgee!!!
-          endTime = sectionEndTime - 0.0001
-        }
-        events.push({
-          instrument: soundKey,
-          startTimeMs: startTime,
-          durationMs: endTime - startTime,
-          values: values
-        });
       }
+      if(e.frequency) {
+        let fetchedValue = this.fetchEventValue(e.frequency.value, context);
+        let frequency: number;
+        switch(e.frequency.type) {
+          case 'pitch':
+            frequency = this.frequencyFromPitch(context.pitch, fetchedValue);
+            break;
+            case 'note':
+            frequency = Evaluator.evaluate(fetchedValue, [Evaluator.NoteToFrequency]);
+            break;
+          case 'frequency':
+            frequency = Evaluator.evaluate(fetchedValue,[Evaluator.ToFloat]);
+            break;
+        }
+        values.set('frequency',frequency);
+      }
+      const sectionDuration = sectionEndTime - sectionStartTime;
+      let startTime = sectionStartTime;
+      let endTime: number;
+      if(e.startOffset) {
+        const factor = this.evalOffset(e.startOffset, context)
+        startTime = startTime + sectionDuration * factor
+      }
+      if(e.endOffset) {
+        const factor = this.evalOffset(e.endOffset, context)
+        endTime = sectionStartTime + sectionDuration * factor
+      } else {
+        // compensation for surgee!!!
+        endTime = sectionEndTime - 0.0001
+      }
+      let instrument = e.instrument ?? context.defaultInstrument;
+      if(!instrument) {
+        throw new Error('no instrument defined');
+      }
+      outEvents.push({
+        instrument: instrument,
+        startTimeMs: startTime,
+        durationMs: endTime - startTime,
+        values: values
+      });
     }
   }
 
   // return endTime
-  private evalSection(section: Section, context: Context, totalSections: number, sectionStartTime: number, events: SequenceEvent[]): number {
+  private evalSection(section: Section, context: Context, totalSections: number, sectionStartTime: number, outEvents: SequenceEvent[]): number {
     if(!section.sectionLength) {
       context.contextLength /= totalSections;
     } else {
@@ -211,6 +214,9 @@ export class SequenceBuilder implements ISequenceBuilder {
         context.sequences = new Map([...context.sequences,...section.sequences]);
       }
     }
+    if(section.defaultInstrument) {
+      context.defaultInstrument = section.defaultInstrument;
+    }
     if(section.variables) { 
       throw new Error('variables are not supported');
     }
@@ -221,7 +227,7 @@ export class SequenceBuilder implements ISequenceBuilder {
           _.cloneDeep(context),
           1,
           sectionStartTime,
-          events)
+          outEvents)
       }
 
     }
@@ -236,14 +242,14 @@ export class SequenceBuilder implements ISequenceBuilder {
           _.cloneDeep(context),
           totalSections,
           sectionEndTime,
-          events);
+          outEvents);
       }
     } else {
       sectionEndTime = sectionStartTime + context.contextLength
     }
 
-    if(section.sounds) {
-      this.buildEvents(section.sounds, context, sectionStartTime, sectionEndTime, events);
+    if(section.events) {
+      this.buildEvents(section.events, context, sectionStartTime, sectionEndTime, outEvents);
     }
 
     return sectionEndTime;

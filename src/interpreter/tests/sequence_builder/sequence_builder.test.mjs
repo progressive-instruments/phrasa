@@ -10,35 +10,21 @@ describe("sequence builder", function() {
       sections: [
         {
           sectionLength: '1/2',
-          sounds: new Map([
-            [
-              'saw_synth', 
-              {
-                events: new Map([[0, 
-                  {
-                    values: new Map([['cutoff', '100%']]),
-                    frequency: {type: 'frequency', value: '440'}
-                  }]])
-              }
-              
-            ]
-          ])
+          events: new Map([[0, 
+            {
+              instrument: 'saw_synth',
+              values: new Map([['cutoff', '100%']]),
+              frequency: {type: 'frequency', value: '440'}
+            }]])
         },
         {
           beat: true,
           sectionLength: '1/2',
-          sounds: new Map([
-            [
-              'saw_synth', 
-              {
-                events: new Map([[0,
-                  {
-                    frequency: {type: 'note', value: 'C3'}
-                  }]])
-              }
-              
-            ]
-          ])
+          events: new Map([[0,
+            {
+              instrument: 'saw_synth',
+              frequency: {type: 'note', value: 'C3'}
+            }]])
         }
       ]
     };
@@ -63,29 +49,19 @@ describe("sequence builder", function() {
     tree.rootSection = {
       tempo: '120bpm',
       beat: true,
-      sounds: new Map([
-        [
-          'saw_synth', 
-          {
-            events: new Map([[0, {
-              values: new Map([['frequency', 'D3']]),
-              startOffset: '10%',
-              endOffset: '90%',
-            }]])
-          }
-          
-        ],
-        [
-          'sine_synth', 
-          {
-            events: new Map([[0, {
-              values: new Map([['frequency', 'D3']]),
-              startOffset: '0.2',
-              endOffset: '0.8',
-            }]])
-          }
-          
-        ]
+      events: new Map([
+        [0, {
+          instrument: 'saw_synth',
+          values: new Map([['frequency', 'D3']]),
+          startOffset: '10%',
+          endOffset: '90%',
+        }],
+        [1, {
+          instrument: 'sine_synth',
+          values: new Map([['frequency', 'D3']]),
+          startOffset: '0.2',
+          endOffset: '0.8',
+        }]
       ])
     };
     let sequenceBuilder = new SequenceBuilder();
@@ -106,31 +82,24 @@ describe("sequence builder", function() {
         grid: [50, 100, 200, 300, 400],
         zone: 260
       },
+      defaultInstrument: 'saw_synth',
       sections: [
         {
-          sounds: new Map([
+          events: new Map(
             [
-              'saw_synth', 
-              {
-                events: new Map(
-                  [
-                    [
-                      0, 
-                      {
-                        frequency: {type: 'pitch', value: '2'}
-                      }
-                    ],
-                    [
-                      1, 
-                      {
-                        frequency: {type: 'pitch', value: '-1'}
-                      }
-                    ]
-                  ])
-              }
-              
-            ]
-          ])
+              [
+                0, 
+                {
+                  frequency: {type: 'pitch', value: '2'}
+                }
+              ],
+              [
+                1, 
+                {
+                  frequency: {type: 'pitch', value: '-1'}
+                }
+              ]
+            ])
         }
       ]
     };
@@ -157,23 +126,16 @@ describe("sequence builder", function() {
       let section = {sections:[]};
       tree.rootSection.sections.push(section);
       for(let j = 0 ; j < 4; ++j) {
-        section.sections.push({sounds: new Map([
+        section.sections.push({events: new Map(
           [
-            'saw_synth', 
-            {
-              events: new Map(
-                [
-                  [
-                    0, 
-                    {
-                      frequency: {type: 'note', value: new SequenceTrigger('seq1',1)}
-                    }
-                  ]
-                ])
-            }
-            
-          ]
-        ])});
+            [
+              0, 
+              {
+                instrument: 'saw_synth',
+                frequency: {type: 'note', value: new SequenceTrigger('seq1',1)}
+              }
+            ]
+          ])});
       }
     }
     let sequenceBuilder = new SequenceBuilder();

@@ -43,12 +43,10 @@ export interface Section {
   sections? : Section[]
   totalSections? : number // should be expression input. Add another property for default section to be used in tree builder after evaluation
   sequences? : Map<string, Sequence>
-  sounds? : Map<string,Sound>
+  events? : Map<number,SectionEvent>
+  defaultInstrument?: string;
 }
 
-export interface Sound {
-  events: Map<number,SectionEvent>
-}
 
 export class SequenceTrigger {
   constructor(name: string, steps: number) {
@@ -70,6 +68,7 @@ export interface FrequencyExpression {
 export type Sequence = string[];
 
 export interface SectionEvent {
+  instrument?: string;
   frequency?: FrequencyExpression;
   values?: Map<string, EventValue>
   startOffset?: OffsetValue

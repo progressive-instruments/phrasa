@@ -1,9 +1,9 @@
+instrument saw_synth
 sections
   total 2
   1.length 1/4
-  1
-    saw_synth~.frequency 440
-    saw_synth.event.cutoff 90%
-  2
-    saw_synth.event
-      note D3
+  1.event
+    frequency 440
+    cutoff 90%
+  2.event
+    note D3

@@ -1,5 +1,5 @@
 pitch.grid (chord c-maj)
 pitch.zone D4
-sections.#.saw_synth.event
+sections.#.event
   1 (pitch 2)
   2 (pitch -1)
