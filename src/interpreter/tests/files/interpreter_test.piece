@@ -1,6 +1,6 @@
 tempo 120bpm
-phrases.2 beat
-phrases
+sections.2 beat
+sections
   1.length 1/4
   1
     saw_synth.event.note C3

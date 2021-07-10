@@ -13,18 +13,18 @@ export enum Property {
   Branches = "branches",
   Events = "events",
   Event = "event",
-  Phrases = "phrases",
+  Sections = "sections",
   EventEndOffset = "end",
   EventStartOffset = "start",
   Sequences = "sequences",
-  PhrasesTotal = 'total',
+  SectionsTotal = 'total',
   PitchGrid = 'grid',
   PitchZone = 'zone',
-  PhrasesEach = 'each'
+  SectionsEach = 'each'
 };
 
 export const KeyPrefixes: Map<string,Property> = new Map<string,Property>([
-  ['>', Property.Phrases],
+  ['>', Property.Sections],
   ['$', Property.Sequences],
   ['&', Property.Branches]
 ]);

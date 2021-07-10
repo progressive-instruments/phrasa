@@ -5,11 +5,11 @@ import {SequenceTrigger} from '../../dist/src/PieceTree.js'
 describe("sequence builder", function() {
   it('builddd', function () {
     let tree = {};
-    tree.rootPhrase = {
+    tree.rootSection = {
       tempo: '120bpm',
-      phrases: [
+      sections: [
         {
-          phraseLength: '1/2',
+          sectionLength: '1/2',
           sounds: new Map([
             [
               'saw_synth', 
@@ -26,7 +26,7 @@ describe("sequence builder", function() {
         },
         {
           beat: true,
-          phraseLength: '1/2',
+          sectionLength: '1/2',
           sounds: new Map([
             [
               'saw_synth', 
@@ -60,7 +60,7 @@ describe("sequence builder", function() {
 
   it('offset', function () {
     let tree = {};
-    tree.rootPhrase = {
+    tree.rootSection = {
       tempo: '120bpm',
       beat: true,
       sounds: new Map([
@@ -99,14 +99,14 @@ describe("sequence builder", function() {
 
   it('pitch', function () {
     let tree = {};
-    tree.rootPhrase = {
+    tree.rootSection = {
       tempo: '120bpm',
       beat: true,
       pitch: {
         grid: [50, 100, 200, 300, 400],
         zone: 260
       },
-      phrases: [
+      sections: [
         {
           sounds: new Map([
             [
@@ -145,19 +145,19 @@ describe("sequence builder", function() {
 
   it('frequency', function () {
     let tree = {};
-    tree.rootPhrase = {
+    tree.rootSection = {
       tempo: '120bpm',
       beat: true,
       sequences: new Map([
         ['seq1', ['C3','D4','F3']]
       ]),
-      phrases: []
+      sections: []
     };
     for(let i = 0 ; i < 2; ++i) {
-      let phrase = {phrases:[]};
-      tree.rootPhrase.phrases.push(phrase);
+      let section = {sections:[]};
+      tree.rootSection.sections.push(section);
       for(let j = 0 ; j < 4; ++j) {
-        phrase.phrases.push({sounds: new Map([
+        section.sections.push({sounds: new Map([
           [
             'saw_synth', 
             {

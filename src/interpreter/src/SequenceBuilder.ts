@@ -1,6 +1,6 @@
 import {ISequenceBuilder} from './ISequenceBuilder'
 import {Sequence, SequenceEvent, EventValue} from './Sequence'
-import {PieceTree, Phrase, ExpressionInput, Expression, Pitch, Sequence as TreeSequence, SequenceTrigger, Sound, OffsetValue} from './PieceTree.js'
+import {PieceTree, Section, ExpressionInput, Expression, Pitch, Sequence as TreeSequence, SequenceTrigger, Sound, OffsetValue} from './PieceTree.js'
 import * as Evaluator from './Evaluator.js'
 import _ from 'lodash'
 
@@ -47,12 +47,12 @@ export class SequenceBuilder implements ISequenceBuilder {
   }
  
   build(tree: PieceTree) : Sequence {
-    if(!tree.rootPhrase.tempo) {
-      throw new Error('tempo must be specified in root phrase');
+    if(!tree.rootSection.tempo) {
+      throw new Error('tempo must be specified in root section');
     }
-    let betLength = this.evalTempo(tree.rootPhrase.tempo);
+    let betLength = this.evalTempo(tree.rootSection.tempo);
     let events: SequenceEvent[] = [];
-    let endTime = this.evalPhrase(tree.rootPhrase, {contextLength: 1},1, 0, events);
+    let endTime = this.evalSection(tree.rootSection, {contextLength: 1},1, 0, events);
     if(!this._relativeBeatLength) {
       throw new Error('beat length must is not defined');
     }
@@ -120,7 +120,7 @@ export class SequenceBuilder implements ISequenceBuilder {
     return pitchContext.grid[index];
   }
 
-  private buildEvents(sounds: Map<string,Sound>, context: Context, phraseStartTime: number, phraseEndTime: number, events: SequenceEvent[]) {
+  private buildEvents(sounds: Map<string,Sound>, context: Context, sectionStartTime: number, sectionEndTime: number, events: SequenceEvent[]) {
     for(const [soundKey,s] of sounds) {
       for(const [eventIndex,e] of s.events) {
 
@@ -153,19 +153,19 @@ export class SequenceBuilder implements ISequenceBuilder {
           }
           values.set('frequency',frequency);
         }
-        const phraseDuration = phraseEndTime - phraseStartTime;
-        let startTime = phraseStartTime;
+        const sectionDuration = sectionEndTime - sectionStartTime;
+        let startTime = sectionStartTime;
         let endTime: number;
         if(e.startOffset) {
           const factor = this.evalOffset(e.startOffset, context)
-          startTime = startTime + phraseDuration * factor
+          startTime = startTime + sectionDuration * factor
         }
         if(e.endOffset) {
           const factor = this.evalOffset(e.endOffset, context)
-          endTime = phraseStartTime + phraseDuration * factor
+          endTime = sectionStartTime + sectionDuration * factor
         } else {
           // compensation for surgee!!!
-          endTime = phraseEndTime - 0.0001
+          endTime = sectionEndTime - 0.0001
         }
         events.push({
           instrument: soundKey,
@@ -178,13 +178,13 @@ export class SequenceBuilder implements ISequenceBuilder {
   }
 
   // return endTime
-  private evalPhrase(phrase: Phrase, context: Context, totalPhrases: number, phraseStartTime: number, events: SequenceEvent[]): number {
-    if(!phrase.phraseLength) {
-      context.contextLength /= totalPhrases;
+  private evalSection(section: Section, context: Context, totalSections: number, sectionStartTime: number, events: SequenceEvent[]): number {
+    if(!section.sectionLength) {
+      context.contextLength /= totalSections;
     } else {
-      context.contextLength = this.evalLength(context.contextLength, phrase.phraseLength);
+      context.contextLength = this.evalLength(context.contextLength, section.sectionLength);
     }
-    if(phrase.beat) {
+    if(section.beat) {
       if(this._relativeBeatLength) {
         if(Math.abs(context.contextLength - this._relativeBeatLength) > 0.000000001) {
           throw new Error('multiple beats with different lengths were defined');
@@ -192,60 +192,60 @@ export class SequenceBuilder implements ISequenceBuilder {
       }
       this._relativeBeatLength = context.contextLength;
     }
-    if(phrase.pitch) {
+    if(section.pitch) {
       if(!context.pitch) {
         context.pitch = new Pitch();
       }
-      if(phrase.pitch.zone) {
-        context.pitch.zone = phrase.pitch.zone;
+      if(section.pitch.zone) {
+        context.pitch.zone = section.pitch.zone;
       }
-      if(phrase.pitch.grid) {
-        context.pitch.grid = phrase.pitch.grid
+      if(section.pitch.grid) {
+        context.pitch.grid = section.pitch.grid
       }
       
     }
-    if(phrase.sequences) {
+    if(section.sequences) {
       if(!context.sequences){
-        context.sequences = phrase.sequences
+        context.sequences = section.sequences
       } else {
-        context.sequences = new Map([...context.sequences,...phrase.sequences]);
+        context.sequences = new Map([...context.sequences,...section.sequences]);
       }
     }
-    if(phrase.variables) { 
+    if(section.variables) { 
       throw new Error('variables are not supported');
     }
-    if(phrase.branches) {
-      for(let branch of phrase.branches) {
-        this.evalPhrase(
+    if(section.branches) {
+      for(let branch of section.branches) {
+        this.evalSection(
           branch[1],
           _.cloneDeep(context),
-          phraseStartTime,
           1,
+          sectionStartTime,
           events)
       }
 
     }
 
-    let phraseEndTime: number;
-    if(phrase.phrases && phrase.phrases.length > 0) {
-      phraseEndTime = phraseStartTime;
-      let totalPhrases = phrase.totalPhrases ?? phrase.phrases.length;
-      for(let i = 0 ; i < totalPhrases ; ++i) {
-        phraseEndTime = this.evalPhrase(
-          phrase.phrases[i],
+    let sectionEndTime: number;
+    if(section.sections && section.sections.length > 0) {
+      sectionEndTime = sectionStartTime;
+      let totalSections = section.totalSections ?? section.sections.length;
+      for(let i = 0 ; i < totalSections ; ++i) {
+        sectionEndTime = this.evalSection(
+          section.sections[i],
           _.cloneDeep(context),
-          totalPhrases,
-          phraseEndTime,
+          totalSections,
+          sectionEndTime,
           events);
       }
     } else {
-      phraseEndTime = phraseStartTime + context.contextLength
+      sectionEndTime = sectionStartTime + context.contextLength
     }
 
-    if(phrase.sounds) {
-      this.buildEvents(phrase.sounds, context, phraseStartTime, phraseEndTime, events);
+    if(section.sounds) {
+      this.buildEvents(section.sounds, context, sectionStartTime, sectionEndTime, events);
     }
 
-    return phraseEndTime;
+    return sectionEndTime;
   }
 }

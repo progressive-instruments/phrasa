@@ -1,7 +1,7 @@
 import { Interpreter } from "./Interpreter";
 
 export interface PieceTree {
-  rootPhrase :Phrase
+  rootSection :Section
 }
   
 export interface TextLocation {
@@ -33,21 +33,21 @@ export class Pitch {
   grid?: number[]; // guaranteed to be sorted
   zone?: number; // frequency
 }
-export interface Phrase {
+export interface Section {
   pitch?: Pitch;
   variables? : Map<string, ExpressionInput>
-  phraseLength? : ExpressionInput;
+  sectionLength? : ExpressionInput;
   tempo? : ExpressionInput;
   beat? : boolean;
-  branches? : Map<string,Phrase>
-  phrases? : Phrase[]
-  totalPhrases? : number // should be expression input. Add another property for default phrase to be used in tree builder after evaluation
+  branches? : Map<string,Section>
+  sections? : Section[]
+  totalSections? : number // should be expression input. Add another property for default section to be used in tree builder after evaluation
   sequences? : Map<string, Sequence>
   sounds? : Map<string,Sound>
 }
 
 export interface Sound {
-  events: Map<number,PhraseEvent>
+  events: Map<number,SectionEvent>
 }
 
 export class SequenceTrigger {
@@ -69,7 +69,7 @@ export interface FrequencyExpression {
 
 export type Sequence = string[];
 
-export interface PhraseEvent {
+export interface SectionEvent {
   frequency?: FrequencyExpression;
   values?: Map<string, EventValue>
   startOffset?: OffsetValue

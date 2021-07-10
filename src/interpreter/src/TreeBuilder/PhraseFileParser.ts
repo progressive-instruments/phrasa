@@ -8,7 +8,7 @@ import {PhrasaSymbol} from './symbols.js'
 
 import * as Tree from '../PieceTree.js'
 import {TextContent} from '../TextContent'
-import {splitAssignKey, PhraseAssigner, ExpressionEvaluator, SelectorAssigner} from './parsers.js'
+import {splitAssignKey, SectionAssigner, ExpressionEvaluator, SelectorAssigner} from './parsers.js'
 
 
 class GetNotesErrorRecognizer {
@@ -21,14 +21,14 @@ class GetNotesErrorRecognizer {
 export class PhraseFileParser extends Listener {
   private _exprEvaluatorsStack: ExpressionEvaluator[];
 
-  constructor(private _phraseFile:TextContent, private _additionalPhraseFiles: TextContent[], private _outPhrase: Tree.Phrase)
+  constructor(private _phraseFile:TextContent, private _additionalPhraseFiles: TextContent[], private _outSection: Tree.Section)
   {
     super();
   }
 
   parse() {
 
-    this._exprEvaluatorsStack = [new PhraseAssigner(this._outPhrase, this._additionalPhraseFiles)];
+    this._exprEvaluatorsStack = [new SectionAssigner(this._outSection, this._additionalPhraseFiles)];
     const chars = new InputStream(this._phraseFile.readAll());
     let lexer = new PhrasaLexer(chars);
     const stream = new CommonTokenStream(lexer);

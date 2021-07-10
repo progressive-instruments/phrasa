@@ -10,9 +10,9 @@ export class TreeBuilder implements ITreeBuilder {
   private _tree: Tree.PieceTree;
 
 
-  build(mainPhrase: TextContent, phrases: TextContent[], instruments: TextContent[]) : Tree.PieceTree {
-    this._tree = {rootPhrase: {}};
-    let fileParser = new PhraseFileParser(mainPhrase,phrases,this._tree.rootPhrase);
+  build(mainPhrase: TextContent, additionalPhrases: TextContent[], instruments: TextContent[]) : Tree.PieceTree {
+    this._tree = {rootSection: {}};
+    let fileParser = new PhraseFileParser(mainPhrase,additionalPhrases,this._tree.rootSection);
     fileParser.parse();
     return this._tree;
   }
