@@ -9,6 +9,17 @@ message ShiftPlayerMessage {
   }
 }
 
+enum ResponseStatus {
+  Ok = 0;
+  GeneralError = 1;
+  ParsingError = 2;
+  InvalidInput = 3;
+}
+
+message ShiftPlayerResponse {
+  ResponseStatus status=1;
+}
+
 enum PlayMode {
   Play = 0;
   Stop = 1;

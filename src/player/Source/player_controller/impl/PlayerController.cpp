@@ -84,11 +84,13 @@ void phrasa::playerctrl::impl::PlayerController::communicationRoutine(PlayerCont
                 uint32_t messageSize;
                 controller->m_connection->receive(&messageSize, sizeof(messageSize));
 
+
                 messageSize = juce::ByteOrder::swapIfLittleEndian(messageSize);
                 std::vector<uint8_t> buff(messageSize);
                 controller->m_connection->receive(buff.data(), messageSize);
+                shift_processor::ResponseStatus status = shift_processor::ResponseStatus::GeneralError;
                 try {
-                    shift_processor::ShiftPlayerMessage message = shift_processor::ShiftPlayerMessage();
+                    shift_processor::ShiftPlayerMessage message;
                     if (!message.ParseFromArray(buff.data(), messageSize))
                     {
                         throw std::runtime_error("failed to parse sequence");
@@ -97,11 +99,20 @@ void phrasa::playerctrl::impl::PlayerController::communicationRoutine(PlayerCont
                         throw std::runtime_error("unsupported message type");
                     }
                     m_messageHandlers[message.message_case()](*(controller->m_player), message);
+                    status = shift_processor::ResponseStatus::Ok;
                 }
                 catch (std::exception& e) {
+
                     // setting sequenec failed...
                 }
-                
+                shift_processor::ShiftPlayerResponse response;
+                response.set_status(status);
+                auto responseBytes = response.SerializeAsString();
+                messageSize = responseBytes.size();
+                messageSize = juce::ByteOrder::swapIfLittleEndian(messageSize);
+                controller->m_connection->send(&messageSize, sizeof(uint32_t));
+                controller->m_connection->send(responseBytes.c_str(), responseBytes.size());
+
             }
         }
         catch (connection::ConnectionClosedException& ex) {
