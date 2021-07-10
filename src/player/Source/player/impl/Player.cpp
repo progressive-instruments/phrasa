@@ -15,6 +15,16 @@ inline void Player::Processor::run(Action& message)
 	}
 }
 
+void phrasa::player::impl::Player::Processor::getState(PlayerState& state)
+{
+	while (m_playerStateLock.exchange(true))
+	{
+		std::this_thread::yield();
+	}
+	state = m_state;
+	m_playerStateLock.store(false);
+}
+
 inline void Player::Processor::prepareForProcessing(double sampleRate, size_t expectedBlockSize)
 {
 	for (auto itr = m_instruments.begin(); itr != m_instruments.end(); ++itr) {
@@ -24,6 +34,15 @@ inline void Player::Processor::prepareForProcessing(double sampleRate, size_t ex
 	m_managedBuffer.setNumSamples(expectedBlockSize);
 	m_sampleRate = sampleRate;
 	m_expectedBlockSize = expectedBlockSize;
+}
+
+inline void Player::Processor::tryUpdateState()
+{
+	if(!m_playerStateLock.exchange(true))
+	{
+		m_state.m_currentPosition = m_track.Time;
+		m_playerStateLock.store(false);
+	}
 }
 
 
@@ -49,6 +68,7 @@ inline void Player::Processor::processBlock(audio::AudioBuffer& buffer)
 	}
 	audio::AudioBufferOperations::gain(buffer, 0.5);
 
+	tryUpdateState();
 
 	m_track.Advance();
 }
@@ -103,6 +123,11 @@ void phrasa::player::impl::Player::setPlayMode(PlayMode mode)
 {
 	Processor::SetPlayModeAction action(mode);
 	m_processor.run(action);
+}
+
+void phrasa::player::impl::Player::getState(PlayerState& state)
+{
+	m_processor.getState(state);
 }
 
 

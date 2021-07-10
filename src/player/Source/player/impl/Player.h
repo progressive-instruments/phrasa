@@ -29,6 +29,7 @@ public:
 	// IPlayer
 	virtual void setSequence(UniqueSequenceMap<std::shared_ptr<Event>> sequenceMap, SequenceTime endTime) override;
 	virtual void setPlayMode(PlayMode mode) override;
+	virtual void getState(PlayerState& state) override;
 
 	// IPlayerAudioProcessor
 	virtual void prepareForProcessing(double sampleRate, size_t expectedBlockSize) override;
@@ -64,6 +65,7 @@ private:
 		};
 
 		void run(Action& action);
+		void getState(PlayerState& state);
 
 		class SetSequenceAction: public Action {
 		public:
@@ -101,6 +103,8 @@ private:
 		};
 
 	private:
+		void tryUpdateState();
+
 		std::mutex m_actionMutex;
 		std::atomic<bool> m_newActionPending;
 		Action* m_action;
@@ -112,6 +116,8 @@ private:
 		bool m_isPlaying;
 		double m_sampleRate;
 		size_t m_expectedBlockSize;
+		PlayerState m_state;
+		std::atomic<bool> m_playerStateLock;
 	};
 
 	Processor m_processor;
