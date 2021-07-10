@@ -3,7 +3,7 @@
 #include "AudioBuffer.h"
 #include "juce_audio_basics/juce_audio_basics.h"
 
-namespace phrasa::player::impl {
+namespace phrasa::audio {
 
 
 class AudioBufferOperations {

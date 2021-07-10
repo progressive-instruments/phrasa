@@ -8,6 +8,7 @@
 #include "IInstrument.h"
 #include "SurgeSynthesizer.h"
 #include "SequenceProcessor.h"
+#include "AudioBufferOperations.h"
 #include <fstream>
 #include <algorithm>
 #include <cctype>
@@ -22,6 +23,7 @@ class SurgeInstrument : public IInstrument, public SurgeSynthesizer::PluginLayer
 public:
 	SurgeInstrument() :
         m_blockPos(0),
+        m_sampleTimeMs(0),
         m_surge(new SurgeSynthesizer(this, "C:\\Users\\erez\\Desktop\\dev\\phrasa\\src\\player\\Source\\instrument\\impl\\surge\\resources\\data"))
     {
         
@@ -41,11 +43,14 @@ public:
         surge->storage.initializePatchDb();
         std::set<std::string> existedNames;
         for (int i = 0; i < surge->storage.patch_list.size(); ++i) {
+            if (surge->storage.patch_list[i].name.size() == 0) {
+                continue;
+            }
             std::string newName = formatPatchName(surge->storage.patch_list[i].name, existedNames);
             res[newName] = i;
             existedNames.insert(newName);
         }
-
+        //createPatchDocs(*surge);
     }
     
 private:
@@ -94,14 +99,19 @@ private:
         std::set<std::string> existedNames;
 
         for (auto& category : patchcategories) {
-            out << category.first << std::endl << "-------------" << std::endl;
-
+            if (category.second.size() == 0) {
+                continue;
+            }
+            out << "### " << category.first << std::endl << std::endl;
+            out << "<ul style=\"list-style-type:none;columns:3\">" << std::endl;
             for (auto patchname : category.second) {
                 std::string newName = formatPatchName(patchname, existedNames);
 
-                out << newName << std::endl;
+                out << "<li>" << newName << "</li>" << std::endl;;
                 existedNames.insert(newName);
             }
+            out << "</ul>" << std::endl;
+
             out << std::endl;
 
         }
@@ -163,12 +173,13 @@ private:
                 });
                 m_surge->process();
             }
-
             data[0][i] = m_surge->output[0][m_blockPos];
             data[1][i] = m_surge->output[1][m_blockPos];
 
             m_blockPos = (m_blockPos + 1) % BLOCK_SIZE;
         }
+        audio::AudioBufferOperations::gain(buffer,0.2);
+
 	}
 
 	virtual void processingEnded() override {

@@ -41,13 +41,14 @@ inline void Player::Processor::processBlock(audio::AudioBuffer& buffer)
 		return;
 	}
 	m_track.Duration = SequenceTime::FromMilliseconds(m_sampleTimeMs * buffer.getNumSamples());
-	AudioBufferOperations::clear(buffer);
+	audio::AudioBufferOperations::clear(buffer);
 	for (auto itr = m_instruments.begin(); itr != m_instruments.end(); ++itr) {
-		AudioBufferOperations::clear(m_managedBuffer);
+		audio::AudioBufferOperations::clear(m_managedBuffer);
 		itr->second->processBlock(m_managedBuffer, m_track);
-		AudioBufferOperations::add(m_managedBuffer, buffer);
+		audio::AudioBufferOperations::add(m_managedBuffer, buffer);
 	}
-	AudioBufferOperations::gain(buffer, 0.4);
+	audio::AudioBufferOperations::gain(buffer, 0.5);
+
 
 	m_track.Advance();
 }

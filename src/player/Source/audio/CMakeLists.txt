@@ -4,6 +4,7 @@ set_property(TARGET audio PROPERTY CXX_STANDARD 17)
 
 target_sources( audio
   PRIVATE
-    AudioBuffer.h )
+    AudioBuffer.h 
+    AudioBufferOperations.h)
 
 target_include_directories(audio INTERFACE .)

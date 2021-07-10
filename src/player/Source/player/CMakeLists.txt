@@ -4,7 +4,6 @@ target_sources( player
   PRIVATE
     impl/Player.h
     impl/UniquePtrLockFreeQueue.h
-    impl/AudioBufferOperations.h
     IPlayer.h
     impl/ManagedAudioBuffer.h
     IPlayerAudioProcessor.h)

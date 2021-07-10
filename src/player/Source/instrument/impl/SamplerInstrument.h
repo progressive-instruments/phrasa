@@ -20,13 +20,20 @@ struct SampleSettings {
     std::string path;
 };
 
+struct SamplerSettings {
+    std::vector<SampleSettings> samples;
+    std::optional<double> totalGain;
+};
+
 class SamplerInstrument : public IInstrument
 {
 public:
     const int VOICES = 4;
-    SamplerInstrument(const std::vector<SampleSettings>& samples)
+    SamplerInstrument(const SamplerSettings& settings)
+        :m_gain(1.0),
+        m_sampleTimeMs(0.0)
     {
-        if (samples.size() > 128) {
+        if (settings.samples.size() > 128) {
             throw new std::out_of_range("max 128 samples are allowed");
         }
 
@@ -36,21 +43,25 @@ public:
         }
 
         juce::WavAudioFormat wavFormat;
-        for (int i = 0; i < samples.size(); ++i) {
-            juce::File file(samples[i].path);
+        for (int i = 0; i < settings.samples.size(); ++i) {
+            juce::File file(settings.samples[i].path);
             auto inputStrem = file.createInputStream();
             std::unique_ptr<juce::AudioFormatReader> audioReader(wavFormat.createReaderFor(inputStrem.release(),true));
             juce::BigInteger note;
             note.setBit(i);
             m_synth.addSound(new juce::SamplerSound(
-                samples[i].name,
+                settings.samples[i].name,
                 *audioReader,
                 note,
                 i,
                 0.1,
                 0.1,
                 10.0));
-            m_nameToNote[samples[i].name] = i;
+            m_nameToNote[settings.samples[i].name] = i;
+        }
+
+        if (settings.totalGain.has_value()) {
+            m_gain = settings.totalGain.value();
         }
     }
 
@@ -97,6 +108,7 @@ public:
             });
 
         m_synth.renderNextBlock(juceBuff, incomingMidi, 0, buffer.getNumSamples());
+        juceBuff.applyGain(m_gain);
     }
 
     void setSequence(std::unique_ptr<Sequence<std::shared_ptr<Event>>>& sequence) override {
@@ -142,6 +154,7 @@ private:
     std::map<std::string, int> m_nameToNote;
     juce::Synthesiser m_synth;
     double m_sampleTimeMs;
+    double m_gain;
 };
 
 }

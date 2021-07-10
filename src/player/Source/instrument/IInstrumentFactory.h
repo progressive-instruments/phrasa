@@ -4,8 +4,6 @@
 
 namespace phrasa::instrument {
 namespace builtin {
-    static const char* BASS = "bass";
-    static const char* LEAD = "lead";
     static const char* DRUMS = "drums";
 }
 
