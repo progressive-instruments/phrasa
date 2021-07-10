@@ -219,8 +219,8 @@ export class SequenceBuilder implements ISequenceBuilder {
         this.evalPhrase(
           branch[1],
           _.cloneDeep(context),
-          totalPhrases,
           phraseStartTime,
+          1,
           events)
       }
 
