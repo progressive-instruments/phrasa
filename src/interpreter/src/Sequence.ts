@@ -4,6 +4,17 @@
 export interface Sequence {
   endTime: number
   events: SequenceEvent[]
+  grid: Grid
+}
+
+export interface Grid {
+  rootNode: GridNode;
+}
+
+export interface GridNode {
+  startTimeMs: number
+  endTimeMs: number
+  nodes: GridNode[] 
 }
 
 export class RangedValue {

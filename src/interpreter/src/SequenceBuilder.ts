@@ -1,5 +1,5 @@
 import {ISequenceBuilder} from './ISequenceBuilder'
-import {Sequence, SequenceEvent, EventValue} from './Sequence'
+import {Sequence, SequenceEvent, EventValue, GridNode, Grid} from './Sequence'
 import {PieceTree, Section, ExpressionInput, Expression, Pitch, Sequence as TreeSequence, SequenceTrigger, OffsetValue, SectionEvent} from './PieceTree.js'
 import * as Evaluator from './Evaluator.js'
 import _ from 'lodash'
@@ -53,7 +53,8 @@ export class SequenceBuilder implements ISequenceBuilder {
     }
     let betLength = this.evalTempo(tree.rootSection.tempo);
     let events: SequenceEvent[] = [];
-    let endTime = this.evalSection(tree.rootSection, {contextLength: 1},1, 0, events);
+
+    let gridRootNode = this.evalSection(tree.rootSection, {contextLength: 1},1, 0, events);
     if(!this._relativeBeatLength) {
       throw new Error('beat length must is not defined');
     }
@@ -62,12 +63,24 @@ export class SequenceBuilder implements ISequenceBuilder {
       e.startTimeMs = e.startTimeMs * tempoFactor
       e.durationMs = e.durationMs * tempoFactor
     })
-    endTime =  endTime*tempoFactor;
+    this.factorGridNodeTime(gridRootNode, tempoFactor)
     return {
       events: events,
-      endTime: endTime
+      endTime: gridRootNode.endTimeMs,
+      grid: {
+        rootNode: gridRootNode
+      }
     };
   }
+
+  factorGridNodeTime(node:GridNode, tempoFactor: number) {
+    node.endTimeMs = node.endTimeMs *tempoFactor;
+    node.startTimeMs = node.startTimeMs * tempoFactor;
+    for(const innerNode of node.nodes) {
+      this.factorGridNodeTime(innerNode,tempoFactor);
+    }
+  }
+
   // use generic evaluator
   //const _divisonExpr = /\d+\s*\/\s*\d+/
   private evalLength(baseLength: number, inputLength: ExpressionInput): number {
@@ -181,7 +194,13 @@ export class SequenceBuilder implements ISequenceBuilder {
   }
 
   // return endTime
-  private evalSection(section: Section, context: Context, totalSections: number, sectionStartTime: number, outEvents: SequenceEvent[]): number {
+  private evalSection(section: Section, context: Context, totalSections: number, sectionStartTime: number, outEvents: SequenceEvent[]): GridNode {
+    let resNode: GridNode = {
+      startTimeMs: sectionStartTime,
+      endTimeMs: 0,
+      nodes: []
+    };
+
     if(!section.sectionLength) {
       context.contextLength /= totalSections;
     } else {
@@ -232,26 +251,27 @@ export class SequenceBuilder implements ISequenceBuilder {
 
     }
 
-    let sectionEndTime: number;
     if(section.sections && section.sections.length > 0) {
-      sectionEndTime = sectionStartTime;
+      resNode.endTimeMs = sectionStartTime;
       let totalSections = section.totalSections ?? section.sections.length;
       for(let i = 0 ; i < totalSections ; ++i) {
-        sectionEndTime = this.evalSection(
+        const newNode = this.evalSection(
           section.sections[i],
           _.cloneDeep(context),
           totalSections,
-          sectionEndTime,
+          resNode.endTimeMs,
           outEvents);
+        resNode.nodes.push(newNode);
+        resNode.endTimeMs = newNode.endTimeMs;
       }
     } else {
-      sectionEndTime = sectionStartTime + context.contextLength
+      resNode.endTimeMs = sectionStartTime + context.contextLength
     }
 
     if(section.events) {
-      this.buildEvents(section.events, context, sectionStartTime, sectionEndTime, outEvents);
+      this.buildEvents(section.events, context, sectionStartTime, resNode.endTimeMs, outEvents);
     }
 
-    return sectionEndTime;
+    return resNode;
   }
 }
