@@ -1,8 +1,9 @@
-import {ISequenceBuilder} from './ISequenceBuilder'
+import {ISequenceBuilder, SequenceBuilderResult} from './ISequenceBuilder'
 import {Sequence, SequenceEvent, EventValue, GridNode, Grid} from './Sequence'
-import {PieceTree, Section, ExpressionInput, Expression, Pitch, Sequence as TreeSequence, SequenceTrigger, OffsetValue, SectionEvent} from './PieceTree.js'
+import {PieceTree, Section, ExpressionInput, Expression, Pitch, Sequence as TreeSequence, SequenceTrigger, OffsetValue, SectionEvent, EventValue as TreeEventValue, ValueWithTextPosition, FrequencyExpression} from './PieceTree.js'
 import * as Evaluator from './Evaluator.js'
 import _ from 'lodash'
+import { PhrasaError, TextPosition, TextPositionRange } from './PhrasaError'
 
 
 interface Context {
@@ -17,7 +18,7 @@ class TreeSequenceState {
   constructor() {
     this.indexes = new Map<string,number>();
   }
-  getNext(name: string, sequence: string[], steps: number): string {
+  getNext(name: string, sequence: TreeSequence, steps: number): ValueWithTextPosition<string> {
     let index = 0;
     if(this.indexes.has(name)){
       index = this.indexes.get(name);
@@ -32,6 +33,7 @@ class TreeSequenceState {
 export class SequenceBuilder implements ISequenceBuilder {
   private _sequenceState: TreeSequenceState;
   private _relativeBeatLength?: number;
+  private _errors: PhrasaError[];
 
   constructor() {
     this._sequenceState = new TreeSequenceState();
@@ -42,22 +44,58 @@ export class SequenceBuilder implements ISequenceBuilder {
       if(!context.sequences || !context.sequences.has(value.name)) {
         throw new Error(`sequence ${value.name} does not exists in context`);
       }
-      return this._sequenceState.getNext(value.name, context.sequences.get(value.name), value.steps)
+      return this._sequenceState.getNext(value.name, context.sequences.get(value.name), value.steps).value;
     }
-    return value
+    return value;
   }
  
-  build(tree: PieceTree) : Sequence {
-    if(!tree.rootSection.tempo) {
-      throw new Error('tempo must be specified in root section');
+  tryEval<T>(expression: ()=>T, textPosition: TextPositionRange, shouldContinue:boolean = false) {
+    try {
+      return expression();
+    } catch (inputErr) {
+      const err: Error = inputErr;
+      this._errors.push({description: err.message, textPosition: textPosition});
+      if(!shouldContinue) {
+        throw inputErr;
+      }
     }
-    let betLength = this.evalTempo(tree.rootSection.tempo);
+  }
+
+  build(tree: PieceTree) : SequenceBuilderResult {
+    try {
+      this._errors = [];
+      return this.doBuild(tree);
+    } catch(e) {
+      if(this._errors.length == 0) {
+        throw new Error(`unexpected error - ${e}`)
+      }
+      return {
+        errors: this._errors,
+        sequence: null
+      };
+    }
+  }
+
+  private doBuild(tree: PieceTree) : SequenceBuilderResult {
+    this.tryEval(() => {
+      if(!tree.rootSection.tempo) {
+        throw new Error('tempo must be specified in root section');
+      }
+    }, null);
+
+    let betLength = this.tryEval(() => {
+      return this.evalTempo(tree.rootSection.tempo.value);
+    }, tree.rootSection?.tempo.textPosition);
+    
     let events: SequenceEvent[] = [];
 
     let gridRootNode = this.evalSection(tree.rootSection, {contextLength: 1},1, 0, events);
-    if(!this._relativeBeatLength) {
-      throw new Error('beat length must is not defined');
-    }
+    this.tryEval(() => {
+      if(!this._relativeBeatLength) {
+        throw new Error('beat length must is not defined');
+      }
+    }, null);
+
     let tempoFactor = betLength/this._relativeBeatLength;
     events.forEach((e) => {
       e.startTimeMs = e.startTimeMs * tempoFactor
@@ -65,11 +103,14 @@ export class SequenceBuilder implements ISequenceBuilder {
     })
     this.factorGridNodeTime(gridRootNode, tempoFactor)
     return {
-      events: events,
-      endTime: gridRootNode.endTimeMs,
-      grid: {
-        rootNode: gridRootNode
-      }
+      sequence: {
+        events: events,
+        endTime: gridRootNode.endTimeMs,
+        grid: {
+          rootNode: gridRootNode
+        }
+      },
+      errors: this._errors
     };
   }
 
@@ -125,65 +166,82 @@ export class SequenceBuilder implements ISequenceBuilder {
     if(pitchContext.zone == null || pitchContext.grid == null) {
       throw new Error('no pitch context defined');
     }
-    let closest = this.getClosestValuesIndex(pitchContext.grid, pitchContext.zone);
+    let closest = this.getClosestValuesIndex(pitchContext.grid.value, pitchContext.zone.value);
     let index = closest[0] + pitchOffset;
-    if(index < 0 || index >= pitchContext.grid.length) {
+    if(index < 0 || index >= pitchContext.grid.value.length) {
       throw new Error('pitch offset out of range');
     }
 
-    return pitchContext.grid[index];
+    return pitchContext.grid.value[index];
+  }
+
+  private mapEventValues(inValues: Map<string,ValueWithTextPosition<TreeEventValue>>, context: Context): Map<string,EventValue> {
+    let values = new Map<string,EventValue>();
+    for(const [valueKey,v] of inValues) {
+      const fetchedValue = this.tryEval(() => {
+        return this.fetchEventValue(v.value, context);
+      }, v.textPosition)
+      let outValue: number|string;
+      try {
+        outValue = Evaluator.evaluate(fetchedValue, [Evaluator.ToFloat])
+      } catch {
+        outValue = fetchedValue;
+      }
+      values.set(valueKey,outValue);
+    }
+    return values;
+  }
+
+  private parseFrequencyValue(freqExpression: FrequencyExpression, context: Context): number {
+    let fetchedValue = this.fetchEventValue(freqExpression.value, context);
+    switch(freqExpression.type) {
+      case 'pitch':
+        return this.frequencyFromPitch(context.pitch, fetchedValue);
+        case 'note':
+        return Evaluator.evaluate(fetchedValue, [Evaluator.NoteToFrequency]);
+      case 'frequency':
+        return Evaluator.evaluate(fetchedValue,[Evaluator.ToFloat]);
+    }
   }
 
   private buildEvents(events: Map<number,SectionEvent>, context: Context, sectionStartTime: number, sectionEndTime: number, outEvents: SequenceEvent[]) {
     for(const [eventIndex,e] of events) {
-
       let values = new Map<string,EventValue>();
       if(e.values) {
-        for(const [valueKey,v] of e.values) {
-          let fetchedValue = this.fetchEventValue(v, context);
-          let outValue: number|string;
-          try {
-            outValue = Evaluator.evaluate(fetchedValue, [Evaluator.ToFloat])
-          } catch {
-            outValue = fetchedValue;
-          }
-          values.set(valueKey,outValue);
-        }
+        values = this.mapEventValues(e.values,context);
       }
       if(e.frequency) {
-        let fetchedValue = this.fetchEventValue(e.frequency.value, context);
-        let frequency: number;
-        switch(e.frequency.type) {
-          case 'pitch':
-            frequency = this.frequencyFromPitch(context.pitch, fetchedValue);
-            break;
-            case 'note':
-            frequency = Evaluator.evaluate(fetchedValue, [Evaluator.NoteToFrequency]);
-            break;
-          case 'frequency':
-            frequency = Evaluator.evaluate(fetchedValue,[Evaluator.ToFloat]);
-            break;
-        }
-        values.set('frequency',frequency);
+        const freqVal = this.tryEval(() => {
+          return this.parseFrequencyValue(e.frequency.value, context);
+        }, e.frequency.textPosition) 
+        
+        values.set('frequency',freqVal);
       }
       const sectionDuration = sectionEndTime - sectionStartTime;
       let startTime = sectionStartTime;
       let endTime: number;
       if(e.startOffset) {
-        const factor = this.evalOffset(e.startOffset, context)
-        startTime = startTime + sectionDuration * factor
+        const factor = this.tryEval(() => {
+          return this.evalOffset(e.startOffset.value, context)
+        },e.startOffset.textPosition);
+        startTime = startTime + sectionDuration * factor;
       }
       if(e.endOffset) {
-        const factor = this.evalOffset(e.endOffset, context)
+        const factor = this.tryEval(() => {
+          return this.evalOffset(e.endOffset.value, context);
+        }, e.endOffset.textPosition);
         endTime = sectionStartTime + sectionDuration * factor
       } else {
         // compensation for surgee!!!
         endTime = sectionEndTime - 0.0001
       }
-      let instrument = e.instrument ?? context.defaultInstrument;
-      if(!instrument) {
-        throw new Error('no instrument defined');
-      }
+      let instrument = e.instrument?.value ?? context.defaultInstrument;
+      this.tryEval(() => {
+        if(!instrument) {
+          throw new Error(`no instrument defined for event`);
+        }
+      }, null);
+      
       outEvents.push({
         instrument: instrument,
         startTimeMs: startTime,
@@ -204,13 +262,17 @@ export class SequenceBuilder implements ISequenceBuilder {
     if(!section.sectionLength) {
       context.contextLength /= totalSections;
     } else {
-      context.contextLength = this.evalLength(context.contextLength, section.sectionLength);
+      context.contextLength = this.tryEval(() => {
+        return this.evalLength(context.contextLength, section.sectionLength.value);
+      }, section.sectionLength.textPosition, true); 
     }
     if(section.beat) {
       if(this._relativeBeatLength) {
-        if(Math.abs(context.contextLength - this._relativeBeatLength) > 0.000000001) {
-          throw new Error('multiple beats with different lengths were defined');
-        }
+        this.tryEval(() => {
+          if(Math.abs(context.contextLength - this._relativeBeatLength) > 0.000000001) {
+            throw new Error('multiple beats with different lengths were defined');
+          }
+        },section.beat.textPosition);
       }
       this._relativeBeatLength = context.contextLength;
     }
@@ -234,7 +296,7 @@ export class SequenceBuilder implements ISequenceBuilder {
       }
     }
     if(section.defaultInstrument) {
-      context.defaultInstrument = section.defaultInstrument;
+      context.defaultInstrument = section.defaultInstrument.value;
     }
     if(section.variables) { 
       throw new Error('variables are not supported');
@@ -253,7 +315,7 @@ export class SequenceBuilder implements ISequenceBuilder {
 
     if(section.sections && section.sections.length > 0) {
       resNode.endTimeMs = sectionStartTime;
-      let totalSections = section.totalSections ?? section.sections.length;
+      let totalSections = section.totalSections?.value ?? section.sections.length;
       for(let i = 0 ; i < totalSections ; ++i) {
         const newNode = this.evalSection(
           section.sections[i],

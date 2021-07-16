@@ -1,8 +1,8 @@
 import {TerminalNode} from 'antlr4/tree/Tree'
-import antlr4 from 'antlr4'
+import antlr4, { Parser } from 'antlr4'
 import Lexer from './PhrasaLexer'
 
-declare class PhrasaParser {
+declare class PhrasaParser extends Parser {
     constructor(input: any);
     _interp: any;
     ruleNames: any;

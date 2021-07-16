@@ -1,0 +1,5 @@
+tempo 120bpm
+beat
+section.1
+  event.instrument saw_synth
+  event.note C3

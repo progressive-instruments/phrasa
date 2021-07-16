@@ -1,6 +1,5 @@
-import {TextLocation} from './PieceTree'
 
-export function evaluate<T>(input: string & TextLocation, evaluators: Evaluator<T>[]): T {
+export function evaluate<T>(input: string, evaluators: Evaluator<T>[]): T {
   for(const evaluator of evaluators) {
     const res = evaluator.evaluate(input);
     if(res != null && res != undefined) {

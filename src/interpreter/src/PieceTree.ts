@@ -1,13 +1,14 @@
 import { Interpreter } from "./Interpreter";
+import {TextPositionRange} from './PhrasaError'
 
 export interface PieceTree {
   rootSection :Section
 }
-  
-export interface TextLocation {
-  __line? :number;
-  __columnStart? : number;
-  __columnEnd? : number;
+
+
+export interface ValueWithTextPosition<T> {
+  value: T;
+  textPosition: TextPositionRange;
 }
 
 export class Variable {
@@ -26,25 +27,25 @@ export class Expression {
   input: ExpressionInput
 }
 
-export type ExpressionInputItem = ((string | Variable | Expression | ArithmeticExpression) & TextLocation);  
+export type ExpressionInputItem = ((string | Variable | Expression | ArithmeticExpression));  
 export type ExpressionInput = ExpressionInputItem[] | ExpressionInputItem;   
 
 export class Pitch {
-  grid?: number[]; // guaranteed to be sorted
-  zone?: number; // frequency
+  grid?: ValueWithTextPosition<number[]>; // guaranteed to be sorted
+  zone?: ValueWithTextPosition<number>; // frequency
 }
 export interface Section {
   pitch?: Pitch;
-  variables? : Map<string, ExpressionInput>
-  sectionLength? : ExpressionInput;
-  tempo? : ExpressionInput;
-  beat? : boolean;
+  variables? : ValueWithTextPosition<Map<string, ExpressionInput>>
+  sectionLength? : ValueWithTextPosition<ExpressionInput>;
+  tempo? : ValueWithTextPosition<ExpressionInput>;
+  beat? : ValueWithTextPosition<boolean>;
   branches? : Map<string,Section>
   sections? : Section[]
-  totalSections? : number // should be expression input. Add another property for default section to be used in tree builder after evaluation
+  totalSections? : ValueWithTextPosition<number> // should be expression input. Add another property for default section to be used in tree builder after evaluation
   sequences? : Map<string, Sequence>
   events? : Map<number,SectionEvent>
-  defaultInstrument?: string;
+  defaultInstrument?: ValueWithTextPosition<string>;
 }
 
 
@@ -65,12 +66,12 @@ export interface FrequencyExpression {
   value: EventValue;
 }
 
-export type Sequence = string[];
+export type Sequence = ValueWithTextPosition<string>[];
 
 export interface SectionEvent {
-  instrument?: string;
-  frequency?: FrequencyExpression;
-  values?: Map<string, EventValue>
-  startOffset?: OffsetValue
-  endOffset?: OffsetValue
+  instrument?: ValueWithTextPosition<string>;
+  frequency?: ValueWithTextPosition<FrequencyExpression>;
+  values?: Map<string, ValueWithTextPosition<EventValue>>;
+  startOffset?: ValueWithTextPosition<OffsetValue>;
+  endOffset?: ValueWithTextPosition<OffsetValue>
 }

@@ -4,7 +4,7 @@ import PhrasaParser from "./generated-parser/PhrasaParser"
 import PhrasaListener from "./generated-parser/PhrasaListener"
 import {Sequence} from './Sequence'
 import {TextContent} from './TextContent'
-import {IInterpreter} from './IInterpreter'
+import {IInterpreter, InterpreterResult} from './IInterpreter'
 import { TreeBuilder } from './TreeBuilder/TreeBuilder.js'
 import { ISequenceBuilder } from './ISequenceBuilder.js'
 import { ITreeBuilder } from './TreeBuilder/ITreeBuilder'
@@ -17,6 +17,8 @@ class GetNotesErrorRecognizer {
 }
 
 
+
+
 export class Interpreter implements IInterpreter {
     private _treeBuilder: ITreeBuilder;
     private _sequenceBuilder: ISequenceBuilder;
@@ -26,9 +28,26 @@ export class Interpreter implements IInterpreter {
         this._sequenceBuilder = new SequenceBuilder();
     }
 
-    parseEvents(piece: TextContent, motifs: TextContent[], instruments: TextContent[]): Sequence {
-        let tree = this._treeBuilder.build(piece, motifs, instruments)
-        return this._sequenceBuilder.build(tree);
+    parseEvents(piece: TextContent, motifs: TextContent[], instruments: TextContent[]): InterpreterResult {
+        let treeBuilderRes = this._treeBuilder.build(piece, motifs, instruments);
+        if(treeBuilderRes.errors && treeBuilderRes.errors.length > 0) {
+            return {
+                sequence: null,
+                errors: treeBuilderRes.errors
+            };
+        }
+
+        const sequenceBuilderRes = this._sequenceBuilder.build(treeBuilderRes.tree);
+        if(sequenceBuilderRes.errors && sequenceBuilderRes.errors.length > 0) {
+            return {
+                sequence: null,
+                errors: sequenceBuilderRes.errors
+            };
+        }
+        return {
+            sequence: sequenceBuilderRes.sequence,
+            errors: []
+        }
     }
 
 }

@@ -6,30 +6,30 @@ describe("sequence builder", function() {
   it('builddd', function () {
     let tree = {};
     tree.rootSection = {
-      tempo: '120bpm',
+      tempo: {value: '120bpm'},
       sections: [
         {
-          sectionLength: '1/2',
+          sectionLength: {value: '1/2'},
           events: new Map([[0, 
             {
-              instrument: 'saw_synth',
-              values: new Map([['cutoff', '100%']]),
-              frequency: {type: 'frequency', value: '440'}
+              instrument: {value:'saw_synth'},
+              values: new Map([['cutoff', {value:'100%'}]]),
+              frequency: {value:{type: 'frequency', value: '440'}}
             }]])
         },
         {
-          beat: true,
-          sectionLength: '1/2',
+          beat: {value:true},
+          sectionLength: {value:'1/2'},
           events: new Map([[0,
             {
-              instrument: 'saw_synth',
-              frequency: {type: 'note', value: 'C3'}
+              instrument: {value:'saw_synth'},
+              frequency: {value:{type: 'note', value: 'C3'}}
             }]])
         }
       ]
     };
     let sequenceBuilder = new SequenceBuilder();
-    let sequence = sequenceBuilder.build(tree);
+    let sequence = sequenceBuilder.build(tree).sequence;
     expect(sequence.endTime).toEqual(1000);
     expect(sequence.events.length).toEqual(2);
     expect(sequence.events[0].startTimeMs).toBeCloseTo(0);
@@ -47,25 +47,25 @@ describe("sequence builder", function() {
   it('offset', function () {
     let tree = {};
     tree.rootSection = {
-      tempo: '120bpm',
-      beat: true,
+      tempo:{value:'120bpm'},
+      beat: {value:true},
       events: new Map([
         [0, {
-          instrument: 'saw_synth',
-          values: new Map([['frequency', 'D3']]),
-          startOffset: '10%',
-          endOffset: '90%',
+          instrument: {value:'saw_synth'},
+          values: new Map([['frequency', {value:'D3}'}]]),
+          startOffset: {value:'10%'},
+          endOffset: {value:'90%'},
         }],
         [1, {
-          instrument: 'sine_synth',
-          values: new Map([['frequency', 'D3']]),
-          startOffset: '0.2',
-          endOffset: '0.8',
+          instrument: {value:'sine_synth'},
+          values: new Map([['frequency', {value:'D3'}]]),
+          startOffset: {value:'0.2'},
+          endOffset: {value:'0.8'},
         }]
       ])
     };
     let sequenceBuilder = new SequenceBuilder();
-    let sequence = sequenceBuilder.build(tree);
+    let sequence = sequenceBuilder.build(tree).sequence;
     expect(sequence.events.length).toEqual(2);
     expect(sequence.events[0].startTimeMs).toBeCloseTo(50);
     expect(sequence.events[0].durationMs).toBeCloseTo(400);
@@ -76,13 +76,13 @@ describe("sequence builder", function() {
   it('pitch', function () {
     let tree = {};
     tree.rootSection = {
-      tempo: '120bpm',
-      beat: true,
+      tempo: {value:'120bpm'},
+      beat: {value:true},
       pitch: {
-        grid: [50, 100, 200, 300, 400],
-        zone: 260
+        grid: {value:[50, 100, 200, 300, 400]},
+        zone: {value:260}
       },
-      defaultInstrument: 'saw_synth',
+      defaultInstrument: {value:'saw_synth'},
       sections: [
         {
           events: new Map(
@@ -90,13 +90,13 @@ describe("sequence builder", function() {
               [
                 0, 
                 {
-                  frequency: {type: 'pitch', value: '2'}
+                  frequency: {value:{type: 'pitch', value: '2'}}
                 }
               ],
               [
                 1, 
                 {
-                  frequency: {type: 'pitch', value: '-1'}
+                  frequency: {value:{type: 'pitch', value: '-1'}}
                 }
               ]
             ])
@@ -104,7 +104,7 @@ describe("sequence builder", function() {
       ]
     };
     let sequenceBuilder = new SequenceBuilder();
-    let sequence = sequenceBuilder.build(tree);
+    let sequence = sequenceBuilder.build(tree).sequence;
     expect(sequence.events.length).toEqual(2);
     expect(sequence.events[0].values.has('frequency')).toBeTrue();
     expect(sequence.events[0].values.get('frequency')).toBeCloseTo(400);
@@ -115,10 +115,10 @@ describe("sequence builder", function() {
   it('frequency', function () {
     let tree = {};
     tree.rootSection = {
-      tempo: '120bpm',
-      beat: true,
+      tempo: {value:'120bpm'},
+      beat: {value:true},
       sequences: new Map([
-        ['seq1', ['C3','D4','F3']]
+        ['seq1', [{value:'C3'},{value:'D4'},{value:'F3'}]]
       ]),
       sections: []
     };
@@ -131,15 +131,15 @@ describe("sequence builder", function() {
             [
               0, 
               {
-                instrument: 'saw_synth',
-                frequency: {type: 'note', value: new SequenceTrigger('seq1',1)}
+                instrument: {value:'saw_synth'},
+                frequency: {value:{type: 'note', value: new SequenceTrigger('seq1',1)}}
               }
             ]
           ])});
       }
     }
     let sequenceBuilder = new SequenceBuilder();
-    let sequence = sequenceBuilder.build(tree);
+    let sequence = sequenceBuilder.build(tree).sequence;
     expect(sequence.events.length).toEqual(8);
     let expectedValues = [130.81, 293.66, 174.61, 130.81, 293.66, 174.61, 130.81, 293.66];
     for(let i = 0 ; i < sequence.events.length ; ++i) {
@@ -148,5 +148,25 @@ describe("sequence builder", function() {
     }
 
   });
+  it('bpm-error', function () {
+    let tree = {};
+    tree.rootSection = {
+      tempo: {value: '120bp'},
+      sections: [
+        {
+          beat: {value:true},
+          events: new Map([[0,
+            {
+              instrument: {value:'saw_synth'},
+              frequency: {value:{type: 'note', value: 'C3'}}
+            }]])
+        }
+      ]
+    };
+    let sequenceBuilder = new SequenceBuilder();
+    let res = sequenceBuilder.build(tree);
+    expect(res.errors.length).toEqual(1);
+  });
+
 
 });
