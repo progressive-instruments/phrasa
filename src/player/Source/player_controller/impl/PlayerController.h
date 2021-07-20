@@ -18,15 +18,16 @@ public:
 	PlayerController(std::shared_ptr<player::IPlayer> player, std::shared_ptr<connection::IConnection> connection);
 
 private:
-	using MessageHandler = std::function<void(player::IPlayer&, const shift_processor::ShiftPlayerMessage&)>;
+	using MessageHandler = std::function<void(player::IPlayer&, const shift_processor::ShiftPlayerMessage&, shift_processor::ShiftPlayerResponse&)>;
 	using MessageHandlerMap = std::map<shift_processor::ShiftPlayerMessage::MessageCase, MessageHandler>;
 	static MessageHandlerMap m_messageHandlers;
 
 	static std::map<shift_processor::PlayMode, player::PlayMode> playModeMap;
 
-	static void setSequenceHandler(player::IPlayer& player, const shift_processor::ShiftPlayerMessage& message);
-	static void setPlayModeHandler(player::IPlayer& player, const shift_processor::ShiftPlayerMessage& message);
-	static void PlayerController::parseSetSequenceMessage(const shift_processor::SetSequenceMessage& msg, UniqueSequenceMap<std::shared_ptr<Event>>& sequenceOutput, SequenceTime& sequenceLengthOut);
+	static void setSequenceHandler(player::IPlayer& player, const shift_processor::ShiftPlayerMessage& message, shift_processor::ShiftPlayerResponse& response);
+	static void setPlayModeHandler(player::IPlayer& player, const shift_processor::ShiftPlayerMessage& message, shift_processor::ShiftPlayerResponse& response);
+	static void getPlayerState(player::IPlayer& player, const shift_processor::ShiftPlayerMessage& message, shift_processor::ShiftPlayerResponse& response);
+	static void parseSetSequenceMessage(const shift_processor::SetSequenceMessage& msg, UniqueSequenceMap<std::shared_ptr<Event>>& sequenceOutput, SequenceTime& sequenceLengthOut);
 
 	static void communicationRoutine(PlayerController* communication);
 	

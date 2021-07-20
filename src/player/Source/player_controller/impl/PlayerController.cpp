@@ -8,6 +8,7 @@ using namespace phrasa::playerctrl::impl;
 PlayerController::MessageHandlerMap PlayerController::m_messageHandlers = {
     {shift_processor::ShiftPlayerMessage::MessageCase::kSetSequence, PlayerController::setSequenceHandler},
     {shift_processor::ShiftPlayerMessage::MessageCase::kSetPlayMode, PlayerController::setPlayModeHandler},
+    {shift_processor::ShiftPlayerMessage::MessageCase::kGetPlayerState, PlayerController::getPlayerState}
 
 };
 
@@ -25,20 +26,53 @@ m_connection(connection)
 	m_commRoutineThread = std::thread(communicationRoutine, this);
 }
 
-void PlayerController::setSequenceHandler(player::IPlayer& player, const shift_processor::ShiftPlayerMessage& message)
+void PlayerController::setSequenceHandler(player::IPlayer& player, const shift_processor::ShiftPlayerMessage& message, shift_processor::ShiftPlayerResponse& response)
 {
-    UniqueSequenceMap<std::shared_ptr<Event>> sequenceMap;
-    SequenceTime sequenceLength;
-    PlayerController::parseSetSequenceMessage(message.setsequence(), sequenceMap, sequenceLength);
-    player.setSequence(std::move(sequenceMap), sequenceLength);
+    try {
+        UniqueSequenceMap<std::shared_ptr<Event>> sequenceMap;
+        SequenceTime sequenceLength;
+        PlayerController::parseSetSequenceMessage(message.setsequence(), sequenceMap, sequenceLength);
+        player.setSequence(std::move(sequenceMap), sequenceLength);
+        response.set_status(shift_processor::ResponseStatus::Ok);
+    }
+    catch (std::exception& e) {
+        response.set_status(shift_processor::ResponseStatus::GeneralError);
+    }
+    
 }
 
-void PlayerController::setPlayModeHandler(player::IPlayer& player, const shift_processor::ShiftPlayerMessage& message)
+void PlayerController::setPlayModeHandler(player::IPlayer& player, const shift_processor::ShiftPlayerMessage& message, shift_processor::ShiftPlayerResponse& response)
 {
-    auto playModeMessage = message.setplaymode();
-    player::PlayMode mode = playModeMap[playModeMessage.playmode()];
-    player.setPlayMode(mode);
+    try {
+        auto playModeMessage = message.setplaymode();
+        player::PlayMode mode = playModeMap[playModeMessage.playmode()];
+        player.setPlayMode(mode);
+        response.set_status(shift_processor::ResponseStatus::Ok);
+    }
+    catch (std::exception& e) {
+        response.set_status(shift_processor::ResponseStatus::GeneralError);
+    }
 }
+
+void PlayerController::getPlayerState(player::IPlayer& player, const shift_processor::ShiftPlayerMessage& message, shift_processor::ShiftPlayerResponse& response)
+{
+    try {
+        player::PlayerState state;
+        player.getState(state);
+
+        auto getStatusData = std::make_unique<shift_processor::GetStatusData>();
+        auto currentPosition = std::make_unique<shift_processor::SequencePosition>();
+        currentPosition->set_currenttimems(state.currentPosition.getMilliSeconds());
+        currentPosition->set_endtimems(state.endTime.getMilliSeconds());
+        getStatusData->set_allocated_currentposition(currentPosition.release());
+        response.set_allocated_getstatusdata(getStatusData.release());
+        response.set_status(shift_processor::ResponseStatus::Ok);
+    }
+    catch (std::exception& e) {
+        response.set_status(shift_processor::ResponseStatus::GeneralError);
+    }
+}
+
 
 void PlayerController::parseSetSequenceMessage(const shift_processor::SetSequenceMessage& msg, UniqueSequenceMap<std::shared_ptr<Event>>& sequenceMapOutput, SequenceTime& sequenceLengthOut) {
 
@@ -88,7 +122,8 @@ void phrasa::playerctrl::impl::PlayerController::communicationRoutine(PlayerCont
                 messageSize = juce::ByteOrder::swapIfLittleEndian(messageSize);
                 std::vector<uint8_t> buff(messageSize);
                 controller->m_connection->receive(buff.data(), messageSize);
-                shift_processor::ResponseStatus status = shift_processor::ResponseStatus::GeneralError;
+                shift_processor::ShiftPlayerResponse response;
+                response.set_status(shift_processor::ResponseStatus::GeneralError);
                 try {
                     shift_processor::ShiftPlayerMessage message;
                     if (!message.ParseFromArray(buff.data(), messageSize))
@@ -98,15 +133,11 @@ void phrasa::playerctrl::impl::PlayerController::communicationRoutine(PlayerCont
                     if (m_messageHandlers.find(message.message_case()) == m_messageHandlers.end()) {
                         throw std::runtime_error("unsupported message type");
                     }
-                    m_messageHandlers[message.message_case()](*(controller->m_player), message);
-                    status = shift_processor::ResponseStatus::Ok;
+                    m_messageHandlers[message.message_case()](*(controller->m_player), message, response);
                 }
                 catch (std::exception& e) {
-
-                    // setting sequenec failed...
+                    // failure, log...
                 }
-                shift_processor::ShiftPlayerResponse response;
-                response.set_status(status);
                 auto responseBytes = response.SerializeAsString();
                 messageSize = responseBytes.size();
                 messageSize = juce::ByteOrder::swapIfLittleEndian(messageSize);

@@ -25,26 +25,27 @@ void to_lower(std::string& data) {
 }
 
 void InstrumentFactory::initSampleSettings() {
-	static const std::string dir = "C:\\Users\\erez\\Desktop\\dev\\phrasa-samples";
-	for (auto& instrumentDir : fs::directory_iterator(dir)) {
-		if (instrumentDir.is_directory()) {
-			std::string instrumentName = instrumentDir.path().filename().string();
-			to_lower(instrumentName);
-			m_samplerSettings[instrumentName] = SamplerSettings();
-			for (auto& file : fs::directory_iterator(instrumentDir)) {
-				std::string extension = file.path().extension().string();
-				if (extension == ".wav") {
-					std::string sampleName = file.path().stem().string();
-					to_lower(sampleName);
-					if (samplersGains.count(sampleName) > 0) {
-						m_samplerSettings[instrumentName].totalGain = samplersGains[sampleName];
+	static const std::string dir = "phrasa-samples";
+	if (fs::exists(dir)) {
+		for (auto& instrumentDir : fs::directory_iterator(dir)) {
+			if (instrumentDir.is_directory()) {
+				std::string instrumentName = instrumentDir.path().filename().string();
+				to_lower(instrumentName);
+				m_samplerSettings[instrumentName] = SamplerSettings();
+				for (auto& file : fs::directory_iterator(instrumentDir)) {
+					std::string extension = file.path().extension().string();
+					if (extension == ".wav") {
+						std::string sampleName = file.path().stem().string();
+						to_lower(sampleName);
+						if (samplersGains.count(sampleName) > 0) {
+							m_samplerSettings[instrumentName].totalGain = samplersGains[sampleName];
+						}
+						m_samplerSettings[instrumentName].samples.push_back(SampleSettings(sampleName, file.path().string()));
 					}
-					m_samplerSettings[instrumentName].samples.push_back(SampleSettings(sampleName, file.path().string()));
 				}
 			}
 		}
 	}
-
 }
 
 std::unique_ptr<IInstrument> InstrumentFactory::createInstrument(std::string instrumentType)

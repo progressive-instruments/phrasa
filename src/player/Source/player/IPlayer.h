@@ -13,7 +13,8 @@ enum class PlayMode {
 };
 
 struct PlayerState {
-	SequenceTime m_currentPosition;
+	SequenceTime currentPosition;
+	SequenceTime endTime;
 };
 
 class IPlayer

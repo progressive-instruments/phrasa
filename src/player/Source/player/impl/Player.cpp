@@ -40,7 +40,8 @@ inline void Player::Processor::tryUpdateState()
 {
 	if(!m_playerStateLock.exchange(true))
 	{
-		m_state.m_currentPosition = m_track.Time;
+		m_state.currentPosition = m_track.Time;
+		m_state.endTime = m_track.SequenceLength;
 		m_playerStateLock.store(false);
 	}
 }
