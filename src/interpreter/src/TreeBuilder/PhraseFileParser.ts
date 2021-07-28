@@ -9,7 +9,7 @@ import {PhrasaSymbol} from './symbols.js'
 import * as Tree from '../PieceTree.js'
 import {TextContent} from '../TextContent'
 import {splitAssignKey, SectionAssigner, ExpressionEvaluator, SelectorAssigner} from './parsers.js'
-import {PhrasaError, TextPositionRange} from '../PhrasaError'
+import {PhrasaError, ErrorPosition, TextPosition} from '../PhrasaError'
 import { ErrorListener } from 'antlr4/error/ErrorListener.js'
 
 class GetNotesErrorRecognizer {
@@ -20,13 +20,13 @@ class GetNotesErrorRecognizer {
 }
 
 class AntlrErrorListener extends ErrorListener {
-  constructor(private _errors: PhrasaError[]) {
+  constructor(private _errors: PhrasaError[], private _fileName: string) {
     super();
   }
   syntaxError(recognizer: Recognizer, offendingSymbol: Token, line: number, column: number, msg: string, e: any): void {
     this._errors.push({
       description: msg,
-      textPosition: {
+      errorPosition: {
         start: {
           line: line,
           column: column
@@ -34,7 +34,8 @@ class AntlrErrorListener extends ErrorListener {
         end: {
           line: line,
           column: column+offendingSymbol.text.length
-        }
+        },
+        fileName: this._fileName
       }
     });
   }
@@ -53,7 +54,7 @@ export class PhraseFileParser extends Listener {
     this._exprEvaluatorsStack = [new SectionAssigner(this._outSection, this._additionalPhraseFiles)];
     const chars = new InputStream(this._phraseFile.readAll());
     let lexer = new PhrasaLexer(chars);
-    var errorListener = new AntlrErrorListener(this._errors);
+    var errorListener = new AntlrErrorListener(this._errors, this._phraseFile.name);
     
     lexer.removeErrorListeners();
     lexer.addErrorListener(errorListener);
@@ -76,7 +77,7 @@ export class PhraseFileParser extends Listener {
   private createError(e: Error, token: Token): PhrasaError{ 
     return {
       description: e.message,
-      textPosition: {
+      errorPosition: {
         start: {
           line: token.line,
           column: token.column
@@ -84,8 +85,9 @@ export class PhraseFileParser extends Listener {
         end: {
           line: token.line,
           column: token.column + token.text.length
-        }
-      }
+        },
+        fileName: this._phraseFile.name
+      },
     }
   }
   enterKey(ctx: PhrasaParser.KeyContext) {
@@ -113,39 +115,41 @@ export class PhraseFileParser extends Listener {
     this._exprEvaluatorsStack.push(newEvaluator);
   }
 
-  private getTextPosition(token: Token): TextPositionRange {
-    return {
-      start: {
+  private getTextPositionRange(token: Token): [TextPosition,TextPosition] {
+    return [
+      {
         line: token.line,
         column: token.column
       },
-      end: {
+      {
         line: token.line,
         column: token.column + token.text.length
       }
-    };
+    ];
   }
 
   enterValue(ctx: PhrasaParser.ValueContext) {
     let assigner = this._exprEvaluatorsStack[this._exprEvaluatorsStack.length-1];
     const token = ctx.TEXT().getSymbol();
     if(ctx.TEXT()) {
-      const textPosition = this.getTextPosition(ctx.TEXT().getSymbol());
+      const textPosition = this.getTextPositionRange(ctx.TEXT().getSymbol());
+      const errorPosition = {start: textPosition[0], end: textPosition[1], fileName: this._phraseFile.name};
       let text = ctx.TEXT().getText();
       try {
-        assigner.setStringValue(text, textPosition);
+        assigner.setStringValue(text, errorPosition);
       } catch(e) {
         const err: Error = e;        
-        this._errors.push({description: e.message, textPosition: textPosition});
+        this._errors.push({description: e.message, errorPosition: errorPosition});
       }
     } else{
       let op = ctx.operation();
-      const textPosition = this.getTextPosition(op.TEXT(0).getSymbol());
+      const textPosition = this.getTextPositionRange(op.TEXT(0).getSymbol());
+      const errorPosition = {start: textPosition[0], end: textPosition[1], fileName: this._phraseFile.name};
       try {
-        assigner.setStringValue(op.TEXT(0).getText() + op.OPERATOR().getText() + op.TEXT(1).getText(), textPosition);
+        assigner.setStringValue(op.TEXT(0).getText() + op.OPERATOR().getText() + op.TEXT(1).getText(), errorPosition);
       } catch(e) {
         const err: Error = e;        
-        this._errors.push({description: e.message, textPosition: textPosition});
+        this._errors.push({description: e.message, errorPosition: errorPosition});
       }
     }
   }

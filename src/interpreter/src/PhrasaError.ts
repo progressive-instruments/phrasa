@@ -4,14 +4,15 @@ export interface TextPosition
   column: number;
 }
 
-export interface TextPositionRange
+export interface ErrorPosition
 {
   start: TextPosition;
   end: TextPosition;
+  fileName: string;
 };
 
 export interface PhrasaError
 {
   description: string;
-  textPosition: TextPositionRange;
+  errorPosition: ErrorPosition;
 }
