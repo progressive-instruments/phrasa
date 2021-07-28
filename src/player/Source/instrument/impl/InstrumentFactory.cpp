@@ -1,13 +1,14 @@
 #include "InstrumentFactory.h"
 #include "SineSynth.h"
 #include "SamplerInstrument.h"
+#include "juce_core/juce_core.h"
 
 namespace phrasa::instrument::impl {
 
 std::map<std::string, double> InstrumentFactory::samplersGains = {
 	{ "drumatic", 1.0 },
 	{ "drums", 1.0 },
-	{ "machine", 1.0 },
+	{ "drum-machine", 0.5 },
 	{ "mattel", 1.0 },
 	{ "snares", 1.0 },
 };
@@ -25,7 +26,9 @@ void to_lower(std::string& data) {
 }
 
 void InstrumentFactory::initSampleSettings() {
-	static const std::string dir = "phrasa-samples";
+	static const std::string dirName = "phrasa-samples";
+	auto exeDir = juce::File::getSpecialLocation(juce::File::SpecialLocationType::currentApplicationFile).getParentDirectory();
+	auto dir = exeDir.getChildFile(dirName).getFullPathName().toStdString();
 	if (fs::exists(dir)) {
 		for (auto& instrumentDir : fs::directory_iterator(dir)) {
 			if (instrumentDir.is_directory()) {
@@ -37,11 +40,11 @@ void InstrumentFactory::initSampleSettings() {
 					if (extension == ".wav") {
 						std::string sampleName = file.path().stem().string();
 						to_lower(sampleName);
-						if (samplersGains.count(sampleName) > 0) {
-							m_samplerSettings[instrumentName].totalGain = samplersGains[sampleName];
-						}
 						m_samplerSettings[instrumentName].samples.push_back(SampleSettings(sampleName, file.path().string()));
 					}
+				}
+				if (samplersGains.count(instrumentName) > 0) {
+					m_samplerSettings[instrumentName].totalGain = samplersGains[instrumentName];
 				}
 			}
 		}

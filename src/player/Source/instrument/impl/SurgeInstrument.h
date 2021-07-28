@@ -24,7 +24,7 @@ public:
 	SurgeInstrument() :
         m_blockPos(0),
         m_sampleTimeMs(0),
-        m_surge(new SurgeSynthesizer(this, "C:\\Users\\erez\\Desktop\\dev\\phrasa\\src\\player\\Source\\instrument\\impl\\surge\\resources\\data"))
+        m_surge(new SurgeSynthesizer(this))
     {
         
         m_surge->storage.initializePatchDb(); 
