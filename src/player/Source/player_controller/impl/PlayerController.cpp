@@ -110,7 +110,7 @@ void phrasa::playerctrl::impl::PlayerController::communicationRoutine(PlayerCont
 {
     while (true)
     {
-        controller->m_connection->waitForClientConnection(1000);
+        controller->m_connection->waitForClientConnection(52301);
 
         try {
             while (true)
