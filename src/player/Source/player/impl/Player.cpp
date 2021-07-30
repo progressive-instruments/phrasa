@@ -118,6 +118,7 @@ void Player::setSequence(UniqueSequenceMap<std::shared_ptr<Event>> sequenceMap, 
 
 	Processor::SetSequenceAction action (std::move(sequenceMap), &addedInstruments, &removedInstruments, endTime);
 	m_processor.run(action);
+	m_processor.cleanUnusedResources();
 }
 
 void phrasa::player::impl::Player::setPlayMode(PlayMode mode)
@@ -147,11 +148,14 @@ void Player::processingEnded()
 	m_processor.processingEnded();
 }
 
+
+
 void Player::Processor::SetSequenceAction::run(Processor& processor)
 {
 	if (m_instrumentsToBeRemoved != nullptr) {
 		for (auto inst : *m_instrumentsToBeRemoved) {
 			processor.m_instruments[inst]->processingEnded();
+			processor.m_instrumentThrash.push(processor.m_instruments[inst]);
 			processor.m_instruments.erase(inst);
 		}
 	}
@@ -174,6 +178,12 @@ void Player::Processor::SetSequenceAction::run(Processor& processor)
 	if (m_newEndTime.has_value()) {
 		processor.m_track.SequenceLength = *m_newEndTime;
 	}
+}
+
+void Player::Processor::cleanUnusedResources() {
+	std::unique_ptr<instrument::IInstrument> removedInstrument;
+	while (m_instrumentThrash.pop(removedInstrument)) 
+	{}
 }
 
 void Player::Processor::SetPlayModeAction::run(Processor& processor)

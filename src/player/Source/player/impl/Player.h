@@ -10,6 +10,7 @@
 #include "IInstrumentFactory.h"
 #include "SequenceTrack.h"
 #include "ManagedAudioBuffer.h"
+#include "UniquePtrLockFreeQueue.h"
 
 namespace phrasa::player::impl {
 
@@ -49,11 +50,13 @@ private:
 		:	m_newActionPending(false),
 			m_action(nullptr),
 			m_sampleTimeMs(0),
-			m_isPlaying(false)
+			m_isPlaying(false),
+			m_instrumentThrash(128)
 		{
 			m_managedBuffer.setChannels(NUM_CHANNELS);
 		}
 
+		void cleanUnusedResources();
 		void prepareForProcessing(double sampleRate, size_t expectedBlockSize);
 		void processBlock(audio::AudioBuffer& buffer);
 		void processingEnded();
@@ -118,6 +121,7 @@ private:
 		size_t m_expectedBlockSize;
 		PlayerState m_state;
 		std::atomic<bool> m_playerStateLock;
+		UniquePtrLockFreeQueue<instrument::IInstrument> m_instrumentThrash;
 	};
 
 	Processor m_processor;
