@@ -1,0 +1,13 @@
+[submodule "src/player/JUCE"]
+	path = src/player/JUCE
+	url = https://github.com/juce-framework/JUCE.git
+[submodule "src/player/protobuf"]
+	path = src/player/protobuf
+	url = https://github.com/protocolbuffers/protobuf.git
+[submodule "src/player/Source/instrument/impl/surge"]
+	path = src/player/Source/instrument/impl/surge
+	url = https://github.com/progressive-instruments/surge.git
+	branch = cmake_subdir_compatible
+[submodule "src/player/googletest"]
+	path = src/player/googletest
+	url = https://github.com/google/googletest.git
