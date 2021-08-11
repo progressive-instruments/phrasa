@@ -45,7 +45,14 @@ inline void PhrasaPlayerApp::initializeAudioDeviceManager()
 
     m_deviceManager.addAudioCallback(&m_audioPlayer);
     m_audioPlayer.setSource(this);
+}
 
+void PhrasaPlayerApp::run() {
+    // wait forever....
+    std::condition_variable cv;
+    std::mutex m;
+    std::unique_lock<std::mutex> lock(m);
+    cv.wait(lock, [] {return false;});
 }
 
 void PhrasaPlayerApp::prepareToPlay(int samplesPerBlockExpected, double sampleRate)
