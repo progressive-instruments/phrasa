@@ -7,7 +7,7 @@ void TcpConnection::waitForClientConnection(unsigned int port)
 {
     if (!m_serverSocket.createListener(port))
     {
-        throw new std::exception("could not create listener");
+        throw new std::exception();
     }
     m_connectionSocket.reset(m_serverSocket.waitForNextConnection());
 }

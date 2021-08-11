@@ -2,6 +2,7 @@
 #include "AudioBufferOperations.h"
 using namespace phrasa::player::impl;
 using namespace std::literals::chrono_literals;
+#include <thread>
 
 inline void Player::Processor::run(Action& message)
 {
