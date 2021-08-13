@@ -1,6 +1,6 @@
 import {AntlrPhrasaExpressionTreeBuilder} from '../../dist/src/ExpressionTreeBuilder/AntlrPhrasaExpressionTreeBuilder.js'
 import * as fs from 'fs';
-import { PhrasaExpressionType } from '../../dist/src/ExpressionTreeBuilder/PhrasaExpressionTreeBuilder.js';
+import { PhrasaExpressionType } from '../../dist/src/PhrasaExpression.js';
 
 class TextContent {
     constructor(name,file) {

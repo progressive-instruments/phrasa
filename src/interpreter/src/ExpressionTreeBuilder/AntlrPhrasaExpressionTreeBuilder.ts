@@ -10,7 +10,8 @@ import {TextContent} from '../TextContent'
 import {PhrasaError, TextPosition, TextPositionPoint} from '../PhrasaError'
 import { ErrorListener } from 'antlr4/error/ErrorListener.js'
 
-import { PhrasaExpresionTreeBuilder, PhrasaSubjectExpression, PhrasaExpressionTreeBuilderResult, PhrasaExpression, PhrasaExpressionType } from "./PhrasaExpressionTreeBuilder.js";
+import { PhrasaExpresionTreeBuilder, PhrasaExpressionTreeBuilderResult } from "./PhrasaExpressionTreeBuilder.js";
+import { PhrasaExpression, PhrasaExpressionType } from '../PhrasaExpression.js'
 
 class AntlrErrorListener extends ErrorListener {
   constructor(private _errors: PhrasaError[], private _fileName: string) {
