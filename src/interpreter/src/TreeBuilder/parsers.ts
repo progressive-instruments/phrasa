@@ -5,6 +5,7 @@ import { TextContent } from "../TextContent.js";
 import _ from 'lodash'
 import {PhraseFileParser} from './PhraseFileParser.js'
 import { TextPositionPoint, TextPosition } from "../PhrasaError.js";
+import { ParsedPhrasaFile } from "./ITreeBuilder.js";
 interface ExtendedSection extends Tree.Section {
   defaultInnerSection? : Tree.Section;
 }
@@ -54,7 +55,7 @@ export abstract class ExpressionEvaluator {
 export class UseEvaluator extends ExpressionEvaluator {
 
   constructor(private _section: ExtendedSection,
-    private _phraseFiles: TextContent[]) {
+    private _phraseFiles: ParsedPhrasaFile[]) {
     super();
   }
   setStringValue(phraseFile : string, errorPosition: TextPosition) {
@@ -70,7 +71,7 @@ export class UseEvaluator extends ExpressionEvaluator {
 
 export class SectionAssigner extends ExpressionEvaluator {
   constructor(private _section: ExtendedSection,
-    private _phraseFiles: TextContent[]) {
+    private _phraseFiles: ParsedPhrasaFile[]) {
     super();
   }
 
@@ -257,7 +258,7 @@ class SectionsLengthAssigner extends ExpressionEvaluator {
 class SectionsAssigner extends ExpressionEvaluator {
   constructor(
     private _parentSection: ExtendedSection,
-    private _phraseFiles: TextContent[]){
+    private _phraseFiles: ParsedPhrasaFile[]){
     super();
   }
   getInnerAssigner(propertyName: string) : ExpressionEvaluator {
@@ -321,7 +322,7 @@ class MultiExpressionEvaluator extends ExpressionEvaluator {
 
 class BranchesAssigner extends ExpressionEvaluator {
   constructor(private _branches: Map<string,ExtendedSection>,
-    private _phraseFiles: TextContent[]) {
+    private _phraseFiles: ParsedPhrasaFile[]) {
     super();
   }
   getInnerAssigner(propertyName: string) : ExpressionEvaluator {

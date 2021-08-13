@@ -2,6 +2,7 @@
 import {PieceTree} from '../PieceTree'
 import {TextContent} from '../TextContent'
 import {PhrasaError} from '../PhrasaError'
+import { PhrasaExpression } from '../PhrasaExpression'
 
 export interface TreeBuilderResult
 {
@@ -9,6 +10,11 @@ export interface TreeBuilderResult
   errors: PhrasaError[]
 }
 
+export interface ParsedPhrasaFile {
+  name: string;
+  expressions: PhrasaExpression[];
+}
+
 export interface ITreeBuilder {
-  build(piece: TextContent, motifs: TextContent[], instruments: TextContent[]) : TreeBuilderResult;
+  build(composition: ParsedPhrasaFile, templates: ParsedPhrasaFile[]) : TreeBuilderResult;
 }
