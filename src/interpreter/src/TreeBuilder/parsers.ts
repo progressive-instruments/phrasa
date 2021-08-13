@@ -4,7 +4,7 @@ import * as ValueEvaluator from '../Evaluator.js'
 import { TextContent } from "../TextContent.js";
 import _ from 'lodash'
 import {PhraseFileParser} from './PhraseFileParser.js'
-import { TextPosition, ErrorPosition } from "../PhrasaError.js";
+import { TextPositionPoint, TextPosition } from "../PhrasaError.js";
 interface ExtendedSection extends Tree.Section {
   defaultInnerSection? : Tree.Section;
 }
@@ -42,10 +42,10 @@ export abstract class ExpressionEvaluator {
   getInnerExprEvaulator(evaluatorSubject: string) {
     return this.getInnerAssigner(evaluatorSubject);
   }
-  setStringValue(value : string, errorPosition: ErrorPosition) {
+  setStringValue(value : string, errorPosition: TextPosition) {
     throw new Error("value assign is not supported");
   }
-  setSequenceExpression(sequence: Tree.SequenceTrigger, errorPosition: ErrorPosition) {
+  setSequenceExpression(sequence: Tree.SequenceTrigger, errorPosition: TextPosition) {
     throw new Error("sequence trigger is not supported");
   }
   assignEnd() {}
@@ -57,7 +57,7 @@ export class UseEvaluator extends ExpressionEvaluator {
     private _phraseFiles: TextContent[]) {
     super();
   }
-  setStringValue(phraseFile : string, errorPosition: ErrorPosition) {
+  setStringValue(phraseFile : string, errorPosition: TextPosition) {
     let index = this._phraseFiles.findIndex((f) => f.name == phraseFile)
     if(index == -1){
       throw new Error(`invalid phrase file ${phraseFile}`);
@@ -121,7 +121,7 @@ export class SectionAssigner extends ExpressionEvaluator {
             throw new Error(`unknown property ${propertyName}`);
       }
     }
-    setStringValue(value : string, errorPosition: ErrorPosition) {
+    setStringValue(value : string, errorPosition: TextPosition) {
       if(value == PhrasaSymbol.Beat) {
         this._section.beat = {value: true,errorPosition: errorPosition};
       } else {
@@ -135,7 +135,7 @@ export class DefaultInstrumentAssigner extends ExpressionEvaluator {
     super();
   }
 
-  setStringValue(value : string, errorPosition: ErrorPosition) {
+  setStringValue(value : string, errorPosition: TextPosition) {
     this._section.defaultInstrument = {value, errorPosition: errorPosition};
   }
 }
@@ -161,7 +161,7 @@ class TempoAssigner extends ExpressionEvaluator {
       super();
     }
 
-    setStringValue(value : string, errorPosition: ErrorPosition) {
+    setStringValue(value : string, errorPosition: TextPosition) {
       this._section.tempo = {value: value, errorPosition: errorPosition};
     }
 }
@@ -171,7 +171,7 @@ class ChordEvaluator extends ExpressionEvaluator {
   constructor(private _pitch: Tree.Pitch) {
     super();
   }
-  setStringValue(value: string, errorPosition: ErrorPosition) {
+  setStringValue(value: string, errorPosition: TextPosition) {
     this._pitch.grid = {value: ValueEvaluator.evaluate(value,[ValueEvaluator.ChordToGrid]), errorPosition: errorPosition};
   }
 }
@@ -180,7 +180,7 @@ class ScaleEvaluator extends ExpressionEvaluator {
   constructor(private _pitch: Tree.Pitch) {
     super();
   }
-  setStringValue(value: string, errorPosition: ErrorPosition) {
+  setStringValue(value: string, errorPosition: TextPosition) {
     this._pitch.grid = {value: ValueEvaluator.evaluate(value,[ValueEvaluator.ScaleToGrid]), errorPosition: errorPosition};
   }
 }
@@ -198,7 +198,7 @@ class PitchGridAssigner extends ExpressionEvaluator {
     return super.getInnerAssigner(assigner);
   }
 
-  setStringValue(value: string, errorPosition: ErrorPosition) {
+  setStringValue(value: string, errorPosition: TextPosition) {
     this._pitch.grid = {value: ValueEvaluator.evaluate(value,[ValueEvaluator.ScaleToGrid]), errorPosition: errorPosition}
   }
 }
@@ -208,7 +208,7 @@ class PitchZoneAssigner extends ExpressionEvaluator {
     super();
   }
 
-  setStringValue(value: string, errorPosition: ErrorPosition) {
+  setStringValue(value: string, errorPosition: TextPosition) {
     this._pitch.zone = {value: ValueEvaluator.evaluate(value,[ValueEvaluator.NoteToFrequency]), errorPosition: errorPosition};
   }
 }
@@ -243,7 +243,7 @@ class SectionsLengthAssigner extends ExpressionEvaluator {
     private _parentSection: ExtendedSection) {
     super();
   }
-  setStringValue(value: string, errorPosition: ErrorPosition) { 
+  setStringValue(value: string, errorPosition: TextPosition) { 
     const num = ValueEvaluator.evaluate(value, [ValueEvaluator.ToUnsignedInteger]);
     for(let i = this._parentSection.sections.length ; i < num ; ++i) {
       this._parentSection.sections.push(_.cloneDeep(this._parentSection.defaultInnerSection));
@@ -292,7 +292,7 @@ class LengthAssigner extends ExpressionEvaluator {
   constructor(private _section: ExtendedSection){
     super();
   }
-  setStringValue(value : string, errorPosition: ErrorPosition) {
+  setStringValue(value : string, errorPosition: TextPosition) {
     this._section.sectionLength = {value:value, errorPosition: errorPosition};
   }
 }
@@ -307,7 +307,7 @@ class MultiExpressionEvaluator extends ExpressionEvaluator {
   getInnerExprEvaulator(propertyName: string) : ExpressionEvaluator {
     return new MultiExpressionEvaluator(this._assigners.map(a => a.getInnerExprEvaulator(propertyName)));
   }
-  setStringValue(value: string, errorPosition: ErrorPosition) {
+  setStringValue(value: string, errorPosition: TextPosition) {
     for(const assigner of this._assigners) {
       assigner.setStringValue(value, errorPosition);
     }
@@ -350,7 +350,7 @@ class SequenceAssigner extends ExpressionEvaluator {
     super();
     _sequence.length = 0; 
   }
-  setStringValue(value: string, errorPosition: ErrorPosition) {
+  setStringValue(value: string, errorPosition: TextPosition) {
     this._sequence.push({value: value, errorPosition: errorPosition});
   }
 }
@@ -359,7 +359,7 @@ const StepsExpression = /(^>+$)|(^<+$)/
 class SequenceTriggerAssigner extends ExpressionEvaluator {
   _name : string;
   _steps : number;
-  _errorPosition: ErrorPosition;
+  _errorPosition: TextPosition;
   constructor(private _valueAssigner: EventValueAssigner) {
     super()
     this._steps = 1;
@@ -372,7 +372,7 @@ class SequenceTriggerAssigner extends ExpressionEvaluator {
     throw new Error('name of sequence trigger unspecified')
   }
 
-  setStringValue(propertyName: string, errorPosition: ErrorPosition) {
+  setStringValue(propertyName: string, errorPosition: TextPosition) {
     let match = propertyName.match(StepsExpression)
     if(!match) {
       throw new Error('invalid sequence trigger argument');
@@ -411,15 +411,15 @@ class EventValueAssigner extends ExpressionEvaluator {
     return super.getInnerAssigner(property);
   }
 
-  setStringValue(value: string, errorPosition: ErrorPosition) {
+  setStringValue(value: string, errorPosition: TextPosition) {
     this.setValue(value, errorPosition);
   }
 
-  setSequenceExpression(sequenceTrigger:Tree.SequenceTrigger, errorPosition: ErrorPosition ) {
+  setSequenceExpression(sequenceTrigger:Tree.SequenceTrigger, errorPosition: TextPosition ) {
     this.setValue(sequenceTrigger,errorPosition);
   }
 
-  private setValue(value: string | Tree.SequenceTrigger, errorPosition: ErrorPosition) {
+  private setValue(value: string | Tree.SequenceTrigger, errorPosition: TextPosition) {
     if(this._valueKey === Property.EventInstrument) {
       if(typeof(value) == 'string') {
         this._event.instrument = {value: value,errorPosition: errorPosition };

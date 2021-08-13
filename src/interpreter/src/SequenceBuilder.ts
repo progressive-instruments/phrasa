@@ -3,7 +3,7 @@ import {Sequence, SequenceEvent, EventValue, GridNode, Grid} from './Sequence'
 import {PieceTree, Section, ExpressionInput, Expression, Pitch, Sequence as TreeSequence, SequenceTrigger, OffsetValue, SectionEvent, EventValue as TreeEventValue, ValueWithErrorPosition, FrequencyExpression} from './PieceTree.js'
 import * as Evaluator from './Evaluator.js'
 import _ from 'lodash'
-import { PhrasaError, TextPosition, ErrorPosition } from './PhrasaError'
+import { PhrasaError, TextPositionPoint, TextPosition } from './PhrasaError'
 
 
 interface Context {
@@ -49,7 +49,7 @@ export class SequenceBuilder implements ISequenceBuilder {
     return value;
   }
  
-  tryEval<T>(expression: ()=>T, textPosition: ErrorPosition, shouldContinue:boolean = false) {
+  tryEval<T>(expression: ()=>T, textPosition: TextPosition, shouldContinue:boolean = false) {
     try {
       return expression();
     } catch (inputErr) {

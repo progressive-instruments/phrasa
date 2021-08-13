@@ -9,7 +9,7 @@ import {PhrasaSymbol} from './symbols.js'
 import * as Tree from '../PieceTree.js'
 import {TextContent} from '../TextContent'
 import {splitAssignKey, SectionAssigner, ExpressionEvaluator, SelectorAssigner} from './parsers.js'
-import {PhrasaError, ErrorPosition, TextPosition} from '../PhrasaError'
+import {PhrasaError, TextPosition, TextPositionPoint} from '../PhrasaError'
 import { ErrorListener } from 'antlr4/error/ErrorListener.js'
 
 class GetNotesErrorRecognizer {
@@ -115,7 +115,7 @@ export class PhraseFileParser extends Listener {
     this._exprEvaluatorsStack.push(newEvaluator);
   }
 
-  private getTextPositionRange(token: Token): [TextPosition,TextPosition] {
+  private getTextPositionRange(token: Token): [TextPositionPoint,TextPositionPoint] {
     return [
       {
         line: token.line,

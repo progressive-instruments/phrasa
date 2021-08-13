@@ -1,18 +1,18 @@
-export interface TextPosition
+export interface TextPositionPoint
 {
   line: number;
   column: number;
 }
 
-export interface ErrorPosition
+export interface TextPosition
 {
-  start: TextPosition;
-  end: TextPosition;
+  start: TextPositionPoint;
+  end: TextPositionPoint;
   fileName: string;
 };
 
 export interface PhrasaError
 {
   description: string;
-  errorPosition: ErrorPosition;
+  errorPosition: TextPosition;
 }
