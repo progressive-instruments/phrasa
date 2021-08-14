@@ -3,7 +3,7 @@ import {PhrasaSymbol} from './symbols.js'
 
 import * as Tree from '../PieceTree.js'
 import {TextContent} from '../TextContent'
-import {splitAssignKey, SectionAssigner, ExpressionEvaluator, SelectorAssigner} from './parsers.js'
+import {SectionAssigner, ExpressionEvaluator, SelectorAssigner} from './parsers.js'
 import {PhrasaError, TextPosition, TextPositionPoint} from '../PhrasaError'
 import { ParsedPhrasaFile } from './ITreeBuilder.js'
 import { PhrasaExpression, PhrasaExpressionType, ValueWithPosition } from '../PhrasaExpression.js'
@@ -26,7 +26,7 @@ export class PhraseFileParser {
       if(expression.type == PhrasaExpressionType.Value) {
         this.setValue(expression.value, evaluator);
       } else if(expression.type == PhrasaExpressionType.SubjectExpression) {
-        const newEvaluator = this.getNewEvaluator(expression.subjectExpression.subject, evaluator);
+        const newEvaluator = this.getNewEvaluator(expression.subjectExpression.subjects, evaluator);
         if(newEvaluator) {
           this.handleExpressions(expression.subjectExpression.expressions, newEvaluator);
         }
@@ -35,22 +35,21 @@ export class PhraseFileParser {
     evaluator.assignEnd();
   }
 
-  getNewEvaluator(subject: ValueWithPosition<string>, evaluator: ExpressionEvaluator): ExpressionEvaluator {
-    const path = splitAssignKey(subject.value);
-    for(let i=0 ; i<path.length; ++i ){
-      if(path[i] == PhrasaSymbol.SelectorSymbol) {
-        evaluator = new SelectorAssigner(path.slice(i+1),evaluator);
+  getNewEvaluator(subjects: ValueWithPosition<string>[], evaluator: ExpressionEvaluator): ExpressionEvaluator {
+    for(let i=0 ; i<subjects.length; ++i ){
+      if(subjects[i].value == PhrasaSymbol.SelectorSymbol) {
+        evaluator = new SelectorAssigner(subjects.slice(i+1).map(s => s.value),evaluator);
         break;
       }
       try {
         if(i == 0) {
-          evaluator = evaluator.getInnerExprEvaulator(path[i])
+          evaluator = evaluator.getInnerExprEvaulator(subjects[i].value)
         } else {
-          evaluator = evaluator.getInnerAssigner(path[i])
+          evaluator = evaluator.getInnerAssigner(subjects[i].value)
         }
       } catch(e) {
         const error = e as Error;
-        this._errors.push({description: error.message, errorPosition: subject.textPosition});
+        this._errors.push({description: error.message, errorPosition: subjects[i].textPosition});
         return null;
       }
       

@@ -11,7 +11,8 @@ import {PhrasaError, TextPosition, TextPositionPoint} from '../PhrasaError'
 import { ErrorListener } from 'antlr4/error/ErrorListener.js'
 
 import { PhrasaExpresionTreeBuilder, PhrasaExpressionTreeBuilderResult } from "./PhrasaExpressionTreeBuilder.js";
-import { PhrasaExpression, PhrasaExpressionType } from '../PhrasaExpression.js'
+import { PhrasaExpression, PhrasaExpressionType, ValueWithPosition } from '../PhrasaExpression.js'
+import { KeyPrefixes, Property } from '../TreeBuilder/symbols.js'
 
 class AntlrErrorListener extends ErrorListener {
   constructor(private _errors: PhrasaError[], private _fileName: string) {
@@ -33,6 +34,51 @@ class AntlrErrorListener extends ErrorListener {
       }
     });
   }
+}
+
+function splitWithTextPosition(str: string, spacer: string, textPosition: TextPosition): ValueWithPosition<string>[] {
+  let res: ValueWithPosition<string>[] = [];
+  const textPosStart =textPosition.start; 
+  let currentPos = 0;
+  const splitted = str.split(spacer);
+  for(const current of splitted) {
+    res.push({
+      value: current,
+      textPosition: {
+        start: {line: textPosStart.line, column: textPosStart.column + currentPos},
+        end: {line: textPosStart.line, column: textPosStart.column + currentPos + current.length},
+        fileName: textPosition.fileName
+      }
+    })
+    currentPos += spacer.length + current.length;
+  }
+  return res;
+}
+
+const EventsPostifxRegex = /(.+)~([1-9]\d*)?$/;
+function splitAssignKey(path: string,textPosition: TextPosition) : ValueWithPosition<string>[] {
+  let res: ValueWithPosition<string>[] = [];
+  for(let keyWithPos of splitWithTextPosition(path, '.', textPosition)) {
+      let prefix = keyWithPos.value.charAt(0);
+      if(KeyPrefixes.has(keyWithPos.value.charAt(0))) {
+        keyWithPos.value = keyWithPos.value.slice(1);
+        res.push({textPosition: keyWithPos.textPosition, value:KeyPrefixes.get(prefix)});
+      }
+
+      res.push(keyWithPos);
+
+      let postfixMatch = keyWithPos.value.match(EventsPostifxRegex);
+      if(postfixMatch) {
+        res[res.length-1].value = postfixMatch[1];
+        if(postfixMatch[2]) {
+          res.push({value: Property.Events, textPosition: keyWithPos.textPosition})
+          res.push({value: postfixMatch[2], textPosition: keyWithPos.textPosition});
+        } else {
+          res.push({value: Property.Event, textPosition: keyWithPos.textPosition});
+        }
+      }
+    }
+    return res;
 }
 
 export class AntlrPhrasaExpressionTreeBuilder extends Listener implements PhrasaExpresionTreeBuilder {
@@ -71,6 +117,8 @@ export class AntlrPhrasaExpressionTreeBuilder extends Listener implements Phrasa
     return {errors: this._errors, expressions: this._expressions};
   }
 
+  
+
   enterKey(ctx: PhrasaParser.KeyContext) {
     const text = ctx.getText();
     const textPositions = this.getTextPositionRange(ctx.TEXT()[0].getSymbol());
@@ -80,7 +128,7 @@ export class AntlrPhrasaExpressionTreeBuilder extends Listener implements Phrasa
     this._expressionStack[this._expressionStack.length-1].push({
       type: PhrasaExpressionType.SubjectExpression, 
       subjectExpression: {
-        subject: {value: text, textPosition: textPosition},
+        subjects: splitAssignKey(text, textPosition),
         expressions: innerExpressions
       }
     });

@@ -17,6 +17,6 @@ export interface PhrasaExpression {
 }
 
 export interface PhrasaSubjectExpression {
-  subject: ValueWithPosition<string>;
+  subjects: ValueWithPosition<string>[];
   expressions: PhrasaExpression[]
 }

@@ -10,35 +10,9 @@ interface ExtendedSection extends Tree.Section {
   defaultInnerSection? : Tree.Section;
 }
 
-const EventsPostifxRegex = /(.+)~([1-9]\d*)?$/;
-export function splitAssignKey(path: string) : string[] {
-  let res: string[] = [];
-  for(let key of path.split('.')) {
-
-      let prefix = key.charAt(0);
-      if(KeyPrefixes.has(key.charAt(0))) {
-        key = key.slice(1);
-        res.push(KeyPrefixes.get(prefix));
-      }
-
-      res.push(key);
-
-      let postfixMatch = key.match(EventsPostifxRegex);
-      if(postfixMatch) {
-        res[res.length-1] = postfixMatch[1];
-        if(postfixMatch[2]) {
-          res.push(Property.Events)
-          res.push(postfixMatch[2]);
-        } else {
-          res.push(Property.Event);
-        }
-      }
-    }
-    return res;
-}
-
 
 export abstract class ExpressionEvaluator {
+
   getInnerAssigner(propertyName: string) : ExpressionEvaluator {throw new Error(`property ${propertyName} unknown`);}
   getInnerExprEvaulator(evaluatorSubject: string) {
     return this.getInnerAssigner(evaluatorSubject);
@@ -50,6 +24,7 @@ export abstract class ExpressionEvaluator {
     throw new Error("sequence trigger is not supported");
   }
   assignEnd() {}
+  
 }
 
 export class UseEvaluator extends ExpressionEvaluator {
@@ -403,7 +378,7 @@ class EventValueAssigner extends ExpressionEvaluator {
   }
 
   getInnerExprEvaulator(property: string): ExpressionEvaluator {
-    let keys = splitAssignKey(property);
+    let keys = property.split('.'); // temp impl
     if(keys.length == 1 && keys[0] == Property.Sequences) {
       return new SequenceTriggerAssigner(this);
     } else if(keys.length == 2 && keys[0] == Property.Sequences) {
