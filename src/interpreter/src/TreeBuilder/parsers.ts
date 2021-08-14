@@ -1,10 +1,8 @@
-import { KeyPrefixes, Property, ExpressionSubject, PhrasaSymbol } from "./symbols.js";
+import { Property, ExpressionSubject, PhrasaSymbol } from "./symbols.js";
 import * as Tree from '../PieceTree.js'
 import * as ValueEvaluator from '../Evaluator.js'
-import { TextContent } from "../TextContent.js";
 import _ from 'lodash'
-import {PhraseFileParser} from './PhraseFileParser.js'
-import { TextPositionPoint, TextPosition } from "../PhrasaError.js";
+import { TextPosition } from "../PhrasaError.js";
 import { ParsedPhrasaFile } from "./ITreeBuilder.js";
 interface ExtendedSection extends Tree.Section {
   defaultInnerSection? : Tree.Section;
@@ -25,23 +23,6 @@ export abstract class ExpressionEvaluator {
   }
   assignEnd() {}
   
-}
-
-export class UseEvaluator extends ExpressionEvaluator {
-
-  constructor(private _section: ExtendedSection,
-    private _phraseFiles: ParsedPhrasaFile[]) {
-    super();
-  }
-  setStringValue(phraseFile : string, errorPosition: TextPosition) {
-    let index = this._phraseFiles.findIndex((f) => f.name == phraseFile)
-    if(index == -1){
-      throw new Error(`invalid phrase file ${phraseFile}`);
-    }
-    
-    let parser = new PhraseFileParser(this._phraseFiles[index], this._phraseFiles.slice(index), this._section);
-    parser.parse();
-  }
 }
 
 export class SectionAssigner extends ExpressionEvaluator {
@@ -79,8 +60,6 @@ export class SectionAssigner extends ExpressionEvaluator {
             this._section.sequences = new Map<string, Tree.Sequence>();
           }
           return new SequencesAssigner(this._section.sequences);
-        case ExpressionSubject.Use:
-          return new UseEvaluator(this._section, this._phraseFiles);
         case Property.Events:
         case Property.Event:
           if(!this._section.events) {

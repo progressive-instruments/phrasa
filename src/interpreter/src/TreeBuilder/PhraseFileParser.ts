@@ -1,5 +1,5 @@
 
-import {PhrasaSymbol} from './symbols.js'
+import {ExpressionSubject, PhrasaSymbol, Property} from './symbols.js'
 
 import * as Tree from '../PieceTree.js'
 import {TextContent} from '../TextContent'
@@ -8,6 +8,10 @@ import {PhrasaError, TextPosition, TextPositionPoint} from '../PhrasaError'
 import { ParsedPhrasaFile } from './ITreeBuilder.js'
 import { PhrasaExpression, PhrasaExpressionType, ValueWithPosition } from '../PhrasaExpression.js'
 
+interface PhrasaTemplate {
+  name: string;
+  expressions: PhrasaExpression[];
+}
 
 export class PhraseFileParser {
   private _errors: PhrasaError[];
@@ -17,18 +21,42 @@ export class PhraseFileParser {
   parse(): PhrasaError[] {
     this._errors = [];
     const initialEvaluator = new SectionAssigner(this._outSection, this._templates);
-    this.handleExpressions(this._composition.expressions, initialEvaluator);
+    this.handleExpressions(this._composition.expressions, initialEvaluator, this._templates);
     return this._errors;
   }
+  
+  private tryEvaluateTemplateExpression(phrasaExpression: PhrasaExpression): ValueWithPosition<string> {
+    if(phrasaExpression.type != PhrasaExpressionType.SubjectExpression 
+      || phrasaExpression.subjectExpression.subjects.length != 1
+      || phrasaExpression.subjectExpression.subjects[0].value != ExpressionSubject.Use) {
+      return null;
+    }
+    if(phrasaExpression.subjectExpression.expressions.length != 1 || phrasaExpression.subjectExpression.expressions[0].type != PhrasaExpressionType.Value) {
+      throw new Error('use expression must include a single value')
+    }
+    return phrasaExpression.subjectExpression.expressions[0].value;
+  }
 
-  private handleExpressions(expressions: PhrasaExpression[], evaluator: ExpressionEvaluator): void {
+  private handleTemplateExpression(templateName: ValueWithPosition<string>, evaluator: ExpressionEvaluator, templates: PhrasaTemplate[]) {
+    const index = templates.findIndex(t => t.name == templateName.value);
+    if(index < 0) { 
+      this._errors.push({description: 'template index', errorPosition: templateName.textPosition});
+      return;
+    }
+    this.handleExpressions(templates[index].expressions, evaluator, templates.slice(index))
+  }
+
+  private handleExpressions(expressions: PhrasaExpression[], evaluator: ExpressionEvaluator, templates: PhrasaTemplate[]): void {
     for(const expression of expressions) {
-      if(expression.type == PhrasaExpressionType.Value) {
+      const templateName = this.tryEvaluateTemplateExpression(expression);
+      if(templateName) {
+        this.handleTemplateExpression(templateName, evaluator, templates);
+      } else if(expression.type == PhrasaExpressionType.Value) {
         this.setValue(expression.value, evaluator);
       } else if(expression.type == PhrasaExpressionType.SubjectExpression) {
         const newEvaluator = this.getNewEvaluator(expression.subjectExpression.subjects, evaluator);
         if(newEvaluator) {
-          this.handleExpressions(expression.subjectExpression.expressions, newEvaluator);
+          this.handleExpressions(expression.subjectExpression.expressions, newEvaluator, templates);
         }
       }
     }
