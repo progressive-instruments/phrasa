@@ -5,7 +5,7 @@ import * as Tree from '../PieceTree.js'
 import {ExpressionSubject, PhrasaSymbol, Property} from './symbols.js'
 import {SectionAssigner, ExpressionEvaluator, SelectorAssigner} from './parsers.js'
 import {PhrasaError, TextPosition, TextPositionPoint} from '../PhrasaError'
-import { PhrasaExpression, PhrasaExpressionType, ValueWithPosition } from '../PhrasaExpression.js'
+import { PhrasaExpression, PhrasaExpressionType, PhrasaSubjectExpression, ValueWithPosition } from '../PhrasaExpression.js'
 
 interface PhrasaTemplate {
   name: string;
@@ -28,8 +28,7 @@ export class TreeBuilder implements ITreeBuilder {
   
   private tryEvaluateTemplateExpression(phrasaExpression: PhrasaExpression): ValueWithPosition<string> {
     if(phrasaExpression.type != PhrasaExpressionType.SubjectExpression 
-      || phrasaExpression.subjectExpression.subjects.length != 1
-      || phrasaExpression.subjectExpression.subjects[0].value != ExpressionSubject.Use) {
+      || phrasaExpression.subjectExpression.subject.value != ExpressionSubject.Use) {
       return null;
     }
     if(phrasaExpression.subjectExpression.expressions.length != 1 || phrasaExpression.subjectExpression.expressions[0].type != PhrasaExpressionType.Value) {
@@ -54,8 +53,8 @@ export class TreeBuilder implements ITreeBuilder {
         this.handleTemplateExpression(templateName, evaluator, templates);
       } else if(expression.type == PhrasaExpressionType.Value) {
         this.setValue(expression.value, evaluator);
-      } else if(expression.type == PhrasaExpressionType.SubjectExpression) {
-        const newEvaluator = this.getNewEvaluator(expression.subjectExpression.subjects, evaluator);
+      } else if(expression.type == PhrasaExpressionType.SubjectExpression || expression.type == PhrasaExpressionType.NestedSubjectExpression) {
+        const newEvaluator = this.getNewEvaluator(expression.subjectExpression, evaluator, expression.type == PhrasaExpressionType.NestedSubjectExpression);
         if(newEvaluator) {
           this.handleExpressions(expression.subjectExpression.expressions, newEvaluator, templates);
         }
@@ -64,26 +63,21 @@ export class TreeBuilder implements ITreeBuilder {
     evaluator.assignEnd();
   }
 
-  getNewEvaluator(subjects: ValueWithPosition<string>[], evaluator: ExpressionEvaluator): ExpressionEvaluator {
-    for(let i=0 ; i<subjects.length; ++i ){
-      if(subjects[i].value == PhrasaSymbol.SelectorSymbol) {
-        evaluator = new SelectorAssigner(subjects.slice(i+1).map(s => s.value),evaluator);
-        break;
-      }
-      try {
-        if(i == 0) {
-          evaluator = evaluator.getInnerExprEvaulator(subjects[i].value)
-        } else {
-          evaluator = evaluator.getInnerAssigner(subjects[i].value)
-        }
-      } catch(e) {
-        const error = e as Error;
-        this._errors.push({description: error.message, errorPosition: subjects[i].textPosition});
-        return null;
-      }
-      
+  getNewEvaluator(phrasaExpression: PhrasaSubjectExpression, evaluator: ExpressionEvaluator, isNested: boolean): ExpressionEvaluator {
+    if(phrasaExpression.subject.value == PhrasaSymbol.SelectorSymbol) {
+      return new SelectorAssigner(evaluator);
     }
-    return evaluator;
+    try {
+      if(isNested) {
+        return evaluator.getInnerAssigner(phrasaExpression.subject.value)
+      } else {
+        return evaluator.getInnerExprEvaulator(phrasaExpression.subject.value)
+      }
+    } catch(e) {
+      const error = e as Error;
+      this._errors.push({description: error.message, errorPosition: phrasaExpression.subject.textPosition});
+      return null;
+    }
   }
 
   setValue(value: ValueWithPosition<string>, evaluator: ExpressionEvaluator) {

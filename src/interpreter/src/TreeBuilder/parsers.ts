@@ -4,6 +4,7 @@ import * as ValueEvaluator from '../Evaluator.js'
 import _ from 'lodash'
 import { TextPosition } from "../PhrasaError.js";
 import { ParsedPhrasaFile } from "./ITreeBuilder.js";
+import { PhrasaExpression } from "../PhrasaExpression.js";
 interface ExtendedSection extends Tree.Section {
   defaultInnerSection? : Tree.Section;
 }
@@ -24,6 +25,7 @@ export abstract class ExpressionEvaluator {
   assignEnd() {}
   
 }
+
 
 export class SectionAssigner extends ExpressionEvaluator {
   constructor(private _section: ExtendedSection,
@@ -76,6 +78,7 @@ export class SectionAssigner extends ExpressionEvaluator {
             throw new Error(`unknown property ${propertyName}`);
       }
     }
+
     setStringValue(value : string, errorPosition: TextPosition) {
       if(value == PhrasaSymbol.Beat) {
         this._section.beat = {value: true,errorPosition: errorPosition};
@@ -96,16 +99,26 @@ export class DefaultInstrumentAssigner extends ExpressionEvaluator {
 }
 
 export class SelectorAssigner extends ExpressionEvaluator {
+  private props: string[]
+
   constructor(
-    private _path:string[], 
     private _innerAssigner: ExpressionEvaluator) {
       super();
+      this.props = [];
   }
+  
   getInnerAssigner(property: string): ExpressionEvaluator{
+    this.props.push(property);
+    return this;
+  }
+
+  getInnerExprEvaulator(property: string): ExpressionEvaluator{
+
     let assigner = this._innerAssigner.getInnerAssigner(property);
-    for(const prop of this._path) {
+    for(const prop of this.props) {
       assigner = assigner.getInnerAssigner(prop);
     }
+    
     return assigner;
   }
 }
@@ -212,9 +225,10 @@ class SectionsLengthAssigner extends ExpressionEvaluator {
 class SectionsAssigner extends ExpressionEvaluator {
   constructor(
     private _parentSection: ExtendedSection,
-    private _phraseFiles: ParsedPhrasaFile[]){
+    private _phraseFiles: ParsedPhrasaFile[]) {
     super();
   }
+
   getInnerAssigner(propertyName: string) : ExpressionEvaluator {
     if(propertyName == Property.SectionsTotal){
       return new SectionsLengthAssigner(this._parentSection);

@@ -11,7 +11,7 @@ import {PhrasaError, TextPosition, TextPositionPoint} from '../PhrasaError'
 import { ErrorListener } from 'antlr4/error/ErrorListener.js'
 
 import { PhrasaExpresionTreeBuilder, PhrasaExpressionTreeBuilderResult } from "./PhrasaExpressionTreeBuilder.js";
-import { PhrasaExpression, PhrasaExpressionType, ValueWithPosition } from '../PhrasaExpression.js'
+import { PhrasaExpression, PhrasaExpressionType, PhrasaSubjectExpression, ValueWithPosition } from '../PhrasaExpression.js'
 import { KeyPrefixes, Property } from '../TreeBuilder/symbols.js'
 
 class AntlrErrorListener extends ErrorListener {
@@ -57,7 +57,7 @@ function splitWithTextPosition(str: string, spacer: string, textPosition: TextPo
 
 const EventsPostifxRegex = /(.+)~([1-9]\d*)?$/;
 function splitAssignKey(path: string,textPosition: TextPosition) : ValueWithPosition<string>[] {
-  let res: ValueWithPosition<string>[] = [];
+let res: ValueWithPosition<string>[] = [];
   for(let keyWithPos of splitWithTextPosition(path, '.', textPosition)) {
       let prefix = keyWithPos.value.charAt(0);
       if(KeyPrefixes.has(keyWithPos.value.charAt(0))) {
@@ -118,22 +118,41 @@ export class AntlrPhrasaExpressionTreeBuilder extends Listener implements Phrasa
   }
 
   
+  createNestedSubjectExpression(subjects: ValueWithPosition<string>[]): {head: PhrasaSubjectExpression, tail: PhrasaSubjectExpression} {
+    const head: PhrasaSubjectExpression = {
+      subject: subjects[0],
+      expressions: []
+    };
+    let tail = head;
+    for(let i = 1 ; i < subjects.length; ++i) {
+      const newSubjectExpression = {
+        subject: subjects[i],
+        expressions: []
+      }
+      tail.expressions.push({
+        type: PhrasaExpressionType.NestedSubjectExpression,
+        subjectExpression: newSubjectExpression
+      })
+      tail = newSubjectExpression;
+    }
+    return {head: head, tail: tail};
+  }
 
+  
   enterKey(ctx: PhrasaParser.KeyContext) {
     const text = ctx.getText();
     const textPositions = this.getTextPositionRange(ctx.TEXT()[0].getSymbol());
     const textPosition = {start: textPositions[0], end: textPositions[1], fileName: this._fileName};
     const innerExpressions = [];
-
+    
+    splitAssignKey(text, textPosition);
+    const nestedSubjectExpression = this.createNestedSubjectExpression(splitAssignKey(text, textPosition));
     this._expressionStack[this._expressionStack.length-1].push({
       type: PhrasaExpressionType.SubjectExpression, 
-      subjectExpression: {
-        subjects: splitAssignKey(text, textPosition),
-        expressions: innerExpressions
-      }
+      subjectExpression: nestedSubjectExpression.head
     });
 
-    this._expressionStack.push(innerExpressions);
+    this._expressionStack.push(nestedSubjectExpression.tail.expressions);
   }
 
   private getTextPositionRange(token: Token): [TextPositionPoint,TextPositionPoint] {

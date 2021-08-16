@@ -7,7 +7,8 @@ export interface ValueWithPosition<T> {
 
 export enum PhrasaExpressionType {
   Value,
-  SubjectExpression
+  SubjectExpression,
+  NestedSubjectExpression
 }
 
 export interface PhrasaExpression {
@@ -17,6 +18,6 @@ export interface PhrasaExpression {
 }
 
 export interface PhrasaSubjectExpression {
-  subjects: ValueWithPosition<string>[];
+  subject: ValueWithPosition<string>;
   expressions: PhrasaExpression[]
 }
