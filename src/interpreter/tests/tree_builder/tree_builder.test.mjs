@@ -179,4 +179,26 @@ describe("tree builder", function() {
     expect(section.events.get(0).values.get('attack').value).toEqual("80%");
   });
 
+  it('templates', function () {
+    const exprTreeBuilder = new AntlrPhrasaExpressionTreeBuilder();
+    const parsedFile = exprTreeBuilder.build(new TextContent("templates", "tests/tree_builder/templates_test"));
+    let treeBuilder = new TreeBuilder();
+    let tree = treeBuilder.build({name: "templates", expressions: parsedFile.expressions}, null ,null).tree
+    const rooSection = tree.rootSection
+    expect(rooSection.tempo.value).toEqual("120bpm");
+    expect(rooSection.sections.length).toEqual(2);
+    const sections = rooSection.sections;
+    const expectedFreqs = [220,440]
+    for(let i = 0 ; i < sections.length ; ++i) {
+      expect(sections[i].sections.length).toEqual(4);
+      const innerSections = sections[i].sections;
+      for(const innerSection of innerSections) {
+        expect(innerSection.events.size).toEqual(1)
+        expect(innerSection.events.get(0).frequency).toBeDefined()
+        expect(innerSection.events.get(0).frequency.value.type).toEqual('frequency')
+        expect(innerSection.events.get(0).frequency.value.value).toBeCloseTo(expectedFreqs[i])
+      }
+    }
+  });
+
 });

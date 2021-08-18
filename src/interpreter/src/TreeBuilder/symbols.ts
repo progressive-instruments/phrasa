@@ -22,7 +22,8 @@ export enum Property {
   PitchZone = 'zone',
   SectionsEach = 'each',
   EventInstrument = 'instrument',
-  DefaultInstrument = 'instrument'
+  DefaultInstrument = 'instrument',
+  Templates = 'templates'
 };
 
 export const KeyPrefixes: Map<string,Property> = new Map<string,Property>([

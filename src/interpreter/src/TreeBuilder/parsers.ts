@@ -128,10 +128,8 @@ export class SectionAssigner extends ExpressionEvaluator {
             this._section.pitch = {};
           }
           return evaluate(expression.subjectExpression.expressions, new PitchAssigner(this._section.pitch),context.value);
-          break;
         case Property.Tempo:
           return evaluate(expression.subjectExpression.expressions, new TempoAssigner(this._section),context.value);
-          break;
         case Property.Sections:
           if(!this._innerSectionsExpressions) {
             this._innerSectionsExpressions = [];
@@ -140,22 +138,18 @@ export class SectionAssigner extends ExpressionEvaluator {
             this._defaultInnerSection = [];
           }
           return evaluate(expression.subjectExpression.expressions, new SectionsAssigner(this._section, this._innerSectionsExpressions, this._defaultInnerSection),context.value);
-          break;
         case Property.Length:
           return evaluate(expression.subjectExpression.expressions, new LengthAssigner(this._section),context.value);
-          break;
         case Property.Branches:
           if(!this._branchesExpressions) {
             this._branchesExpressions = new Map<string, PhrasaExpression[]>();
           }
           return evaluate(expression.subjectExpression.expressions, new BranchesAssigner(this._branchesExpressions),context.value);
-          break;
         case Property.Sequences:
           if(!this._section.sequences) {
             this._section.sequences = new Map<string, Tree.Sequence>();
           }
           return evaluate(expression.subjectExpression.expressions, new SequencesAssigner(this._section.sequences),context.value);
-          break;
           case Property.Events:
         case Property.Event:
           if(!this._section.events) {
@@ -176,10 +170,15 @@ export class SectionAssigner extends ExpressionEvaluator {
             }]
           }
           return evaluate(expressions, eventsAssigner,context.value);
-          break;
         case Property.DefaultInstrument:
           return evaluate(expression.subjectExpression.expressions, new DefaultInstrumentAssigner(this._section),context.value);
-          break;
+        case Property.Templates:
+          const newTemplateMap = new Map<string,PhrasaExpression[]>(context.value.templates)
+          const errors = evaluate(expression.subjectExpression.expressions, new TemplatesAssigner(newTemplateMap), context.value);
+          if(!errors || errors.length == 0) {
+            context.value = {templates: newTemplateMap};
+          }
+          return errors;
         default:
           return [{description: `invalid property ${subject.value}`, errorPosition: subject.textPosition}]
       }
@@ -292,6 +291,22 @@ class PitchAssigner extends SubjectExpressionEvaluator {
       return evaluate(expressions, new PitchZoneAssigner(this._pitch),context.value)
     } else {
       throw new Error('invalid property');
+    }
+  }
+
+}
+
+
+class TemplatesAssigner extends SubjectExpressionEvaluator {
+  constructor(private _templates: Map<string,PhrasaExpression[]>){
+    super();
+  }
+
+  evaluateSubjectExpression(subject: ValueWithPosition<string>, expressions: PhrasaExpression[], context: Ref<EvaluationContext>) {
+    if(!this._templates.has(subject.value)) {
+      this._templates.set(subject.value, expressions);
+    } else {
+      this._templates.set(subject.value ,expressions.concat(this._templates.get(subject.value))); 
     }
   }
 
