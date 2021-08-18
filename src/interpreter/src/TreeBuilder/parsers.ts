@@ -21,7 +21,7 @@ export interface EvaluationContext {
 export abstract class ExpressionEvaluator {
 
   abstract evaluate(expression: PhrasaExpression, context: Ref<EvaluationContext>): PhrasaError[] | void
-  evaluateEnd() {}
+  evaluateEnd(context: EvaluationContext) {}
 }
 
 
@@ -103,15 +103,22 @@ export function evaluate(expressions: PhrasaExpression[], evaluatorOrEvaluators:
         }
       }
     }
-    evaluator.evaluateEnd();
+    evaluator.evaluateEnd(contextRef.value);
   }
   return finalErrors;
 }
 
+
 export class SectionAssigner extends ExpressionEvaluator {
+  _innerSectionsExpressions: PhrasaExpression[][];
+  _defaultInnerSection?: PhrasaExpression[]
+
+  _branchesExpressions: Map<string,PhrasaExpression[]>;
+
   constructor(private _section: ExtendedSection) {
     super();
   }
+
   evaluate(expression: PhrasaExpression, context: Ref<EvaluationContext>): PhrasaError[] | void {
     if(isSubjectExpression(expression.type)) {
       const subject = expression.subjectExpression.subject;
@@ -126,22 +133,22 @@ export class SectionAssigner extends ExpressionEvaluator {
           return evaluate(expression.subjectExpression.expressions, new TempoAssigner(this._section),context.value);
           break;
         case Property.Sections:
-          if(!this._section.sections) {
-            this._section.sections = [];
+          if(!this._innerSectionsExpressions) {
+            this._innerSectionsExpressions = [];
           }
-          if(!this._section.defaultInnerSection) {
-            this._section.defaultInnerSection = {};
+          if(!this._defaultInnerSection) {
+            this._defaultInnerSection = [];
           }
-          return evaluate(expression.subjectExpression.expressions, new SectionsAssigner(this._section),context.value);
+          return evaluate(expression.subjectExpression.expressions, new SectionsAssigner(this._section, this._innerSectionsExpressions, this._defaultInnerSection),context.value);
           break;
         case Property.Length:
           return evaluate(expression.subjectExpression.expressions, new LengthAssigner(this._section),context.value);
           break;
         case Property.Branches:
-          if(!this._section.branches) {
-            this._section.branches = new Map<string, Tree.Section>();
+          if(!this._branchesExpressions) {
+            this._branchesExpressions = new Map<string, PhrasaExpression[]>();
           }
-          return evaluate(expression.subjectExpression.expressions, new BranchesAssigner(this._section.branches),context.value);
+          return evaluate(expression.subjectExpression.expressions, new BranchesAssigner(this._branchesExpressions),context.value);
           break;
         case Property.Sequences:
           if(!this._section.sequences) {
@@ -184,6 +191,28 @@ export class SectionAssigner extends ExpressionEvaluator {
       }
     }
   }
+
+  evaluateEnd(context: EvaluationContext) {
+    if(this._innerSectionsExpressions) {
+      this._section.sections = new Array(this._innerSectionsExpressions.length);
+      for(let i = 0 ; i < this._innerSectionsExpressions.length ; ++i) {
+        if(this._innerSectionsExpressions[i].length > 0) {
+          this._section.sections[i] = {};
+          evaluate(this._innerSectionsExpressions[i], new SectionAssigner(this._section.sections[i]),context)
+        }
+      }
+    }
+
+    if(this._branchesExpressions) {
+      this._section.branches = new Map<string, Tree.Section>()
+      for(const branchExpression of this._branchesExpressions) {
+        const newSection: Tree.Section = {};
+        evaluate(branchExpression[1], new SectionAssigner(newSection), context);
+        this._section.branches.set(branchExpression[0], newSection);
+      }
+    }
+  }
+
 }
 
 export class DefaultInstrumentAssigner extends ValueExpressionEvaluator {
@@ -277,14 +306,14 @@ function getOrCreate<T,U>(map: Map<T,U> , key: T, defaultValue: ()=>U): U {
 
 class SectionsLengthAssigner extends ValueExpressionEvaluator {
   constructor(
-    private _parentSection: ExtendedSection) {
+    private _parentSection: ExtendedSection, private _sectionsExpressions: PhrasaExpression[][], private _defaultExpressions: PhrasaExpression[]) {
     super();
   }
 
   evaluateValue(value: ValueWithPosition<string>, context: Ref<EvaluationContext>): PhrasaError[] | void {
     const num = ValueEvaluator.evaluate(value.value, [ValueEvaluator.ToUnsignedInteger]);
-    for(let i = this._parentSection.sections.length ; i < num ; ++i) {
-      this._parentSection.sections.push(_.cloneDeep(this._parentSection.defaultInnerSection));
+    while(this._sectionsExpressions.length < num) {
+      this._sectionsExpressions.push(this._defaultExpressions.slice())
     }
     this._parentSection.totalSections = {value: num, errorPosition: value.textPosition};
   }
@@ -294,33 +323,27 @@ class SectionsLengthAssigner extends ValueExpressionEvaluator {
 
 class SectionsAssigner extends SubjectExpressionEvaluator {
   constructor(
-    private _parentSection: ExtendedSection) {
+    private _parentSection: ExtendedSection, private _sectionsExpressions: PhrasaExpression[][], private _defaultExpressions: PhrasaExpression[]) {
     super();
   }
 
   evaluateSubjectExpression(subject: ValueWithPosition<string>, expressions: PhrasaExpression[], context: Ref<EvaluationContext>) {
-    if(subject.value == Property.SectionsTotal){
-      return evaluate(expressions, new SectionsLengthAssigner(this._parentSection),context.value);
+    if(subject.value == Property.SectionsTotal) {
+      return evaluate(expressions, new SectionsLengthAssigner(this._parentSection, this._sectionsExpressions, this._defaultExpressions),context.value);
     }
     else if(subject.value == Property.SectionsEach) {
-      let assigners :ExpressionEvaluator[] = 
-        [
-          new SectionAssigner(this._parentSection.defaultInnerSection),
-        ];
-      if(this._parentSection.sections) {
-        assigners.push(...this._parentSection.sections.map(section => new SectionAssigner(section)));
+      this._defaultExpressions.push(...expressions);
+      for(const sectionExpressions of this._sectionsExpressions) {
+        sectionExpressions.push(...expressions);
       }
-      return evaluate(expressions, assigners,context.value);
     } else {
       const sectionIndexes = ValueEvaluator.evaluate(subject.value,[ValueEvaluator.OneBasedToZeroBaseRanged]);
-      let assigners :ExpressionEvaluator[] = []; 
       for(const sectionIndex of sectionIndexes) {
-        while(sectionIndex >= this._parentSection.sections.length) {
-          this._parentSection.sections.push(_.cloneDeep(this._parentSection.defaultInnerSection));
+        while(this._sectionsExpressions.length <= sectionIndex) {
+          this._sectionsExpressions.push(this._defaultExpressions.slice());
         }
-        assigners.push(new SectionAssigner(this._parentSection.sections[sectionIndex]));
+        this._sectionsExpressions[sectionIndex].push(...expressions)
       }
-      return evaluate(expressions, assigners,context.value);
     }
     
   }
@@ -337,14 +360,15 @@ class LengthAssigner extends ValueExpressionEvaluator {
 
 
 class BranchesAssigner extends SubjectExpressionEvaluator {
-  constructor(private _branches: Map<string,ExtendedSection>) {
+  constructor(private _branchesExpressions: Map<string,PhrasaExpression[]>) {
     super();
   }
   evaluateSubjectExpression(subject: ValueWithPosition<string>, expressions: PhrasaExpression[], context: Ref<EvaluationContext>) {
-    if(!this._branches.has(subject.value)) {
-      this._branches.set(subject.value,{});
+    if(!this._branchesExpressions.has(subject.value)) {
+      this._branchesExpressions.set(subject.value, expressions);
+    } else {
+      this._branchesExpressions.get(subject.value).push(...expressions);
     }
-    return evaluate(expressions, new SectionAssigner(this._branches.get(subject.value)),context.value);
   }
 }
 
