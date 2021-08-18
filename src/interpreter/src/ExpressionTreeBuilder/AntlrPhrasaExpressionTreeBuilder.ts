@@ -12,7 +12,7 @@ import { ErrorListener } from 'antlr4/error/ErrorListener.js'
 
 import { PhrasaExpresionTreeBuilder, PhrasaExpressionTreeBuilderResult } from "./PhrasaExpressionTreeBuilder.js";
 import { PhrasaExpression, PhrasaExpressionType, PhrasaSubjectExpression, ValueWithPosition } from '../PhrasaExpression.js'
-import { KeyPrefixes, Property } from '../TreeBuilder/symbols.js'
+import { KeyPrefixes, PhrasaSymbol, Property } from '../TreeBuilder/symbols.js'
 
 class AntlrErrorListener extends ErrorListener {
   constructor(private _errors: PhrasaError[], private _fileName: string) {
@@ -55,37 +55,60 @@ function splitWithTextPosition(str: string, spacer: string, textPosition: TextPo
   return res;
 }
 
+interface SplittedKeys {
+  preSelectorKeys: ValueWithPosition<string>[]
+  postSelectorKeys: ValueWithPosition<string>[]
+}
+
 const EventsPostifxRegex = /(.+)~([1-9]\d*)?$/;
-function splitAssignKey(path: string,textPosition: TextPosition) : ValueWithPosition<string>[] {
-let res: ValueWithPosition<string>[] = [];
+function splitAssignKey(path: string,textPosition: TextPosition) : SplittedKeys {
+  let res: SplittedKeys = {
+    preSelectorKeys: [],
+    postSelectorKeys: null
+  };
+  let currentKeys = res.preSelectorKeys;
   for(let keyWithPos of splitWithTextPosition(path, '.', textPosition)) {
-      let prefix = keyWithPos.value.charAt(0);
-      if(KeyPrefixes.has(keyWithPos.value.charAt(0))) {
-        keyWithPos.value = keyWithPos.value.slice(1);
-        res.push({textPosition: keyWithPos.textPosition, value:KeyPrefixes.get(prefix)});
-      }
-
-      res.push(keyWithPos);
-
-      let postfixMatch = keyWithPos.value.match(EventsPostifxRegex);
-      if(postfixMatch) {
-        res[res.length-1].value = postfixMatch[1];
-        if(postfixMatch[2]) {
-          res.push({value: Property.Events, textPosition: keyWithPos.textPosition})
-          res.push({value: postfixMatch[2], textPosition: keyWithPos.textPosition});
-        } else {
-          res.push({value: Property.Event, textPosition: keyWithPos.textPosition});
+      if(keyWithPos.value == PhrasaSymbol.SelectorSymbol) {
+        if(currentKeys == res.postSelectorKeys) {
+          throw new Error('selector symbol is allowed only once');
+        }
+        res.postSelectorKeys = [];
+        currentKeys = res.postSelectorKeys;
+      } else {
+        let prefix = keyWithPos.value.charAt(0);
+        if(KeyPrefixes.has(keyWithPos.value.charAt(0))) {
+          keyWithPos.value = keyWithPos.value.slice(1);
+          currentKeys.push({textPosition: keyWithPos.textPosition, value:KeyPrefixes.get(prefix)});
+        }
+  
+        currentKeys.push(keyWithPos);
+  
+        let postfixMatch = keyWithPos.value.match(EventsPostifxRegex);
+        if(postfixMatch) {
+          res[currentKeys.length-1].value = postfixMatch[1];
+          if(postfixMatch[2]) {
+            currentKeys.push({value: Property.Events, textPosition: keyWithPos.textPosition})
+            currentKeys.push({value: postfixMatch[2], textPosition: keyWithPos.textPosition});
+          } else {
+            currentKeys.push({value: Property.Event, textPosition: keyWithPos.textPosition});
+          }
         }
       }
     }
     return res;
 }
 
+interface Mode {
+  currentExpressions: PhrasaExpression[]
+  selectorKeys: ValueWithPosition<string>[]
+}
+
 export class AntlrPhrasaExpressionTreeBuilder extends Listener implements PhrasaExpresionTreeBuilder {
   private _errors: PhrasaError[];  
   private _expressions: PhrasaExpression[];
-  private _expressionStack: PhrasaExpression[][];
   private _fileName: string
+  private _modeStack: Mode[];
+
   constructor() {
     super();
   }
@@ -94,7 +117,7 @@ export class AntlrPhrasaExpressionTreeBuilder extends Listener implements Phrasa
     this._errors = [];
     this._fileName = text.name;
     this._expressions = []
-    this._expressionStack = [this._expressions];
+    this._modeStack = [{currentExpressions: this._expressions, selectorKeys: null}]
     const chars = new InputStream(text.readAll());
     let lexer = new PhrasaLexer(chars);
     var errorListener = new AntlrErrorListener(this._errors, text.name);
@@ -138,21 +161,27 @@ export class AntlrPhrasaExpressionTreeBuilder extends Listener implements Phrasa
     return {head: head, tail: tail};
   }
 
-  
+
   enterKey(ctx: PhrasaParser.KeyContext) {
     const text = ctx.getText();
     const textPositions = this.getTextPositionRange(ctx.TEXT()[0].getSymbol());
     const textPosition = {start: textPositions[0], end: textPositions[1], fileName: this._fileName};
-    const innerExpressions = [];
-    
-    splitAssignKey(text, textPosition);
-    const nestedSubjectExpression = this.createNestedSubjectExpression(splitAssignKey(text, textPosition));
-    this._expressionStack[this._expressionStack.length-1].push({
-      type: PhrasaExpressionType.SubjectExpression, 
-      subjectExpression: nestedSubjectExpression.head
-    });
+    let keys = splitAssignKey(text, textPosition);
+    const currentMode = this._modeStack[this._modeStack.length-1];
+    if(currentMode.selectorKeys) {
+      keys.preSelectorKeys.push(...currentMode.selectorKeys);
+    }
+    let nextExpressions = currentMode.currentExpressions;
+    if(keys.preSelectorKeys.length > 0) {
+      const nestedSubjectExpression = this.createNestedSubjectExpression(keys.preSelectorKeys);
+      currentMode.currentExpressions.push({
+        type: PhrasaExpressionType.SubjectExpression, 
+        subjectExpression: nestedSubjectExpression.head
+      });
+      nextExpressions = nestedSubjectExpression.tail.expressions;
+    }
 
-    this._expressionStack.push(nestedSubjectExpression.tail.expressions);
+    this._modeStack.push({currentExpressions: nextExpressions, selectorKeys: keys.postSelectorKeys});
   }
 
   private getTextPositionRange(token: Token): [TextPositionPoint,TextPositionPoint] {
@@ -183,16 +212,16 @@ export class AntlrPhrasaExpressionTreeBuilder extends Listener implements Phrasa
 
     const textPositions = this.getTextPositionRange(ctx.TEXT().getSymbol());
     const textPosition = {start: textPositions[0], end: textPositions[1], fileName: this._fileName};
-    this._expressionStack[this._expressionStack.length-1].push({
+    this._modeStack[this._modeStack.length-1].currentExpressions.push({
       type: PhrasaExpressionType.Value,
       value: {value: text, textPosition: textPosition}
     });
   }
 
   exitNewline_expr(ctx: PhrasaParser.Newline_exprContext) {
-    this._expressionStack.pop();
+    this._modeStack.pop();
   }
   exitInline_expr(ctx: PhrasaParser.Newline_exprContext) {
-    this._expressionStack.pop();
+    this._modeStack.pop();
   }
 }

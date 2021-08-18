@@ -11,6 +11,10 @@ export enum PhrasaExpressionType {
   NestedSubjectExpression
 }
 
+export function isSubjectExpression(type: PhrasaExpressionType) {
+  return type == PhrasaExpressionType.SubjectExpression || type == PhrasaExpressionType.NestedSubjectExpression;
+}
+
 export interface PhrasaExpression {
   type: PhrasaExpressionType,
   subjectExpression?: PhrasaSubjectExpression,
