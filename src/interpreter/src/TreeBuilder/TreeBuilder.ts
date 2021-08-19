@@ -1,23 +1,26 @@
 
 
-import {ITreeBuilder, TreeBuilderResult} from './ITreeBuilder'
+import {ITreeBuilder, ParsedPhrasaFile, TreeBuilderResult} from './ITreeBuilder'
 import * as Tree from '../PieceTree.js'
-import {TextContent} from '../TextContent'
+import {ExpressionSubject, PhrasaSymbol, Property} from './symbols.js'
+import {SectionAssigner, ExpressionEvaluator, evaluate} from './parsers.js'
+import {PhrasaError, TextPosition, TextPositionPoint} from '../PhrasaError'
+import { PhrasaExpression, PhrasaExpressionType, PhrasaSubjectExpression, ValueWithPosition } from '../PhrasaExpression.js'
 
-import {PhraseFileParser} from './PhraseFileParser.js'
 
 export class TreeBuilder implements ITreeBuilder {
-  private _tree: Tree.PieceTree;
 
+  build(composition: ParsedPhrasaFile, templates: ParsedPhrasaFile[]) : TreeBuilderResult {
+    let tree: Tree.PieceTree = {rootSection: {}};
+    const initialEvaluator = new SectionAssigner(tree.rootSection);
+    const templatesMap = new Map(templates?.map(t => [t.name, t.expressions]) ?? []);
 
-  build(mainPhrase: TextContent, additionalPhrases: TextContent[], instruments: TextContent[]) : TreeBuilderResult {
-    this._tree = {rootSection: {}};
-    let fileParser = new PhraseFileParser(mainPhrase,additionalPhrases,this._tree.rootSection);
-    const errors = fileParser.parse();
+    const errors = evaluate(composition.expressions, initialEvaluator, {templates: new Map(templatesMap)});
     return {
-      tree: this._tree,
+      tree: tree,
       errors: errors
     };
   }
+  
 
 }

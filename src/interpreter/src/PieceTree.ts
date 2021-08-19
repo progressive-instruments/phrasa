@@ -1,5 +1,5 @@
 import { Interpreter } from "./Interpreter";
-import {ErrorPosition} from './PhrasaError'
+import {TextPosition} from './PhrasaError'
 
 export interface PieceTree {
   rootSection :Section
@@ -8,7 +8,7 @@ export interface PieceTree {
 
 export interface ValueWithErrorPosition<T> {
   value: T;
-  errorPosition: ErrorPosition;
+  errorPosition: TextPosition;
 }
 
 export class Variable {

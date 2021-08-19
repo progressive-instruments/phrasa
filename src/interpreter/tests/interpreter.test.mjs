@@ -55,6 +55,6 @@ describe("interpreter", function() {
     expect(pos.start.line).toEqual(3);
     expect(pos.start.column).toEqual(0);
     expect(pos.end.line).toEqual(3);
-    expect(pos.end.column).toEqual(9);
+    expect(pos.end.column).toEqual(7);
   });
 });

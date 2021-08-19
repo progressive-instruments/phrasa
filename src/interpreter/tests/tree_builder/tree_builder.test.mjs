@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import {TreeBuilder} from '../../dist/src/TreeBuilder/TreeBuilder.js'
 import {SequenceTrigger} from '../../dist/src/PieceTree.js'
+import { AntlrPhrasaExpressionTreeBuilder } from '../../dist/src/ExpressionTreeBuilder/AntlrPhrasaExpressionTreeBuilder.js';
 class TextContent {
     constructor(name,file) {
       this.name = name;
@@ -12,8 +13,10 @@ class TextContent {
 
 describe("tree builder", function() {
   it('builddd', function () {
+    const exprTreeBuilder = new AntlrPhrasaExpressionTreeBuilder();
+    const parsedFile = exprTreeBuilder.build(new TextContent("bla", "tests/tree_builder/general_test"));
     let treeBuilder = new TreeBuilder();
-    let tree = treeBuilder.build(new TextContent("bla", "tests/tree_builder/general_test"), null ,null).tree
+    let tree = treeBuilder.build({name: "bla", expressions: parsedFile.expressions}, null ,null).tree
     let root = tree.rootSection;
     expect(root.tempo.value).toEqual("120bpm");
     expect(root.totalSections.value).toEqual(2);
@@ -51,8 +54,10 @@ describe("tree builder", function() {
   });
 
   it('offset', function () {
+    const exprTreeBuilder = new AntlrPhrasaExpressionTreeBuilder();
+    const parsedFile = exprTreeBuilder.build(new TextContent("bla", "tests/tree_builder/offset_test"));
     let treeBuilder = new TreeBuilder();
-    let tree = treeBuilder.build(new TextContent("bla", "tests/tree_builder/offset_test"), null ,null).tree
+    let tree = treeBuilder.build({name: "bla", expressions: parsedFile.expressions}, null ,null).tree
     let root = tree.rootSection;
 
     expect(root.events.get(0).startOffset.value).toEqual("10%");
@@ -62,8 +67,10 @@ describe("tree builder", function() {
   });
 
   it('selector', function () {
+    const exprTreeBuilder = new AntlrPhrasaExpressionTreeBuilder();
+    const parsedFile = exprTreeBuilder.build(new TextContent("bla", "tests/tree_builder/selector_test"));
     let treeBuilder = new TreeBuilder();
-    let tree = treeBuilder.build(new TextContent("bla", "tests/tree_builder/selector_test"), null ,null).tree
+    let tree = treeBuilder.build({name: "bla", expressions: parsedFile.expressions}, null ,null).tree
     let root = tree.rootSection;
     expect(root.sections.length).toEqual(2);
     let events = root.sections[0].events
@@ -76,8 +83,10 @@ describe("tree builder", function() {
   });
 
   it('pitchtest', function () {
+    const exprTreeBuilder = new AntlrPhrasaExpressionTreeBuilder();
+    const parsedFile = exprTreeBuilder.build(new TextContent("bla", "tests/tree_builder/pitch_test"));
     let treeBuilder = new TreeBuilder();
-    let tree = treeBuilder.build(new TextContent("bla", "tests/tree_builder/pitch_test"), null ,null).tree
+    let tree = treeBuilder.build({name: "bla", expressions: parsedFile.expressions}, null ,null).tree
     let root = tree.rootSection;
     expect(root.pitch.zone.value).toBeCloseTo(293.66);
     expect(root.pitch.grid.value[14]).toBeCloseTo(196);
@@ -93,8 +102,10 @@ describe("tree builder", function() {
   });
 
   it('sequencetest', function () {
+    const exprTreeBuilder = new AntlrPhrasaExpressionTreeBuilder();
+    const parsedFile = exprTreeBuilder.build(new TextContent("bla", "tests/tree_builder/sequence_test"));
     let treeBuilder = new TreeBuilder();
-    let tree = treeBuilder.build(new TextContent("bla", "tests/tree_builder/sequence_test"), null ,null).tree
+    let tree = treeBuilder.build({name: "bla", expressions: parsedFile.expressions}, null ,null).tree
     let root = tree.rootSection;
     expect(root.sequences.has('seq1')).toBeTrue();
     expect(root.sequences.get('seq1').map(v=>v.value)).toEqual(['3','2','1']);
@@ -118,8 +129,10 @@ describe("tree builder", function() {
   });
 
   it('each', function () {
+    const exprTreeBuilder = new AntlrPhrasaExpressionTreeBuilder();
+    const parsedFile = exprTreeBuilder.build(new TextContent("bla", "tests/tree_builder/each_test"));
     let treeBuilder = new TreeBuilder();
-    let tree = treeBuilder.build(new TextContent("bla", "tests/tree_builder/each_test"), null ,null).tree
+    let tree = treeBuilder.build({name: "bla", expressions: parsedFile.expressions}, null ,null).tree
     let root = tree.rootSection;
     expect(root.sections.length).toEqual(4)
     let freqs = ['330','220','330','330']
@@ -133,8 +146,11 @@ describe("tree builder", function() {
   });
 
   it('multi-file', function () {
+    const exprTreeBuilder = new AntlrPhrasaExpressionTreeBuilder();
+    const parsedFile1 = exprTreeBuilder.build(new TextContent("multifile1", "tests/tree_builder/multifile1"));
+    const parsedFile2 = exprTreeBuilder.build(new TextContent("multifile2", "tests/tree_builder/multifile2"));
     let treeBuilder = new TreeBuilder();
-    let tree = treeBuilder.build(new TextContent("multifile1", "tests/tree_builder/multifile1"), [new TextContent("multifile2", "tests/tree_builder/multifile2")] ,null).tree
+    let tree = treeBuilder.build({name: "multifile1", expressions: parsedFile1.expressions}, [{name: "multifile2", expressions: parsedFile2.expressions}] ,null).tree
     let root = tree.rootSection;
     expect(root.tempo.value).toEqual("120bpm");
     expect(root.totalSections.value).toEqual(2);
@@ -161,6 +177,28 @@ describe("tree builder", function() {
     expect(section.events.get(0).frequency.value.value).toEqual("D3");
     expect(section.events.get(0).values.has('attack')).toBeTrue();
     expect(section.events.get(0).values.get('attack').value).toEqual("80%");
+  });
+
+  it('templates', function () {
+    const exprTreeBuilder = new AntlrPhrasaExpressionTreeBuilder();
+    const parsedFile = exprTreeBuilder.build(new TextContent("templates", "tests/tree_builder/templates_test"));
+    let treeBuilder = new TreeBuilder();
+    let tree = treeBuilder.build({name: "templates", expressions: parsedFile.expressions}, null ,null).tree
+    const rooSection = tree.rootSection
+    expect(rooSection.tempo.value).toEqual("120bpm");
+    expect(rooSection.sections.length).toEqual(2);
+    const sections = rooSection.sections;
+    const expectedFreqs = [220,440]
+    for(let i = 0 ; i < sections.length ; ++i) {
+      expect(sections[i].sections.length).toEqual(4);
+      const innerSections = sections[i].sections;
+      for(const innerSection of innerSections) {
+        expect(innerSection.events.size).toEqual(1)
+        expect(innerSection.events.get(0).frequency).toBeDefined()
+        expect(innerSection.events.get(0).frequency.value.type).toEqual('frequency')
+        expect(innerSection.events.get(0).frequency.value.value).toBeCloseTo(expectedFreqs[i])
+      }
+    }
   });
 
 });
