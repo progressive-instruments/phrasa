@@ -15,7 +15,7 @@ export class TreeBuilder implements ITreeBuilder {
     const initialEvaluator = new SectionAssigner(tree.rootSection);
     const templatesMap = new Map(templates?.map(t => [t.name, t.expressions]) ?? []);
 
-    const errors = evaluate(composition.expressions, initialEvaluator, {templates: new Map(templatesMap)});
+    const errors = evaluate(composition.expressions, initialEvaluator, {templates: templatesMap});
     return {
       tree: tree,
       errors: errors

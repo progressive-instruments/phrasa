@@ -37,7 +37,7 @@ export class Interpreter implements IInterpreter {
         let parsedFilesErrors: PhrasaError[] = [];
         if(templates) {
             for(const template of templates) {
-                const templateBuilderRes = this._phrasaExpressonBuilder.build(composition);
+                const templateBuilderRes = this._phrasaExpressonBuilder.build(template);
                 if(templateBuilderRes.errors && templateBuilderRes.errors.length > 0) {
                     parsedFilesErrors.push(...templateBuilderRes.errors);
                 } else {
