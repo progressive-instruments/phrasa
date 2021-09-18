@@ -259,14 +259,14 @@ export class SequenceBuilder implements ISequenceBuilder {
       nodes: []
     };
 
-    if(!section.sectionLength) {
+    if(!section?.sectionLength) {
       context.contextLength /= totalSections;
     } else {
       context.contextLength = this.tryEval(() => {
         return this.evalLength(context.contextLength, section.sectionLength.value);
       }, section.sectionLength.errorPosition, true); 
     }
-    if(section.beat) {
+    if(section?.beat) {
       if(this._relativeBeatLength) {
         this.tryEval(() => {
           if(Math.abs(context.contextLength - this._relativeBeatLength) > 0.000000001) {
@@ -276,7 +276,7 @@ export class SequenceBuilder implements ISequenceBuilder {
       }
       this._relativeBeatLength = context.contextLength;
     }
-    if(section.pitch) {
+    if(section?.pitch) {
       if(!context.pitch) {
         context.pitch = new Pitch();
       }
@@ -288,20 +288,20 @@ export class SequenceBuilder implements ISequenceBuilder {
       }
       
     }
-    if(section.sequences) {
+    if(section?.sequences) {
       if(!context.sequences){
         context.sequences = section.sequences
       } else {
         context.sequences = new Map([...context.sequences,...section.sequences]);
       }
     }
-    if(section.defaultInstrument) {
+    if(section?.defaultInstrument) {
       context.defaultInstrument = section.defaultInstrument.value;
     }
-    if(section.variables) { 
+    if(section?.variables) { 
       throw new Error('variables are not supported');
     }
-    if(section.branches) {
+    if(section?.branches) {
       for(let branch of section.branches) {
         this.evalSection(
           branch[1],
@@ -313,7 +313,7 @@ export class SequenceBuilder implements ISequenceBuilder {
 
     }
 
-    if(section.sections && section.sections.length > 0) {
+    if(section?.sections && section.sections.length > 0) {
       resNode.endTimeMs = sectionStartTime;
       let totalSections = section.totalSections?.value ?? section.sections.length;
       for(let i = 0 ; i < totalSections ; ++i) {
@@ -330,7 +330,7 @@ export class SequenceBuilder implements ISequenceBuilder {
       resNode.endTimeMs = sectionStartTime + context.contextLength
     }
 
-    if(section.events) {
+    if(section?.events) {
       this.buildEvents(section.events, context, sectionStartTime, resNode.endTimeMs, outEvents);
     }
 
