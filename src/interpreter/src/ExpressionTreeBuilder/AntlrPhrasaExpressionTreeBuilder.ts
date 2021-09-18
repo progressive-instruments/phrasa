@@ -68,6 +68,11 @@ function splitAssignKey(path: string,textPosition: TextPosition) : SplittedKeys 
   };
   let currentKeys = res.preSelectorKeys;
   for(let keyWithPos of splitWithTextPosition(path, '.', textPosition)) {
+      let prefix = keyWithPos.value.charAt(0);
+      if(KeyPrefixes.has(keyWithPos.value.charAt(0))) {
+        keyWithPos.value = keyWithPos.value.slice(1);
+        currentKeys.push({textPosition: keyWithPos.textPosition, value:KeyPrefixes.get(prefix)});
+      }
       if(keyWithPos.value == PhrasaSymbol.SelectorSymbol) {
         if(currentKeys == res.postSelectorKeys) {
           throw new Error('selector symbol is allowed only once');
@@ -75,12 +80,6 @@ function splitAssignKey(path: string,textPosition: TextPosition) : SplittedKeys 
         res.postSelectorKeys = [];
         currentKeys = res.postSelectorKeys;
       } else {
-        let prefix = keyWithPos.value.charAt(0);
-        if(KeyPrefixes.has(keyWithPos.value.charAt(0))) {
-          keyWithPos.value = keyWithPos.value.slice(1);
-          currentKeys.push({textPosition: keyWithPos.textPosition, value:KeyPrefixes.get(prefix)});
-        }
-  
         currentKeys.push(keyWithPos);
   
         let postfixMatch = keyWithPos.value.match(EventsPostifxRegex);
