@@ -179,6 +179,14 @@ describe("tree builder", function() {
     expect(section.events.get(0).values.get('attack').value).toEqual("80%");
   });
 
+  it('multi-file-not-found', function () {
+    const exprTreeBuilder = new AntlrPhrasaExpressionTreeBuilder();
+    const parsedFile1 = exprTreeBuilder.build(new TextContent("multifile1", "tests/tree_builder/multifile1"));
+    let treeBuilder = new TreeBuilder();
+    let res = treeBuilder.build({name: "multifile1", expressions: parsedFile1.expressions}, [] ,null)
+    expect(res.errors.length).toEqual(1)
+  });
+
   it('templates', function () {
     const exprTreeBuilder = new AntlrPhrasaExpressionTreeBuilder();
     const parsedFile = exprTreeBuilder.build(new TextContent("templates", "tests/tree_builder/templates_test"));

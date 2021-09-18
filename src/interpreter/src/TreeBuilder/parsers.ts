@@ -60,7 +60,7 @@ function tryEvaluateTemplateExpression(phrasaExpression: PhrasaExpression): Valu
 
 function evaluateTemplateExpression(templateName: ValueWithPosition<string>, evaluator: ExpressionEvaluator, context: EvaluationContext): PhrasaError[] | void {
   if(!context.templates.has(templateName.value)) { 
-    return [{description: 'template index', errorPosition: templateName.textPosition}];
+    return [{description: `template '${templateName.value}' was not found`, errorPosition: templateName.textPosition}];
   }
   let newContext = {templates: new Map<string,PhrasaExpression[]>(context.templates)};
   const templateExpressions = newContext.templates.get(templateName.value);
