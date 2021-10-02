@@ -8,7 +8,8 @@ using namespace phrasa::playerctrl::impl;
 PlayerController::MessageHandlerMap PlayerController::m_messageHandlers = {
     {shift_processor::ShiftPlayerMessage::MessageCase::kSetSequence, PlayerController::setSequenceHandler},
     {shift_processor::ShiftPlayerMessage::MessageCase::kSetPlayMode, PlayerController::setPlayModeHandler},
-    {shift_processor::ShiftPlayerMessage::MessageCase::kGetPlayerState, PlayerController::getPlayerState}
+    {shift_processor::ShiftPlayerMessage::MessageCase::kGetPlayerState, PlayerController::getPlayerState},
+    {shift_processor::ShiftPlayerMessage::MessageCase::kSetSequencePositionMs, PlayerController::setPlayerPosition}
 
 };
 
@@ -73,6 +74,18 @@ void PlayerController::getPlayerState(player::IPlayer& player, const shift_proce
     }
 }
 
+
+void PlayerController::setPlayerPosition(player::IPlayer& player, const shift_processor::ShiftPlayerMessage& message, shift_processor::ShiftPlayerResponse& response)
+{
+	try {
+        auto newSequencePosition = message.setsequencepositionms();
+        player.setSequencePosition(newSequencePosition);
+        response.set_status(shift_processor::ResponseStatus::Ok);
+    }
+    catch (std::exception& e) {
+        response.set_status(shift_processor::ResponseStatus::GeneralError);
+    }
+}
 
 void PlayerController::parseSetSequenceMessage(const shift_processor::SetSequenceMessage& msg, UniqueSequenceMap<std::shared_ptr<Event>>& sequenceMapOutput, SequenceTime& sequenceLengthOut) {
 

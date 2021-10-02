@@ -30,6 +30,7 @@ public:
 	// IPlayer
 	virtual void setSequence(UniqueSequenceMap<std::shared_ptr<Event>> sequenceMap, SequenceTime endTime) override;
 	virtual void setPlayMode(PlayMode mode) override;
+	virtual void setSequencePosition(double sequencePosition) override;
 	virtual void getState(PlayerState& state) override;
 
 	// IPlayerAudioProcessor
@@ -104,6 +105,19 @@ private:
 		private:
 			PlayMode m_mode;
 		};
+
+		class SetSequencePositionAction : public Action {
+		public:
+
+			SetSequencePositionAction(
+				double newPosition)
+				: m_newPosition(newPosition) {}
+
+			void run(Processor& processor)override;
+		private:
+			double m_newPosition;
+		};
+
 
 	private:
 		void tryUpdateState();

@@ -27,6 +27,7 @@ private:
 	static void setSequenceHandler(player::IPlayer& player, const shift_processor::ShiftPlayerMessage& message, shift_processor::ShiftPlayerResponse& response);
 	static void setPlayModeHandler(player::IPlayer& player, const shift_processor::ShiftPlayerMessage& message, shift_processor::ShiftPlayerResponse& response);
 	static void getPlayerState(player::IPlayer& player, const shift_processor::ShiftPlayerMessage& message, shift_processor::ShiftPlayerResponse& response);
+	static void setPlayerPosition(player::IPlayer& player, const shift_processor::ShiftPlayerMessage& message, shift_processor::ShiftPlayerResponse& response);
 	static void parseSetSequenceMessage(const shift_processor::SetSequenceMessage& msg, UniqueSequenceMap<std::shared_ptr<Event>>& sequenceOutput, SequenceTime& sequenceLengthOut);
 
 	static void communicationRoutine(PlayerController* communication);

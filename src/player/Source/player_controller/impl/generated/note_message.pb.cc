@@ -183,6 +183,7 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_note_5fmessage_2eproto::offset
   ::PROTOBUF_NAMESPACE_ID::internal::kInvalidFieldOffsetTag,
   ::PROTOBUF_NAMESPACE_ID::internal::kInvalidFieldOffsetTag,
   ::PROTOBUF_NAMESPACE_ID::internal::kInvalidFieldOffsetTag,
+  ::PROTOBUF_NAMESPACE_ID::internal::kInvalidFieldOffsetTag,
   PROTOBUF_FIELD_OFFSET(::shift_processor::ShiftPlayerMessage, message_),
   ~0u,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::shift_processor::ShiftPlayerResponse, _internal_metadata_),
@@ -268,17 +269,17 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_note_5fmessage_2eproto::offset
 };
 static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
   { 0, -1, sizeof(::shift_processor::ShiftPlayerMessage)},
-  { 9, -1, sizeof(::shift_processor::ShiftPlayerResponse)},
-  { 18, -1, sizeof(::shift_processor::EmptyMessage)},
-  { 23, -1, sizeof(::shift_processor::GetStatusData)},
-  { 29, -1, sizeof(::shift_processor::SequencePosition)},
-  { 36, -1, sizeof(::shift_processor::SetPlayMode)},
-  { 42, -1, sizeof(::shift_processor::SetSequenceMessage)},
-  { 49, -1, sizeof(::shift_processor::InstrumentEvents)},
-  { 56, 63, sizeof(::shift_processor::SequenceEvent_ValuesEntry_DoNotUse)},
-  { 65, -1, sizeof(::shift_processor::SequenceEvent)},
-  { 73, -1, sizeof(::shift_processor::EventValue)},
-  { 82, -1, sizeof(::shift_processor::RangedValue)},
+  { 10, -1, sizeof(::shift_processor::ShiftPlayerResponse)},
+  { 19, -1, sizeof(::shift_processor::EmptyMessage)},
+  { 24, -1, sizeof(::shift_processor::GetStatusData)},
+  { 30, -1, sizeof(::shift_processor::SequencePosition)},
+  { 37, -1, sizeof(::shift_processor::SetPlayMode)},
+  { 43, -1, sizeof(::shift_processor::SetSequenceMessage)},
+  { 50, -1, sizeof(::shift_processor::InstrumentEvents)},
+  { 57, 64, sizeof(::shift_processor::SequenceEvent_ValuesEntry_DoNotUse)},
+  { 66, -1, sizeof(::shift_processor::SequenceEvent)},
+  { 74, -1, sizeof(::shift_processor::EventValue)},
+  { 83, -1, sizeof(::shift_processor::RangedValue)},
 };
 
 static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
@@ -297,44 +298,45 @@ static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] =
 };
 
 const char descriptor_table_protodef_note_5fmessage_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
-  "\n\022note_message.proto\022\017shift_processor\"\311\001"
+  "\n\022note_message.proto\022\017shift_processor\"\352\001"
   "\n\022ShiftPlayerMessage\022:\n\013setSequence\030\001 \001("
   "\0132#.shift_processor.SetSequenceMessageH\000"
   "\0223\n\013setPlayMode\030\002 \001(\0132\034.shift_processor."
   "SetPlayModeH\000\0227\n\016getPlayerState\030\003 \001(\0132\035."
-  "shift_processor.EmptyMessageH\000B\t\n\007messag"
-  "e\"\266\001\n\023ShiftPlayerResponse\022/\n\006status\030\001 \001("
-  "\0162\037.shift_processor.ResponseStatus\022-\n\004no"
-  "ne\030\002 \001(\0132\035.shift_processor.EmptyMessageH"
-  "\000\0227\n\rgetStatusData\030\003 \001(\0132\036.shift_process"
-  "or.GetStatusDataH\000B\006\n\004data\"\016\n\014EmptyMessa"
-  "ge\"K\n\rGetStatusData\022:\n\017currentPosition\030\001"
-  " \001(\0132!.shift_processor.SequencePosition\""
-  "<\n\020SequencePosition\022\021\n\tendTimeMs\030\001 \001(\001\022\025"
-  "\n\rcurrentTimeMs\030\002 \001(\001\":\n\013SetPlayMode\022+\n\010"
-  "playMode\030\001 \001(\0162\031.shift_processor.PlayMod"
-  "e\"i\n\022SetSequenceMessage\022\026\n\016sequenceLengt"
-  "h\030\001 \001(\001\022;\n\020instrumentEvents\030\002 \003(\0132!.shif"
-  "t_processor.InstrumentEvents\"V\n\020Instrume"
-  "ntEvents\022\022\n\ninstrument\030\001 \001(\t\022.\n\006events\030\002"
-  " \003(\0132\036.shift_processor.SequenceEvent\"\274\001\n"
-  "\rSequenceEvent\022\021\n\teventTime\030\001 \001(\001\022\020\n\010dur"
-  "ation\030\002 \001(\001\022:\n\006values\030\003 \003(\0132*.shift_proc"
-  "essor.SequenceEvent.ValuesEntry\032J\n\013Value"
-  "sEntry\022\013\n\003key\030\001 \001(\t\022*\n\005value\030\002 \001(\0132\033.shi"
-  "ft_processor.EventValue:\0028\001\"y\n\nEventValu"
-  "e\022\026\n\014numericValue\030\001 \001(\001H\000\022\025\n\013stringValue"
-  "\030\002 \001(\tH\000\0223\n\013rangedValue\030\003 \001(\0132\034.shift_pr"
-  "ocessor.RangedValueH\000B\007\n\005value\"B\n\013Ranged"
-  "Value\022\022\n\nstartValue\030\001 \001(\001\022\020\n\010endValue\030\002 "
-  "\001(\001\022\r\n\005curve\030\003 \001(\001*N\n\016ResponseStatus\022\006\n\002"
-  "Ok\020\000\022\020\n\014GeneralError\020\001\022\020\n\014ParsingError\020\002"
-  "\022\020\n\014InvalidInput\020\003*)\n\010PlayMode\022\010\n\004Play\020\000"
-  "\022\010\n\004Stop\020\001\022\t\n\005Pause\020\002b\006proto3"
+  "shift_processor.EmptyMessageH\000\022\037\n\025setSeq"
+  "uencePositionMs\030\004 \001(\001H\000B\t\n\007message\"\266\001\n\023S"
+  "hiftPlayerResponse\022/\n\006status\030\001 \001(\0162\037.shi"
+  "ft_processor.ResponseStatus\022-\n\004none\030\002 \001("
+  "\0132\035.shift_processor.EmptyMessageH\000\0227\n\rge"
+  "tStatusData\030\003 \001(\0132\036.shift_processor.GetS"
+  "tatusDataH\000B\006\n\004data\"\016\n\014EmptyMessage\"K\n\rG"
+  "etStatusData\022:\n\017currentPosition\030\001 \001(\0132!."
+  "shift_processor.SequencePosition\"<\n\020Sequ"
+  "encePosition\022\021\n\tendTimeMs\030\001 \001(\001\022\025\n\rcurre"
+  "ntTimeMs\030\002 \001(\001\":\n\013SetPlayMode\022+\n\010playMod"
+  "e\030\001 \001(\0162\031.shift_processor.PlayMode\"i\n\022Se"
+  "tSequenceMessage\022\026\n\016sequenceLength\030\001 \001(\001"
+  "\022;\n\020instrumentEvents\030\002 \003(\0132!.shift_proce"
+  "ssor.InstrumentEvents\"V\n\020InstrumentEvent"
+  "s\022\022\n\ninstrument\030\001 \001(\t\022.\n\006events\030\002 \003(\0132\036."
+  "shift_processor.SequenceEvent\"\274\001\n\rSequen"
+  "ceEvent\022\021\n\teventTime\030\001 \001(\001\022\020\n\010duration\030\002"
+  " \001(\001\022:\n\006values\030\003 \003(\0132*.shift_processor.S"
+  "equenceEvent.ValuesEntry\032J\n\013ValuesEntry\022"
+  "\013\n\003key\030\001 \001(\t\022*\n\005value\030\002 \001(\0132\033.shift_proc"
+  "essor.EventValue:\0028\001\"y\n\nEventValue\022\026\n\014nu"
+  "mericValue\030\001 \001(\001H\000\022\025\n\013stringValue\030\002 \001(\tH"
+  "\000\0223\n\013rangedValue\030\003 \001(\0132\034.shift_processor"
+  ".RangedValueH\000B\007\n\005value\"B\n\013RangedValue\022\022"
+  "\n\nstartValue\030\001 \001(\001\022\020\n\010endValue\030\002 \001(\001\022\r\n\005"
+  "curve\030\003 \001(\001*N\n\016ResponseStatus\022\006\n\002Ok\020\000\022\020\n"
+  "\014GeneralError\020\001\022\020\n\014ParsingError\020\002\022\020\n\014Inv"
+  "alidInput\020\003*)\n\010PlayMode\022\010\n\004Play\020\000\022\010\n\004Sto"
+  "p\020\001\022\t\n\005Pause\020\002b\006proto3"
   ;
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_note_5fmessage_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_note_5fmessage_2eproto = {
-  false, false, 1349, descriptor_table_protodef_note_5fmessage_2eproto, "note_message.proto", 
+  false, false, 1382, descriptor_table_protodef_note_5fmessage_2eproto, "note_message.proto", 
   &descriptor_table_note_5fmessage_2eproto_once, nullptr, 0, 12,
   schemas, file_default_instances, TableStruct_note_5fmessage_2eproto::offsets,
   file_level_metadata_note_5fmessage_2eproto, file_level_enum_descriptors_note_5fmessage_2eproto, file_level_service_descriptors_note_5fmessage_2eproto,
@@ -470,6 +472,10 @@ ShiftPlayerMessage::ShiftPlayerMessage(const ShiftPlayerMessage& from)
       _internal_mutable_getplayerstate()->::shift_processor::EmptyMessage::MergeFrom(from._internal_getplayerstate());
       break;
     }
+    case kSetSequencePositionMs: {
+      _internal_set_setsequencepositionms(from._internal_setsequencepositionms());
+      break;
+    }
     case MESSAGE_NOT_SET: {
       break;
     }
@@ -526,6 +532,10 @@ void ShiftPlayerMessage::clear_message() {
       }
       break;
     }
+    case kSetSequencePositionMs: {
+      // No need to clear
+      break;
+    }
     case MESSAGE_NOT_SET: {
       break;
     }
@@ -569,6 +579,13 @@ const char* ShiftPlayerMessage::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
           ptr = ctx->ParseMessage(_internal_mutable_getplayerstate(), ptr);
           CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // double setSequencePositionMs = 4;
+      case 4:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 33)) {
+          _internal_set_setsequencepositionms(::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<double>(ptr));
+          ptr += sizeof(double);
         } else goto handle_unusual;
         continue;
       default: {
@@ -624,6 +641,12 @@ failure:
         3, _Internal::getplayerstate(this), target, stream);
   }
 
+  // double setSequencePositionMs = 4;
+  if (_internal_has_setsequencepositionms()) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteDoubleToArray(4, this->_internal_setsequencepositionms(), target);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
@@ -660,6 +683,11 @@ size_t ShiftPlayerMessage::ByteSizeLong() const {
       total_size += 1 +
         ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
           *message_.getplayerstate_);
+      break;
+    }
+    // double setSequencePositionMs = 4;
+    case kSetSequencePositionMs: {
+      total_size += 1 + 8;
       break;
     }
     case MESSAGE_NOT_SET: {
@@ -705,6 +733,10 @@ void ShiftPlayerMessage::MergeFrom(const ShiftPlayerMessage& from) {
     }
     case kGetPlayerState: {
       _internal_mutable_getplayerstate()->::shift_processor::EmptyMessage::MergeFrom(from._internal_getplayerstate());
+      break;
+    }
+    case kSetSequencePositionMs: {
+      _internal_set_setsequencepositionms(from._internal_setsequencepositionms());
       break;
     }
     case MESSAGE_NOT_SET: {

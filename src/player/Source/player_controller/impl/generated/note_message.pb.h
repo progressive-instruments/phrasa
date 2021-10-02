@@ -209,6 +209,7 @@ class ShiftPlayerMessage final :
     kSetSequence = 1,
     kSetPlayMode = 2,
     kGetPlayerState = 3,
+    kSetSequencePositionMs = 4,
     MESSAGE_NOT_SET = 0,
   };
 
@@ -291,6 +292,7 @@ class ShiftPlayerMessage final :
     kSetSequenceFieldNumber = 1,
     kSetPlayModeFieldNumber = 2,
     kGetPlayerStateFieldNumber = 3,
+    kSetSequencePositionMsFieldNumber = 4,
   };
   // .shift_processor.SetSequenceMessage setSequence = 1;
   bool has_setsequence() const;
@@ -346,6 +348,19 @@ class ShiftPlayerMessage final :
       ::shift_processor::EmptyMessage* getplayerstate);
   ::shift_processor::EmptyMessage* unsafe_arena_release_getplayerstate();
 
+  // double setSequencePositionMs = 4;
+  bool has_setsequencepositionms() const;
+  private:
+  bool _internal_has_setsequencepositionms() const;
+  public:
+  void clear_setsequencepositionms();
+  double setsequencepositionms() const;
+  void set_setsequencepositionms(double value);
+  private:
+  double _internal_setsequencepositionms() const;
+  void _internal_set_setsequencepositionms(double value);
+  public:
+
   void clear_message();
   MessageCase message_case() const;
   // @@protoc_insertion_point(class_scope:shift_processor.ShiftPlayerMessage)
@@ -354,6 +369,7 @@ class ShiftPlayerMessage final :
   void set_has_setsequence();
   void set_has_setplaymode();
   void set_has_getplayerstate();
+  void set_has_setsequencepositionms();
 
   inline bool has_message() const;
   inline void clear_has_message();
@@ -367,6 +383,7 @@ class ShiftPlayerMessage final :
     ::shift_processor::SetSequenceMessage* setsequence_;
     ::shift_processor::SetPlayMode* setplaymode_;
     ::shift_processor::EmptyMessage* getplayerstate_;
+    double setsequencepositionms_;
   } message_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   ::PROTOBUF_NAMESPACE_ID::uint32 _oneof_case_[1];
@@ -2252,6 +2269,44 @@ inline ::shift_processor::EmptyMessage* ShiftPlayerMessage::mutable_getplayersta
   ::shift_processor::EmptyMessage* _msg = _internal_mutable_getplayerstate();
   // @@protoc_insertion_point(field_mutable:shift_processor.ShiftPlayerMessage.getPlayerState)
   return _msg;
+}
+
+// double setSequencePositionMs = 4;
+inline bool ShiftPlayerMessage::_internal_has_setsequencepositionms() const {
+  return message_case() == kSetSequencePositionMs;
+}
+inline bool ShiftPlayerMessage::has_setsequencepositionms() const {
+  return _internal_has_setsequencepositionms();
+}
+inline void ShiftPlayerMessage::set_has_setsequencepositionms() {
+  _oneof_case_[0] = kSetSequencePositionMs;
+}
+inline void ShiftPlayerMessage::clear_setsequencepositionms() {
+  if (_internal_has_setsequencepositionms()) {
+    message_.setsequencepositionms_ = 0;
+    clear_has_message();
+  }
+}
+inline double ShiftPlayerMessage::_internal_setsequencepositionms() const {
+  if (_internal_has_setsequencepositionms()) {
+    return message_.setsequencepositionms_;
+  }
+  return 0;
+}
+inline void ShiftPlayerMessage::_internal_set_setsequencepositionms(double value) {
+  if (!_internal_has_setsequencepositionms()) {
+    clear_message();
+    set_has_setsequencepositionms();
+  }
+  message_.setsequencepositionms_ = value;
+}
+inline double ShiftPlayerMessage::setsequencepositionms() const {
+  // @@protoc_insertion_point(field_get:shift_processor.ShiftPlayerMessage.setSequencePositionMs)
+  return _internal_setsequencepositionms();
+}
+inline void ShiftPlayerMessage::set_setsequencepositionms(double value) {
+  _internal_set_setsequencepositionms(value);
+  // @@protoc_insertion_point(field_set:shift_processor.ShiftPlayerMessage.setSequencePositionMs)
 }
 
 inline bool ShiftPlayerMessage::has_message() const {

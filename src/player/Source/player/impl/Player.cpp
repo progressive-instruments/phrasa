@@ -128,6 +128,12 @@ void phrasa::player::impl::Player::setPlayMode(PlayMode mode)
 	m_processor.run(action);
 }
 
+void phrasa::player::impl::Player::setSequencePosition(double newSequencePosition)
+{
+	Processor::SetSequencePositionAction action(newSequencePosition);
+	m_processor.run(action);
+}
+
 void phrasa::player::impl::Player::getState(PlayerState& state)
 {
 	m_processor.getState(state);
@@ -202,4 +208,9 @@ void Player::Processor::SetPlayModeAction::run(Processor& processor)
 		break;
 	}
 	
+}
+
+void Player::Processor::SetSequencePositionAction::run(Processor& processor)
+{
+	processor.m_track.Time = SequenceTime::FromMilliseconds(m_newPosition);
 }
