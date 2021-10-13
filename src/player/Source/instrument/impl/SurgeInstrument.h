@@ -24,7 +24,7 @@ public:
 	SurgeInstrument() :
         m_blockPos(0),
         m_sampleTimeMs(0),
-        m_surge(new SurgeSynthesizer(this))
+        m_surge(new SurgeSynthesizer(this,"SurgeXTData"))
     {
         
         m_surge->storage.initializePatchDb(); 
@@ -39,7 +39,7 @@ public:
 	}
 
     static void initPatchMap(std::map<std::string, int>& res) {
-        std::unique_ptr<SurgeSynthesizer> surge(new SurgeSynthesizer(nullptr, "C:\\Users\\erez\\Desktop\\dev\\phrasa\\src\\player\\Source\\instrument\\impl\\surge\\resources\\data"));
+        std::unique_ptr<SurgeSynthesizer> surge(new SurgeSynthesizer(nullptr, "SurgeXTData"));
         surge->storage.initializePatchDb();
         std::set<std::string> existedNames;
         for (int i = 0; i < surge->storage.patch_list.size(); ++i) {
