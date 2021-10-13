@@ -15,8 +15,8 @@
 #include "impl/PlayerController.h"
 #include "impl/InstrumentFactory.h"
 namespace phrasa {
-
-PhrasaPlayerApp::PhrasaPlayerApp()
+const unsigned int defaultPort = 52301;
+PhrasaPlayerApp::PhrasaPlayerApp(std::optional<unsigned int> inputPort)
     :
     m_player(
         new player::impl::Player(
@@ -24,7 +24,7 @@ PhrasaPlayerApp::PhrasaPlayerApp()
     m_playerController(
         new playerctrl::impl::PlayerController(
             m_player, 
-            std::make_shared<connection::impl::TcpConnection>()))
+            std::shared_ptr<connection::impl::TcpConnection>(new connection::impl::TcpConnection(inputPort.has_value() ? inputPort.value() : defaultPort))))
 {
     initializeAudioDeviceManager();
 }

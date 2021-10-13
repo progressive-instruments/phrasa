@@ -14,10 +14,8 @@ public:
 
 		opens a socket and for client to connected.
 
-		@param port       the port number to listen on
-
 	*/
-	virtual void waitForClientConnection(unsigned int port) = 0;
+	virtual void waitForClientConnection() = 0;
 
 	/** wait for data and receive from client.
 

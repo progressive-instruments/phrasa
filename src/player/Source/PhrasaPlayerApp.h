@@ -11,6 +11,7 @@
 #include "juce_audio_devices/juce_audio_devices.h"
 #include "impl/Player.h"
 #include "impl/PlayerController.h"
+#include <optional>
 #pragma once
 
 namespace phrasa {
@@ -18,7 +19,7 @@ namespace phrasa {
 class PhrasaPlayerApp : juce::AudioSource
 {
 public:
-    PhrasaPlayerApp();
+    PhrasaPlayerApp(std::optional<unsigned int> tcpPort = std::nullopt);
     void run();
 private:
     std::shared_ptr<player::impl::Player> m_player;

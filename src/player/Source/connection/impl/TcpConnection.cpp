@@ -1,16 +1,19 @@
 #include "TcpConnection.h"
+#include "TcpConnection.h"
 
 using namespace phrasa::connection::impl;
 using namespace phrasa::connection;
 
-void TcpConnection::waitForClientConnection(unsigned int port)
+
+void TcpConnection::waitForClientConnection()
 {
-    if (!m_serverSocket.createListener(port))
+    if (!m_serverSocket.createListener(m_port))
     {
         throw new std::exception();
     }
     m_connectionSocket.reset(m_serverSocket.waitForNextConnection());
 }
+
 
 void TcpConnection::receive(void* output, size_t size)
 {
