@@ -52,7 +52,8 @@ private:
 			m_action(nullptr),
 			m_sampleTimeMs(0),
 			m_isPlaying(false),
-			m_instrumentThrash(128)
+			m_instrumentThrash(128),
+            m_playerStateLock(false)
 		{
 			m_managedBuffer.setChannels(NUM_CHANNELS);
 		}

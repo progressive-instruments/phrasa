@@ -20,6 +20,14 @@ add_subdirectory(googletest)                    # If you've put JUCE in a subdir
 SET(protobuf_BUILD_TESTS OFF)
 add_subdirectory(protobuf/cmake)
 
+
+set(BOOST_ROOT "boost") # either set it here or from the command line  
+set(Boost_USE_STATIC_LIBS OFF) 
+set(Boost_USE_MULTITHREADED ON)  
+set(Boost_USE_STATIC_RUNTIME OFF) 
+
+find_package(Boost 1.77 REQUIRED)
+
 add_subdirectory(Source/utils)
 add_subdirectory(Source/connection)
 add_subdirectory(Source/audio)
