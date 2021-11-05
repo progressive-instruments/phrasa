@@ -58,51 +58,48 @@ function tryEvaluateTemplateExpression(phrasaExpression: PhrasaExpression): Valu
   return phrasaExpression.subjectExpression.expressions[0].value;
 }
 
-function evaluateTemplateExpression(templateName: ValueWithPosition<string>, evaluator: ExpressionEvaluator, context: EvaluationContext): PhrasaError[] | void {
-  if(!context.templates.has(templateName.value)) { 
-    return [{description: `template '${templateName.value}' was not found`, errorPosition: templateName.textPosition}];
-  }
-  let newContext = {templates: new Map<string,PhrasaExpression[]>(context.templates)};
-  const templateExpressions = newContext.templates.get(templateName.value);
-  newContext.templates.delete(templateName.value);
-  return evaluate(templateExpressions, evaluator, newContext);
+export function doExpressionEvaluation(expressions: PhrasaExpression[], evaluator: ExpressionEvaluator, contextRef: Ref<EvaluationContext>, finalErrors: PhrasaError[])
+{
+  for(const expression of expressions)  {
+    const templateName = tryEvaluateTemplateExpression(expression);
+    if(templateName) {
+      if(!contextRef.value.templates.has(templateName.value)) { 
+        finalErrors.push({description: `template '${templateName.value}' was not found`, errorPosition: templateName.textPosition});
+      } else {
+        const templateExpressions = contextRef.value.templates.get(templateName.value);
+        
+        doExpressionEvaluation(templateExpressions,evaluator,contextRef, finalErrors);
+      }
+    } else {
+      try {
+        const errors = evaluator.evaluate(expression,contextRef);
+        if(errors) {
+          finalErrors.push(...errors);
+        }
+      } catch(e) {
+        if(expression.type == PhrasaExpressionType.Value) {
+          finalErrors.push({
+            errorPosition: expression.value.textPosition,
+            description: (e as Error).message
+          })
+        }
+        else {
+          finalErrors.push({
+            errorPosition: expression.subjectExpression.subject.textPosition,
+            description: (e as Error).message
+          })
+        }
+      }
+    }
+  } 
 }
-
 
 export function evaluate(expressions: PhrasaExpression[], evaluatorOrEvaluators: ExpressionEvaluator | ExpressionEvaluator[], context: EvaluationContext): PhrasaError[] {
   let finalErrors: PhrasaError[] = [];
   const evaluators = Array.isArray(evaluatorOrEvaluators) ? evaluatorOrEvaluators : [evaluatorOrEvaluators];
   for(const evaluator of evaluators) {
     const contextRef: Ref<EvaluationContext> = {value:context};
-    for(const expression of expressions)  {
-      const templateName = tryEvaluateTemplateExpression(expression);
-      if(templateName) {
-        const errors =  evaluateTemplateExpression(templateName, evaluator, contextRef.value);
-        if(errors) {
-          finalErrors.push(...errors)
-        }
-      } else {
-        try {
-          const errors = evaluator.evaluate(expression,contextRef);
-          if(errors) {
-            finalErrors.push(...errors);
-          }
-        } catch(e) {
-          if(expression.type == PhrasaExpressionType.Value) {
-            finalErrors.push({
-              errorPosition: expression.value.textPosition,
-              description: (e as Error).message
-            })
-          }
-          else {
-            finalErrors.push({
-              errorPosition: expression.subjectExpression.subject.textPosition,
-              description: (e as Error).message
-            })
-          }
-        }
-      }
-    }
+    doExpressionEvaluation(expressions, evaluator, contextRef, finalErrors);
     evaluator.evaluateEnd(contextRef.value);
   }
   return finalErrors;
