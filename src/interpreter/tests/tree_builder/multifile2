@@ -1,9 +1,10 @@
 instrument saw_synth
+templates.x 440
 sections
   total 2
   1.length 1/4
   1.event
-    frequency 440
+    frequency (use x)
     cutoff 90%
   2.event
     note D3
