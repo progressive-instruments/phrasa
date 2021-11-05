@@ -35,7 +35,7 @@ describe("sequence builder", function() {
     expect(sequence.events[0].startTimeMs).toBeCloseTo(0);
     expect(sequence.events[0].durationMs).toBeCloseTo(500,-1);
     expect(sequence.events[0].values.has('cutoff')).toBeTrue();
-    expect(sequence.events[0].values.get('cutoff')).toEqual('100%');
+    expect(sequence.events[0].values.get('cutoff')).toEqual(1.0);
     expect(sequence.events[0].values.has('frequency')).toBeTrue();
     expect(sequence.events[0].values.get('frequency')).toBeCloseTo('440');
     expect(sequence.events[1].startTimeMs).toBeCloseTo(500);
