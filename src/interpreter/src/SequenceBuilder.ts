@@ -183,7 +183,7 @@ export class SequenceBuilder implements ISequenceBuilder {
       }, v.errorPosition)
       let outValue: number|string;
       try {
-        outValue = Evaluator.evaluate(fetchedValue, [Evaluator.ToFloat])
+        outValue = Evaluator.evaluate(fetchedValue, [Evaluator.PrecentToFactor,Evaluator.ToFloat])
       } catch {
         outValue = fetchedValue;
       }
