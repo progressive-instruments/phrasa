@@ -28,3 +28,4 @@ Release
 *.vbproj.user
 ipch
 *sdf
+boost

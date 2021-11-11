@@ -87,7 +87,14 @@ public:
                 auto sampleName = std::get<std::string>(values["sample"]);
                 if (m_nameToNote.count(sampleName)) {
                     int sample = event.relativeTime.getMilliSeconds() / m_sampleTimeMs;
-                    addToMidiBuffer(incomingMidi, juce::MidiMessage::noteOn(1, m_nameToNote[sampleName], (juce::uint8)127), sample, (int)buffer.getNumSamples());
+                    int velocity = 127;
+                    if (values.count("volume") && std::holds_alternative<double>(values["volume"])) {
+                        double volume = std::get<double>(values["volume"]);
+                        if (volume >= 0) {
+                            velocity = std::min((int)std::lround(volume * velocity), 127);
+                        }
+                    }
+                    addToMidiBuffer(incomingMidi, juce::MidiMessage::noteOn(1, m_nameToNote[sampleName], (juce::uint8)velocity), sample, (int)buffer.getNumSamples());
                     m_eventPool.addEvent(event.event, event.relativeTime + event.event->duration);
                 }
             }

@@ -6,6 +6,7 @@ target_sources( instrument
   PRIVATE
     impl/SineSynth.h
     impl/SequenceProcessor.h
+    impl/MPEEventPerChannelHolder.h
     IInstrument.h
     IInstrumentFactory.h
     SequenceTrack.h
@@ -36,7 +37,30 @@ target_include_directories(instrument
 
 
 
-#Tests
-add_executable( sequenceProcessorTests tests/SequenceProcessorTests.cpp )
-target_link_libraries(sequenceProcessorTests instrument gtest gtest_main)
-add_test( sequenceProcessorTests sequenceProcessorTests )
+juce_add_console_app(instrumentTests
+    PRODUCT_NAME "InstrumentTests")     # The name of the final executable, which can differ from the target name
+
+target_sources(instrumentTests
+    PRIVATE
+      tests/instrumentTests.cpp)
+
+target_link_libraries(instrumentTests
+    PRIVATE
+        # GuiAppData            # If we'd created a binary data target, we'd link to it here
+        juce::juce_audio_basics
+        juce::juce_audio_devices
+        juce::juce_audio_formats
+        juce::juce_audio_processors
+        juce::juce_audio_utils
+        juce::juce_core
+        juce::juce_data_structures
+        juce::juce_events
+        instrument
+        gtest
+        gtest_main
+    PUBLIC
+        juce::juce_recommended_config_flags
+        juce::juce_recommended_lto_flags
+        juce::juce_recommended_warning_flags)
+
+add_test( instrumentTests instrumentTests )

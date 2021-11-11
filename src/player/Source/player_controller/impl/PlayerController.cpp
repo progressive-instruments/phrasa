@@ -93,7 +93,7 @@ void PlayerController::parseSetSequenceMessage(const shift_processor::SetSequenc
     for (auto instrumentEvents : msg.instrumentevents()) {
         const std::string& instrumentID = instrumentEvents.instrument();
         for (auto e : instrumentEvents.events()) {
-            auto outputEvent = std::make_shared<Event>(SequenceTime::FromMilliseconds(e.duration()));
+            auto outputEvent = std::make_shared<Event>(SequenceTime::fromMilliseconds(e.duration()));
             auto values = e.values();
             for (auto val : values) {
                 if (val.second.value_case() == shift_processor::EventValue::ValueCase::kNumericValue) {
@@ -111,10 +111,10 @@ void PlayerController::parseSetSequenceMessage(const shift_processor::SetSequenc
             if (sequenceMapOutput->count(instrumentID) == 0) {
                 (*sequenceMapOutput)[instrumentID] = std::make_unique<Sequence<std::shared_ptr<Event>>>();
             }
-            (*sequenceMapOutput)[instrumentID]->events.insert({ SequenceTime::FromMilliseconds(e.eventtime()), outputEvent });
+            (*sequenceMapOutput)[instrumentID]->events.insert({ SequenceTime::fromMilliseconds(e.eventtime()), outputEvent });
         }
     }
-    sequenceLengthOut = SequenceTime::FromMilliseconds(msg.sequencelength());
+    sequenceLengthOut = SequenceTime::fromMilliseconds(msg.sequencelength());
 }
 
 

@@ -61,7 +61,7 @@ inline void Player::Processor::processBlock(audio::AudioBuffer& buffer)
 	if (m_track.SequenceLength == 0us || !m_isPlaying) {
 		return;
 	}
-	m_track.Duration = SequenceTime::FromMilliseconds(m_sampleTimeMs * buffer.getNumSamples());
+	m_track.Duration = SequenceTime::fromMilliseconds(m_sampleTimeMs * buffer.getNumSamples());
 	audio::AudioBufferOperations::clear(buffer);
 	for (auto itr = m_instruments.begin(); itr != m_instruments.end(); ++itr) {
 		audio::AudioBufferOperations::clear(m_managedBuffer);
@@ -197,7 +197,7 @@ void Player::Processor::SetPlayModeAction::run(Processor& processor)
 {
 	switch (m_mode) {
 	case PlayMode::Stop:
-		processor.m_track.Time = SequenceTime::FromMilliseconds(0);
+		processor.m_track.Time = SequenceTime::fromMilliseconds(0);
 		processor.m_isPlaying = false;
 		break;
 	case PlayMode::Pause:
@@ -212,5 +212,5 @@ void Player::Processor::SetPlayModeAction::run(Processor& processor)
 
 void Player::Processor::SetSequencePositionAction::run(Processor& processor)
 {
-	processor.m_track.Time = SequenceTime::FromMilliseconds(m_newPosition);
+	processor.m_track.Time = SequenceTime::fromMilliseconds(m_newPosition);
 }

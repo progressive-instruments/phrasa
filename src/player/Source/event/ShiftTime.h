@@ -32,7 +32,7 @@ public:
 		return m_time.count() / 1000.0;
 	}
 
-	static SequenceTime FromMilliseconds(double ms) {
+	static SequenceTime fromMilliseconds(double ms) {
 		return SequenceTime(std::chrono::microseconds(std::lround(ms * 1000)));
 	}
 
