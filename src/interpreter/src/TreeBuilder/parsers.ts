@@ -470,11 +470,7 @@ class EventValueAssigner extends ExpressionEvaluator {
     } else if(this._valueKey === Property.EventEndOffset) {
       this._event.endOffset = {value: value,errorPosition: errorPosition };
     } else if(this._valueKey === PhrasaSymbol.PitchEventValue) {
-      this._event.frequency = {value: {type: 'pitch', value: value}, errorPosition: errorPosition};
-    } else if(this._valueKey === PhrasaSymbol.FrequencyEventValue) {
-      this._event.frequency = {value: {type: 'frequency', value: value}, errorPosition: errorPosition};
-    } else if(this._valueKey === PhrasaSymbol.NoteEventValue) {
-      this._event.frequency = {value: {type: 'note', value: value}, errorPosition: errorPosition};
+      this._event.pitch = {value: value, errorPosition: errorPosition};
     } else {
       this._event.values.set(this._valueKey, {value:value, errorPosition: errorPosition});
     }

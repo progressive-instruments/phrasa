@@ -1,9 +1,9 @@
 tempo 120bpm
 beat
-sections.1.templates.x 220
-sections.2.templates.x 440
+sections.1.templates.x 220hz
+sections.2.templates.x 440hz
 sections.1-2
   use y
 templates.y
   sections.1-4
-    event.frequency (use x)
+    event.pitch (use x)

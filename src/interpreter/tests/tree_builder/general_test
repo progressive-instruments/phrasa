@@ -6,11 +6,11 @@ sections
   1.length 1/4
   1.event
     instrument sine_synth
-    frequency 440
+    pitch 440hz
     cutoff 90%
   2.event
-    note D3
+    pitch D3
 >1-2.event.attack 80%
 branches.b
   >1,2.event
-    frequency 220
+    pitch 220hz

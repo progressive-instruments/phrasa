@@ -1,8 +1,6 @@
 export enum PhrasaSymbol { 
   Beat = "beat",
   PitchEventValue = "pitch",
-  FrequencyEventValue = "frequency",
-  NoteEventValue = "note",
   SelectorSymbol = "#",
 };
 

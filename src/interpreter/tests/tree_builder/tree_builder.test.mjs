@@ -28,9 +28,8 @@ describe("tree builder", function() {
 
     let section = sections[0];
     expect(section.events.size).toEqual(1);
-    expect(section.events.get(0).frequency).toBeDefined();
-    expect(section.events.get(0).frequency.value.type).toEqual('frequency');
-    expect(section.events.get(0).frequency.value.value).toEqual("440");
+    expect(section.events.get(0).pitch).toBeDefined();
+    expect(section.events.get(0).pitch.value).toEqual("440hz");
     expect(section.events.get(0).values.has('cutoff')).toBeTrue();
     expect(section.events.get(0).values.get('cutoff').value).toEqual("90%");
     expect(section.events.get(0).values.has('attack')).toBeTrue();
@@ -38,9 +37,8 @@ describe("tree builder", function() {
 
     section = sections[1]
     expect(section.events.size).toEqual(1);
-    expect(section.events.get(0).frequency).toBeDefined();
-    expect(section.events.get(0).frequency.value.type).toEqual('note');
-    expect(section.events.get(0).frequency.value.value).toEqual("D3");
+    expect(section.events.get(0).pitch).toBeDefined();
+    expect(section.events.get(0).pitch.value).toEqual("D3");
     expect(section.events.get(0).values.has('attack')).toBeTrue();
     expect(section.events.get(0).values.get('attack').value).toEqual("80%");
 
@@ -49,7 +47,7 @@ describe("tree builder", function() {
     expect(branch.sections.length).toEqual(2);
     for(let i = 0 ; i < branch.sections.length ; ++i) {
       section = branch.sections[i];
-      expect(section.events.get(0).frequency.value.value).toEqual('220');
+      expect(section.events.get(0).pitch.value).toEqual('220hz');
     }
   });
 
@@ -94,11 +92,9 @@ describe("tree builder", function() {
     expect(root.pitch.grid.value[16]).toBeCloseTo(329.63);
     expect(root.pitch.grid.value[17]).toBeCloseTo(392);
     let events = root.sections[0].events
-    expect(events.get(0).frequency.value.type).toEqual("pitch");
-    expect(events.get(0).frequency.value.value).toEqual("2");
+    expect(events.get(0).pitch.value).toEqual("2");
     events = root.sections[1].events
-    expect(events.get(0).frequency.value.type).toEqual("pitch");
-    expect(events.get(0).frequency.value.value).toEqual("-1");
+    expect(events.get(0).pitch.value).toEqual("-1");
   });
 
   it('sequencetest', function () {
@@ -113,7 +109,7 @@ describe("tree builder", function() {
     expect(root.sections[0].sequences.get('seq1').map(v=>v.value)).toEqual(['4']);
     expect(root.sections[1].sequences.has('seq2')).toBeTrue();
     expect(root.sections[1].sequences.get('seq2').map(v=>v.value)).toEqual(['4','erez','-1']);
-    let val = root.events.get(0).frequency.value.value;
+    let val = root.events.get(0).pitch.value;
 
     expect(val).toBeInstanceOf(SequenceTrigger);
     expect(val.name).toEqual('seq1');
@@ -121,7 +117,7 @@ describe("tree builder", function() {
     
     for(let i = 0 ; i < 2 ; ++i) {
       let e = root.sections[i].events.get(0);
-      let freqVal  = e.frequency.value.value;
+      let freqVal  = e.pitch.value;
       expect(freqVal).toBeInstanceOf(SequenceTrigger);
       expect(freqVal.name).toEqual('seq2');
       expect(freqVal.steps).toEqual(1);
@@ -135,10 +131,10 @@ describe("tree builder", function() {
     let tree = treeBuilder.build({name: "bla", expressions: parsedFile.expressions}, null ,null).tree
     let root = tree.rootSection;
     expect(root.sections.length).toEqual(4)
-    let freqs = ['330','220','330','330']
+    let freqs = ['330hz','220hz','330hz','330hz']
     for(let i = 0 ; i < root.sections.length; ++i) {
       let event = root.sections[i].events.get(0);
-      expect(event.frequency.value.value).toEqual(freqs[i]);
+      expect(event.pitch.value).toEqual(freqs[i]);
       if(i == 2) {
         expect(event.values.get('cutoff').value).toEqual('100%');
       }
@@ -162,9 +158,8 @@ describe("tree builder", function() {
 
     let section = sections[0];
     expect(section.events.size).toEqual(1);
-    expect(section.events.get(0).frequency).toBeDefined();
-    expect(section.events.get(0).frequency.value.type).toEqual('frequency');
-    expect(section.events.get(0).frequency.value.value).toEqual("440");
+    expect(section.events.get(0).pitch).toBeDefined();
+    expect(section.events.get(0).pitch.value).toEqual("440hz");
     expect(section.events.get(0).values.has('cutoff')).toBeTrue();
     expect(section.events.get(0).values.get('cutoff').value).toEqual("90%");
     expect(section.events.get(0).values.has('attack')).toBeTrue();
@@ -172,9 +167,8 @@ describe("tree builder", function() {
 
     section = sections[1];
     expect(section.events.size).toEqual(1);
-    expect(section.events.get(0).frequency).toBeDefined();
-    expect(section.events.get(0).frequency.value.type).toEqual('note');
-    expect(section.events.get(0).frequency.value.value).toEqual("D3");
+    expect(section.events.get(0).pitch).toBeDefined();
+    expect(section.events.get(0).pitch.value).toEqual("D3");
     expect(section.events.get(0).values.has('attack')).toBeTrue();
     expect(section.events.get(0).values.get('attack').value).toEqual("80%");
   });
@@ -196,15 +190,14 @@ describe("tree builder", function() {
     expect(rooSection.tempo.value).toEqual("120bpm");
     expect(rooSection.sections.length).toEqual(2);
     const sections = rooSection.sections;
-    const expectedFreqs = [220,440]
+    const expectedFreqs = ['220hz','440hz']
     for(let i = 0 ; i < sections.length ; ++i) {
       expect(sections[i].sections.length).toEqual(4);
       const innerSections = sections[i].sections;
       for(const innerSection of innerSections) {
         expect(innerSection.events.size).toEqual(1)
-        expect(innerSection.events.get(0).frequency).toBeDefined()
-        expect(innerSection.events.get(0).frequency.value.type).toEqual('frequency')
-        expect(innerSection.events.get(0).frequency.value.value).toBeCloseTo(expectedFreqs[i])
+        expect(innerSection.events.get(0).pitch).toBeDefined()
+        expect(innerSection.events.get(0).pitch.value).toEqual(expectedFreqs[i])
       }
     }
   });

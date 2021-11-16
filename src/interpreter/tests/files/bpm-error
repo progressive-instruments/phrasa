@@ -2,4 +2,4 @@ tempo 120bp
 beat
 sections.1
   event.instrument saw_synth
-  event.note C3
+  event.pitch C3

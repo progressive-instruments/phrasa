@@ -14,7 +14,7 @@ describe("sequence builder", function() {
             {
               instrument: {value:'saw_synth'},
               values: new Map([['cutoff', {value:'100%'}]]),
-              frequency: {value:{type: 'frequency', value: '440'}}
+              pitch: { value: '440hz'}
             }]])
         },
         {
@@ -23,7 +23,7 @@ describe("sequence builder", function() {
           events: new Map([[0,
             {
               instrument: {value:'saw_synth'},
-              frequency: {value:{type: 'note', value: 'C3'}}
+              pitch: { value: 'C3'}
             }]])
         }
       ]
@@ -52,13 +52,13 @@ describe("sequence builder", function() {
       events: new Map([
         [0, {
           instrument: {value:'saw_synth'},
-          values: new Map([['frequency', {value:'D3}'}]]),
+          values: new Map([['pitch', {value:'D3'}]]),
           startOffset: {value:'10%'},
           endOffset: {value:'90%'},
         }],
         [1, {
           instrument: {value:'sine_synth'},
-          values: new Map([['frequency', {value:'D3'}]]),
+          values: new Map([['pitch', {value:'D3'}]]),
           startOffset: {value:'0.2'},
           endOffset: {value:'0.8'},
         }]
@@ -90,13 +90,13 @@ describe("sequence builder", function() {
               [
                 0, 
                 {
-                  frequency: {value:{type: 'pitch', value: '2'}}
+                  pitch: { value: '2'}
                 }
               ],
               [
                 1, 
                 {
-                  frequency: {value:{type: 'pitch', value: '-1'}}
+                  pitch: { value: '-1'}
                 }
               ]
             ])
@@ -132,7 +132,7 @@ describe("sequence builder", function() {
               0, 
               {
                 instrument: {value:'saw_synth'},
-                frequency: {value:{type: 'note', value: new SequenceTrigger('seq1',1)}}
+                pitch: { value: new SequenceTrigger('seq1',1)}
               }
             ]
           ])});
@@ -158,7 +158,7 @@ describe("sequence builder", function() {
           events: new Map([[0,
             {
               instrument: {value:'saw_synth'},
-              frequency: {value:{type: 'note', value: 'C3'}}
+              pitch: { value: 'C3'}
             }]])
         }
       ]

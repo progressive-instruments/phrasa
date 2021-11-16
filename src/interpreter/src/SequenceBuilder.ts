@@ -1,10 +1,45 @@
 import {ISequenceBuilder, SequenceBuilderResult} from './ISequenceBuilder'
 import {Sequence, SequenceEvent, EventValue, GridNode, Grid} from './Sequence'
-import {PieceTree, Section, ExpressionInput, Expression, Pitch, Sequence as TreeSequence, SequenceTrigger, OffsetValue, SectionEvent, EventValue as TreeEventValue, ValueWithErrorPosition, FrequencyExpression} from './PieceTree.js'
-import * as Evaluator from './Evaluator.js'
+import {PieceTree, Section, ExpressionInput, Expression, Pitch, Sequence as TreeSequence, SequenceTrigger, OffsetValue, SectionEvent, EventValue as TreeEventValue, ValueWithErrorPosition} from './PieceTree.js'
+import * as Evaluators from './Evaluator.js'
 import _ from 'lodash'
 import { PhrasaError, TextPositionPoint, TextPosition } from './PhrasaError'
 
+
+
+class RelativePitchEvaluator implements Evaluators.Evaluator<number>{
+  constructor(private _pitchContext: Pitch) {}
+
+  evaluate(input: string) {
+    let pitchOffset = Evaluators.evaluate(input, [Evaluators.ToInteger]);
+    
+    if(this._pitchContext.zone == null || this._pitchContext.grid == null) {
+      throw new Error('no pitch context defined');
+    }
+    let closest = this.getClosestValuesIndex(this._pitchContext.grid.value, this._pitchContext.zone.value);
+    let index = closest[0] + pitchOffset;
+    if(index < 0 || index >= this._pitchContext.grid.value.length) {
+      throw new Error('pitch offset out of range');
+    }
+
+    return this._pitchContext.grid.value[index];
+  }
+
+  private getClosestValuesIndex(array: number[], value: number): [number,number] {
+    let lo = -1, hi = array.length;
+    while (hi - lo > 1) {
+        var mid = Math.round((lo + hi)/2);
+        if (array[mid] <= value) {
+            lo = mid;
+        } else {
+            hi = mid;
+        }
+    }
+    if (array[lo] == value) hi = lo;
+    return [lo, hi];
+  }
+
+}
 
 interface Context {
   contextLength: number;
@@ -134,46 +169,21 @@ export class SequenceBuilder implements ISequenceBuilder {
 
   private evalTempo(input: ExpressionInput): number {
     if(typeof input == 'string') {
-      return Evaluator.evaluate(input, [Evaluator.BpmToMs]);
+      return Evaluators.evaluate(input, [Evaluators.BpmToMs]);
     }
     throw new Error('unsupported offset format');
   }
 
   private evalOffset(input: OffsetValue, context: Context): number {
     let fetchedValue = this.fetchEventValue(input,context)
-    return Evaluator.evaluate(fetchedValue, [
-      Evaluator.PrecentToFactor,
-      Evaluator.ToFloat]);
+    return Evaluators.evaluate(fetchedValue, [
+      Evaluators.PrecentToFactor,
+      Evaluators.ToFloat]);
   }
 
-  private getClosestValuesIndex(array: number[], value: number): [number,number] {
-    let lo = -1, hi = array.length;
-    while (hi - lo > 1) {
-        var mid = Math.round((lo + hi)/2);
-        if (array[mid] <= value) {
-            lo = mid;
-        } else {
-            hi = mid;
-        }
-    }
-    if (array[lo] == value) hi = lo;
-    return [lo, hi];
-  }
 
-  private frequencyFromPitch(pitchContext: Pitch, value: string): number {
-    let pitchOffset = Evaluator.evaluate(value, [Evaluator.ToInteger]);
-    
-    if(pitchContext.zone == null || pitchContext.grid == null) {
-      throw new Error('no pitch context defined');
-    }
-    let closest = this.getClosestValuesIndex(pitchContext.grid.value, pitchContext.zone.value);
-    let index = closest[0] + pitchOffset;
-    if(index < 0 || index >= pitchContext.grid.value.length) {
-      throw new Error('pitch offset out of range');
-    }
 
-    return pitchContext.grid.value[index];
-  }
+
 
   private mapEventValues(inValues: Map<string,ValueWithErrorPosition<TreeEventValue>>, context: Context): Map<string,EventValue> {
     let values = new Map<string,EventValue>();
@@ -183,7 +193,7 @@ export class SequenceBuilder implements ISequenceBuilder {
       }, v.errorPosition)
       let outValue: number|string;
       try {
-        outValue = Evaluator.evaluate(fetchedValue, [Evaluator.PrecentToFactor,Evaluator.ToFloat])
+        outValue = Evaluators.evaluate(fetchedValue, [Evaluators.PrecentToFactor,Evaluators.ToFloat])
       } catch {
         outValue = fetchedValue;
       }
@@ -192,16 +202,9 @@ export class SequenceBuilder implements ISequenceBuilder {
     return values;
   }
 
-  private parseFrequencyValue(freqExpression: FrequencyExpression, context: Context): number {
-    let fetchedValue = this.fetchEventValue(freqExpression.value, context);
-    switch(freqExpression.type) {
-      case 'pitch':
-        return this.frequencyFromPitch(context.pitch, fetchedValue);
-        case 'note':
-        return Evaluator.evaluate(fetchedValue, [Evaluator.NoteToFrequency]);
-      case 'frequency':
-        return Evaluator.evaluate(fetchedValue,[Evaluator.ToFloat]);
-    }
+  private parseFrequencyValue(eventValue: string|SequenceTrigger, context: Context): number {
+    let fetchedValue = this.fetchEventValue(eventValue, context);
+    return Evaluators.evaluate(fetchedValue, [Evaluators.FrequencyToFloat,Evaluators.NoteToFrequency,new RelativePitchEvaluator(context.pitch)]);
   }
 
   private buildEvents(events: Map<number,SectionEvent>, context: Context, sectionStartTime: number, sectionEndTime: number, outEvents: SequenceEvent[]) {
@@ -210,10 +213,10 @@ export class SequenceBuilder implements ISequenceBuilder {
       if(e.values) {
         values = this.mapEventValues(e.values,context);
       }
-      if(e.frequency) {
+      if(e.pitch) {
         const freqVal = this.tryEval(() => {
-          return this.parseFrequencyValue(e.frequency.value, context);
-        }, e.frequency.errorPosition) 
+          return this.parseFrequencyValue(e.pitch.value, context);
+        }, e.pitch.errorPosition) 
         
         values.set('frequency',freqVal);
       }

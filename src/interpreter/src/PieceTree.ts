@@ -61,16 +61,11 @@ export class SequenceTrigger {
 export type EventValue = string | SequenceTrigger;
 export type OffsetValue = string | SequenceTrigger;
 
-export interface FrequencyExpression {
-  type: 'pitch' | 'frequency' | 'note';
-  value: EventValue;
-}
-
 export type Sequence = ValueWithErrorPosition<string>[];
 
 export interface SectionEvent {
   instrument?: ValueWithErrorPosition<string>;
-  frequency?: ValueWithErrorPosition<FrequencyExpression>;
+  pitch?: ValueWithErrorPosition<EventValue>;
   values?: Map<string, ValueWithErrorPosition<EventValue>>;
   startOffset?: ValueWithErrorPosition<OffsetValue>;
   endOffset?: ValueWithErrorPosition<OffsetValue>

@@ -9,10 +9,6 @@ import { PhrasaExpresionTreeBuilder } from './ExpressionTreeBuilder/PhrasaExpres
 import { PhrasaExpression } from './PhrasaExpression'
 import { PhrasaError } from './PhrasaError'
 
-
-
-
-
 export class Interpreter implements IInterpreter {
     private _treeBuilder: ITreeBuilder;
     private _sequenceBuilder: ISequenceBuilder;

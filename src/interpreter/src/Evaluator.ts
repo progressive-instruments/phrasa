@@ -1,4 +1,5 @@
 
+
 export function evaluate<T>(input: string, evaluators: Evaluator<T>[]): T {
   for(const evaluator of evaluators) {
     const res = evaluator.evaluate(input);
@@ -9,11 +10,11 @@ export function evaluate<T>(input: string, evaluators: Evaluator<T>[]): T {
   throw new Error(`unable to parse string '${input}'`);
 }
 
-interface Evaluator<T> {
+export interface Evaluator<T> {
   evaluate(input: string): T;
 }
 
-class RegexEvaluatorWrapper<T> implements Evaluator<T> {
+export class RegexEvaluatorWrapper<T> implements Evaluator<T> {
   constructor(private evaluator: RegexEvaluator<T>) {
 
   }
@@ -30,10 +31,6 @@ class RegexEvaluatorWrapper<T> implements Evaluator<T> {
 
 }
 
-interface RegexEvaluator<T>{
-  expression: RegExp;
-  evaluate(matchArr: RegExpMatchArray):T;
-}
 
 export const BpmToMs = new RegexEvaluatorWrapper<number>({
   expression: /^(\d*[.]?\d+)bpm$/,
@@ -42,10 +39,23 @@ export const BpmToMs = new RegexEvaluatorWrapper<number>({
   }
 })
 
+export interface RegexEvaluator<T>{
+  expression: RegExp;
+  evaluate(matchArr: RegExpMatchArray):T;
+}
+
+
 export const ToFloat = new RegexEvaluatorWrapper<number>({
   expression: /^-?\d*[.]?\d+$/,
   evaluate(matches) {
     return parseFloat(matches[0]);
+  }
+})
+
+export const FrequencyToFloat = new RegexEvaluatorWrapper<number>({
+  expression: /(^-?\d*[.]?\d+)hz$/,
+  evaluate(matches) {
+    return parseFloat(matches[1]);
   }
 })
 

@@ -1,12 +1,12 @@
 >1.event
   instrument saw_synth
-  frequency 440
+  pitch 440hz
 >each.event
   instrument saw_synth
-  frequency 330
+  pitch 330hz
 >2.event
   instrument saw_synth
-  frequency 220
+  pitch 220hz
 >3.event
   instrument saw_synth
   cutoff 100%

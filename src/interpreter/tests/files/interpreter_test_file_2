@@ -4,5 +4,5 @@ sections
     event.instrument saw_synth
     event.note C3
   2,4.event
-    note D3
+    pitch D3
     instrument saw_synth
