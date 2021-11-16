@@ -1,6 +1,5 @@
 import * as fs from 'fs';
 import {TreeBuilder} from '../../dist/src/TreeBuilder/TreeBuilder.js'
-import {SequenceTrigger} from '../../dist/src/PieceTree.js'
 import { AntlrPhrasaExpressionTreeBuilder } from '../../dist/src/ExpressionTreeBuilder/AntlrPhrasaExpressionTreeBuilder.js';
 class TextContent {
     constructor(name,file) {
@@ -103,24 +102,20 @@ describe("tree builder", function() {
     let treeBuilder = new TreeBuilder();
     let tree = treeBuilder.build({name: "bla", expressions: parsedFile.expressions}, null ,null).tree
     let root = tree.rootSection;
-    expect(root.sequences.has('seq1')).toBeTrue();
-    expect(root.sequences.get('seq1').map(v=>v.value)).toEqual(['3','2','1']);
-    expect(root.sections[0].sequences.has('seq1')).toBeTrue();
-    expect(root.sections[0].sequences.get('seq1').map(v=>v.value)).toEqual(['4']);
-    expect(root.sections[1].sequences.has('seq2')).toBeTrue();
-    expect(root.sections[1].sequences.get('seq2').map(v=>v.value)).toEqual(['4','erez','-1']);
-    let val = root.events.get(0).pitch.value;
-
-    expect(val).toBeInstanceOf(SequenceTrigger);
-    expect(val.name).toEqual('seq1');
-    expect(val.steps).toEqual(-2);
-    
-    for(let i = 0 ; i < 2 ; ++i) {
-      let e = root.sections[i].events.get(0);
-      let freqVal  = e.pitch.value;
-      expect(freqVal).toBeInstanceOf(SequenceTrigger);
-      expect(freqVal.name).toEqual('seq2');
-      expect(freqVal.steps).toEqual(1);
+    const expectedPitch = ['0','4','2','0']
+    for(let i = 0 ; i < root.sections.length ; ++i) {
+      const section = root.sections[i];
+      expect(section.events.size).toEqual(1)
+      const event = section.events.get(0)
+      expect(event.pitch.value).toEqual(expectedPitch[i])
+      const innerExpectedSamples = ['kick','snare']
+      for (let j = 0 ; i < section.sections.length ; ++i) {
+        const innerSection = section.sections[j];
+        expect(innerSection.events.size).toEqual(1);
+        const innerEvent = innerSection.events.get(0);
+        expect(innerEvent.values.get('sample').value).toEqual(innerExpectedSamples[j])
+      
+      }
     }
   });
 

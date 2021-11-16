@@ -1,6 +1,5 @@
 
 import {SequenceBuilder} from '../../dist/src/SequenceBuilder.js'
-import {SequenceTrigger} from '../../dist/src/PieceTree.js'
 
 describe("sequence builder", function() {
   it('builddd', function () {
@@ -117,9 +116,6 @@ describe("sequence builder", function() {
     tree.rootSection = {
       tempo: {value:'120bpm'},
       beat: {value:true},
-      sequences: new Map([
-        ['seq1', [{value:'C3'},{value:'D4'},{value:'F3'}]]
-      ]),
       sections: []
     };
     for(let i = 0 ; i < 2; ++i) {
@@ -132,7 +128,7 @@ describe("sequence builder", function() {
               0, 
               {
                 instrument: {value:'saw_synth'},
-                pitch: { value: new SequenceTrigger('seq1',1)}
+                pitch: { value: 'C3'}
               }
             ]
           ])});
@@ -141,10 +137,9 @@ describe("sequence builder", function() {
     let sequenceBuilder = new SequenceBuilder();
     let sequence = sequenceBuilder.build(tree).sequence;
     expect(sequence.events.length).toEqual(8);
-    let expectedValues = [130.81, 293.66, 174.61, 130.81, 293.66, 174.61, 130.81, 293.66];
     for(let i = 0 ; i < sequence.events.length ; ++i) {
       expect(sequence.events[i].values.has('frequency')).toBeTrue();
-      expect(sequence.events[i].values.get('frequency')).toBeCloseTo(expectedValues[i]);
+      expect(sequence.events[i].values.get('frequency')).toBeCloseTo(130.81);
     }
 
   });

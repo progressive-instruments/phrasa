@@ -14,8 +14,14 @@ interface ExtendedSection extends Tree.Section {
   defaultInnerSection? : Tree.Section;
 }
 
+export interface Sequence {
+  values: PhrasaExpression[];
+  index: number;
+}
+
 export interface EvaluationContext {
-  templates: Map<string,PhrasaExpression[]>
+  templates: Map<string,PhrasaExpression[]>;
+  sequences: Map<string, Sequence>;
 }
 
 export abstract class ExpressionEvaluator {
@@ -47,7 +53,7 @@ abstract class SubjectExpressionEvaluator extends ExpressionEvaluator {
 }
 
 
-function tryEvaluateTemplateExpression(phrasaExpression: PhrasaExpression): ValueWithPosition<string> {
+function tryEvaluateUseExpression(phrasaExpression: PhrasaExpression): ValueWithPosition<string> {
   if(phrasaExpression.type != PhrasaExpressionType.SubjectExpression 
     || phrasaExpression.subjectExpression.subject.value != ExpressionSubject.Use) {
     return null;
@@ -58,17 +64,31 @@ function tryEvaluateTemplateExpression(phrasaExpression: PhrasaExpression): Valu
   return phrasaExpression.subjectExpression.expressions[0].value;
 }
 
+function getSequenceNextExpression(sequence: Sequence): PhrasaExpression {
+  if(sequence.values.length == 0) {
+    return null;
+  }
+  sequence.index += 1;
+  if(sequence.index == sequence.values.length) {
+    sequence.index = 0;
+  }
+  return sequence.values[sequence.index];
+}
+
 export function doExpressionEvaluation(expressions: PhrasaExpression[], evaluator: ExpressionEvaluator, contextRef: Ref<EvaluationContext>, finalErrors: PhrasaError[])
 {
   for(const expression of expressions)  {
-    const templateName = tryEvaluateTemplateExpression(expression);
-    if(templateName) {
-      if(!contextRef.value.templates.has(templateName.value)) { 
-        finalErrors.push({description: `template '${templateName.value}' was not found`, errorPosition: templateName.textPosition});
-      } else {
-        const templateExpressions = contextRef.value.templates.get(templateName.value);
-        
+    const resourceName = tryEvaluateUseExpression(expression);
+    if(resourceName) {
+      if(contextRef.value.templates.has(resourceName.value)) { 
+        const templateExpressions = contextRef.value.templates.get(resourceName.value);
         doExpressionEvaluation(templateExpressions,evaluator,contextRef, finalErrors);
+      } else if(contextRef.value.sequences.has(resourceName.value)) {
+        const sequence = contextRef.value.sequences.get(resourceName.value)
+        const sequenceExpression = getSequenceNextExpression(sequence)
+        doExpressionEvaluation([sequenceExpression],evaluator,contextRef, finalErrors);
+      }else {
+        finalErrors.push({description: `template or sequence '${resourceName.value}' was not found`, errorPosition: resourceName.textPosition});
       }
     } else {
       try {
@@ -143,10 +163,12 @@ export class SectionAssigner extends ExpressionEvaluator {
           }
           return evaluate(expression.subjectExpression.expressions, new BranchesAssigner(this._branchesExpressions),context.value);
         case Property.Sequences:
-          if(!this._section.sequences) {
-            this._section.sequences = new Map<string, Tree.Sequence>();
+          const newSequenceMap = new Map<string,Sequence>(context.value.sequences)
+          const sequenceErrors = evaluate(expression.subjectExpression.expressions, new SequencesAssigner(newSequenceMap),context.value);
+          if(!sequenceErrors || sequenceErrors.length == 0) {
+            context.value = {...context.value, sequences: newSequenceMap};
           }
-          return evaluate(expression.subjectExpression.expressions, new SequencesAssigner(this._section.sequences),context.value);
+          return sequenceErrors;
           case Property.Events:
         case Property.Event:
           if(!this._section.events) {
@@ -173,7 +195,7 @@ export class SectionAssigner extends ExpressionEvaluator {
           const newTemplateMap = new Map<string,PhrasaExpression[]>(context.value.templates)
           const errors = evaluate(expression.subjectExpression.expressions, new TemplatesAssigner(newTemplateMap), context.value);
           if(!errors || errors.length == 0) {
-            context.value = {templates: newTemplateMap};
+            context.value = {...context.value, templates: newTemplateMap};
           }
           return errors;
         default:
@@ -385,24 +407,28 @@ class BranchesAssigner extends SubjectExpressionEvaluator {
 }
 
 class SequencesAssigner extends SubjectExpressionEvaluator {
-  constructor(private _sequences: Map<string, Tree.Sequence>){
+  constructor(private _sequences: Map<string, Sequence>){
     super();
   }
   evaluateSubjectExpression(subject: ValueWithPosition<string>, expressions: PhrasaExpression[], context: Ref<EvaluationContext>) {
     if(!this._sequences.has(subject.value)) {
-      this._sequences.set(subject.value,[]);
+      this._sequences.set(subject.value,{
+        index: -1,
+        values: []
+      });
     }
     return evaluate(expressions,new SequenceAssigner(this._sequences.get(subject.value)),context.value);
   }
 }
 
-class SequenceAssigner extends ValueExpressionEvaluator {
-  constructor(private _sequence: Tree.Sequence){
+class SequenceAssigner extends ExpressionEvaluator {
+  constructor(private _sequence: Sequence){
     super();
-    _sequence.length = 0; 
+    _sequence.values = []; 
   }
-  evaluateValue(value: ValueWithPosition<string>, context: Ref<EvaluationContext>): PhrasaError[] | void {
-    this._sequence.push({value: value.value, errorPosition: value.textPosition});
+  
+  evaluate(expression: PhrasaExpression, context: Ref<EvaluationContext>): PhrasaError[] | void {
+    this._sequence.values.push(expression);
   }
 }
 
@@ -415,56 +441,18 @@ class EventValueAssigner extends ExpressionEvaluator {
     super();
   }
 
-  createSequenceTrigger(expression: PhrasaExpression) {
-
-    let name: ValueWithPosition<string>;
-    let steps: number;
-    if(expression.type == PhrasaExpressionType.NestedSubjectExpression) {
-      name = expression.subjectExpression.subject;
-      if(expression.subjectExpression.expressions.length != 1 || 
-        expression.subjectExpression.expressions[0].type != PhrasaExpressionType.Value) {
-        throw new Error('invalid sequence trigger argument')
-      }
-      const value = expression.subjectExpression.expressions[0].value;
-      let match = value.value.match(StepsExpression)
-      if(!match) {
-        throw new Error('invalid sequence trigger argument');
-      }
-      steps = value.value.length;
-      if(value.value.startsWith('<')) {
-        steps *= -1;
-      }
-
-    } else if(expression.type == PhrasaExpressionType.Value) {
-      steps = 1;
-      name = expression.value
-    } else {
-      throw new Error('invalid expression');
-    }
-
-    return new Tree.SequenceTrigger(name.value, steps);
-  }
   
   evaluate(expression: PhrasaExpression, context: Ref<EvaluationContext>) {
-    if(expression.type == PhrasaExpressionType.SubjectExpression) {
-      const subjectExpression = expression.subjectExpression;
-      if(subjectExpression.subject.value == Property.Sequences && subjectExpression.expressions.length == 1 && subjectExpression.expressions[0].type == PhrasaExpressionType.NestedSubjectExpression) {
-        this.setValue(this.createSequenceTrigger(subjectExpression.expressions[0]), expression.subjectExpression.subject.textPosition);
-      }
-    } else if(expression.type == PhrasaExpressionType.Value) {
+    if(expression.type == PhrasaExpressionType.Value) {
       this.setValue(expression.value.value, expression.value.textPosition)
     } else {
       throw new Error('invalid property')
     }
   }
 
-  private setValue(value: string | Tree.SequenceTrigger, errorPosition: TextPosition) {
+  private setValue(value: string, errorPosition: TextPosition) {
     if(this._valueKey === Property.EventInstrument) {
-      if(typeof(value) == 'string') {
-        this._event.instrument = {value: value,errorPosition: errorPosition };
-      } else {
-        throw new Error('instrument value must be a string')
-      }
+      this._event.instrument = {value: value,errorPosition: errorPosition };
     } else if(this._valueKey === Property.EventStartOffset) {
       this._event.startOffset = {value: value,errorPosition: errorPosition };
     } else if(this._valueKey === Property.EventEndOffset) {

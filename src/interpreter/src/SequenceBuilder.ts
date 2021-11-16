@@ -1,6 +1,6 @@
 import {ISequenceBuilder, SequenceBuilderResult} from './ISequenceBuilder'
 import {Sequence, SequenceEvent, EventValue, GridNode, Grid} from './Sequence'
-import {PieceTree, Section, ExpressionInput, Expression, Pitch, Sequence as TreeSequence, SequenceTrigger, OffsetValue, SectionEvent, EventValue as TreeEventValue, ValueWithErrorPosition} from './PieceTree.js'
+import {PieceTree, Section, ExpressionInput, Expression, Pitch, OffsetValue, SectionEvent, EventValue as TreeEventValue, ValueWithErrorPosition} from './PieceTree.js'
 import * as Evaluators from './Evaluator.js'
 import _ from 'lodash'
 import { PhrasaError, TextPositionPoint, TextPosition } from './PhrasaError'
@@ -44,45 +44,12 @@ class RelativePitchEvaluator implements Evaluators.Evaluator<number>{
 interface Context {
   contextLength: number;
   pitch?: Pitch;
-  sequences?: Map<string,TreeSequence>;
   defaultInstrument?: string;
 }
 
-class TreeSequenceState {
-  private indexes: Map<string,number>;
-  constructor() {
-    this.indexes = new Map<string,number>();
-  }
-  getNext(name: string, sequence: TreeSequence, steps: number): ValueWithErrorPosition<string> {
-    let index = 0;
-    if(this.indexes.has(name)){
-      index = this.indexes.get(name);
-      index = Math.min(index,sequence.length-1);
-      index = (index + 1) % sequence.length;
-    }
-    this.indexes.set(name,index);
-    return sequence[index];
-  }
-}
-
 export class SequenceBuilder implements ISequenceBuilder {
-  private _sequenceState: TreeSequenceState;
   private _relativeBeatLength?: number;
   private _errors: PhrasaError[];
-
-  constructor() {
-    this._sequenceState = new TreeSequenceState();
-  }
-
-  fetchEventValue(value: string | SequenceTrigger, context: Context): string {
-    if(value instanceof SequenceTrigger) {
-      if(!context.sequences || !context.sequences.has(value.name)) {
-        throw new Error(`sequence ${value.name} does not exists in context`);
-      }
-      return this._sequenceState.getNext(value.name, context.sequences.get(value.name), value.steps).value;
-    }
-    return value;
-  }
  
   tryEval<T>(expression: ()=>T, textPosition: TextPosition, shouldContinue:boolean = false) {
     try {
@@ -175,7 +142,7 @@ export class SequenceBuilder implements ISequenceBuilder {
   }
 
   private evalOffset(input: OffsetValue, context: Context): number {
-    let fetchedValue = this.fetchEventValue(input,context)
+    let fetchedValue = input
     return Evaluators.evaluate(fetchedValue, [
       Evaluators.PrecentToFactor,
       Evaluators.ToFloat]);
@@ -189,7 +156,7 @@ export class SequenceBuilder implements ISequenceBuilder {
     let values = new Map<string,EventValue>();
     for(const [valueKey,v] of inValues) {
       const fetchedValue = this.tryEval(() => {
-        return this.fetchEventValue(v.value, context);
+        return v.value;
       }, v.errorPosition)
       let outValue: number|string;
       try {
@@ -202,8 +169,8 @@ export class SequenceBuilder implements ISequenceBuilder {
     return values;
   }
 
-  private parseFrequencyValue(eventValue: string|SequenceTrigger, context: Context): number {
-    let fetchedValue = this.fetchEventValue(eventValue, context);
+  private parseFrequencyValue(eventValue: string, context: Context): number {
+    let fetchedValue = eventValue;
     return Evaluators.evaluate(fetchedValue, [Evaluators.FrequencyToFloat,Evaluators.NoteToFrequency,new RelativePitchEvaluator(context.pitch)]);
   }
 
@@ -290,13 +257,6 @@ export class SequenceBuilder implements ISequenceBuilder {
         context.pitch.grid = section.pitch.grid
       }
       
-    }
-    if(section?.sequences) {
-      if(!context.sequences){
-        context.sequences = section.sequences
-      } else {
-        context.sequences = new Map([...context.sequences,...section.sequences]);
-      }
     }
     if(section?.defaultInstrument) {
       context.defaultInstrument = section.defaultInstrument.value;
