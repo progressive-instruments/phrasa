@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
 
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "")
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON) # required for oredering projects within solution
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
