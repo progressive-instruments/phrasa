@@ -2,4 +2,4 @@ tempo 120bpm
 use multifile2
 instrument saw_synth
 >2 beat
->1-2.event.attack 80%
+>1-2 event attack 80%

@@ -1,7 +1,7 @@
 tempo 120bpm
-events.1.pitch C3
-events.1.start 10%
-events.1.end -10%
-events.2.pitch C3
-events.2.start 0.1
-events.2.end -0.1
+events 1 pitch C3
+events 1 start 10%
+events 1 end -10%
+events 2 pitch C3
+events 2 start 0.1
+events 2 end -0.1

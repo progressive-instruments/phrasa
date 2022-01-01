@@ -1,10 +1,10 @@
-sequences.seq1 0,1,2
+sequences seq1 0,1,2
 
->2.sequences.seq 4,4,4,4
+>2 sequences seq 4,4,4,4
 
 >1-4
-  event.pitch (use seq1)
+  event pitch use seq1
   $seq2 kick,snare,cym
   >1-2
-    event.sample 
+    event sample 
       use seq2

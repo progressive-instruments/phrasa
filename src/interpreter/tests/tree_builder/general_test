@@ -3,14 +3,14 @@ tempo 120bpm
 instrument saw_synth
 sections
   total 2
-  1.length 1/4
-  1.event
+  1 length 1/4
+  1 event
     instrument sine_synth
     pitch 440hz
     cutoff 90%
-  2.event
+  2 event
     pitch D3
->1-2.event.attack 80%
+>1-2 event.attack 80%
 branches.b
-  >1,2.event
+  >1,2 event
     pitch 220hz

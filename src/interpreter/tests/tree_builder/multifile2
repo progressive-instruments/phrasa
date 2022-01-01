@@ -1,10 +1,10 @@
 instrument saw_synth
-templates.x 440hz
+templates x 440hz
 sections
   total 2
-  1.length 1/4
-  1.event
+  1 length 1/4
+  1 event
     pitch (use x)
     cutoff 90%
-  2.event
+  2 event
     pitch D3

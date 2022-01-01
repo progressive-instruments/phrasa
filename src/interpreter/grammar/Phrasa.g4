@@ -25,15 +25,30 @@ tokens {
 
 main: newline_expr_ins;
 
-newline_expr_ins: (' '* NEWLINE | newline_expr_in)+;
+// sections (1 events (2 pitch 2),(3 pitch 4)), 2,3
+//   event pitch 2
 
-newline_expr_in: 
-    newline_expr
-    | inline_expr_in (NEWLINE | EOF);
+newline_expr_ins: (end_exprs | ' '* NEWLINE |)+;
 
-newline_expr: key (' '* NEWLINE INDENT newline_expr_ins (DEDENT | EOF)  | ' '+ inline_expr_ins  (EOF | NEWLINE));
+end_exprs: (middle_expr ' '* ',' ' '*)* end_expr;
 
-key: (TEXT | ',')+;
+end_expr:
+    value ' '* (NEWLINE|EOF)
+    | enclosed_middle ' '* (NEWLINE|EOF)
+    | key ' '* NEWLINE INDENT newline_expr_ins (DEDENT | EOF)
+    | key ' '+ end_exprs;
+
+middle_exprs: (middle_expr ' '* ',' ' '*)* middle_expr;
+enclosed_middle: '(' ' '* key ' '+ middle_exprs ' '* ')';
+
+middle_expr: 
+    | enclosed_middle
+    | key ' '+ middle_exprs
+    | value;
+
+
+value: TEXT+;
+key: TEXT+;
 
 inline_expr_ins: inline_expr_in ' '* (',' ' '* inline_expr_in ' '*)*;
 
@@ -41,15 +56,10 @@ inline_expr_in:
     value
     | inline_expr
     | '(' ' '* inline_expr_ins ' '* ')';
-
-value: 
-    TEXT | operation;
     
-operation:  TEXT OPERATOR TEXT;
 inline_expr: '(' ' '* key ' '+  inline_expr_ins ' '* ')';
 
 COMMENT: '//' ~[\n\r]+ -> skip;
-OPERATOR: [*/+-];
 TEXT: ~[ )(,\n\r]+;
 
 NEWLINE: '\r'? '\n' ' '* {

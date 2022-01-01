@@ -1,13 +1,13 @@
->1.event
+>1 event
   instrument saw_synth
   pitch 440hz
->each.event
+>each event
   instrument saw_synth
   pitch 330hz
->2.event
+>2 event
   instrument saw_synth
   pitch 220hz
->3.event
+>3 event
   instrument saw_synth
   cutoff 100%
 >total 4
